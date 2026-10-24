@@ -4,7 +4,7 @@ import io
 
 import segno
 from flask import current_app, render_template
-from weasyprint import HTML
+from weasyprint import HTML, URLFetcher
 
 from app.domain.epc import epc_payload
 from app.domain.iban import formatiere_iban
@@ -49,8 +49,16 @@ def layout_kontext(layout=None, vorschau: bool = False) -> dict:
     }
 
 
+def nur_eingebettet() -> URLFetcher:
+    """WeasyPrint darf nur eingebettete Daten (Logo als data:-Adresse) laden: keine Anfragen ins
+    Netz und keine lokalen Dateien, auch wenn doch einmal eine Adresse ins Dokument gelangt."""
+    return URLFetcher(allowed_protocols={"data"}, allow_redirects=False)
+
+
 def _als_pdf(html: str) -> bytes:
-    return HTML(string=html, base_url=current_app.root_path).write_pdf(pdf_variant="pdf/a-3b")
+    return HTML(
+        string=html, base_url=current_app.root_path, url_fetcher=nur_eingebettet()
+    ).write_pdf(pdf_variant="pdf/a-3b")
 
 
 def rendere_mahnung(rechnung: Rechnung, mahnung, text: str) -> bytes:
