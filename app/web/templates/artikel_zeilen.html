@@ -1,0 +1,13 @@
+{% for a in artikelliste %}
+<tr>
+  <td>
+    {% if darf("stammdaten") %}<a class="zeilenlink" href="{{ url_for('artikel.bearbeiten', artikel_id=a.id) }}">{{ a.bezeichnung }}</a>{% else %}{{ a.bezeichnung }}{% endif %}
+    {% if a.artikelnummer %}<div class="hinweis">{{ a.artikelnummer }}</div>{% endif %}
+  </td>
+  <td class="gekuerzt">{{ a.beschreibung or "" }}</td>
+  <td>{{ a.einheit }}</td>
+  <td class="rechts betrag">{{ a.preis_cent | euro }}</td>
+</tr>
+{% else %}
+<tr><td colspan="4" class="leer">{{ "Keine Treffer." if suche else "Noch keine Artikel." }}</td></tr>
+{% endfor %}

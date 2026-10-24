@@ -1,0 +1,50 @@
+{% extends "pdf/brief.html" %}
+{% block titel %}{{ r.titel }} {{ r.anzeige_nummer }}{% endblock %}
+{% block info %}
+  <div class="info">
+    <table>
+      <tr><td>Lieferscheinnr.</td><td>{{ r.anzeige_nummer }}</td></tr>
+      {% if r.bezug and r.bezug.nummer %}<tr><td>zu Rechnung</td><td>{{ r.bezug.nummer }} vom {{ r.bezug.rechnungsdatum | datum }}</td></tr>{% endif %}
+      {% if r.kontakt and r.kontakt.kundennummer %}<tr><td>Kundennr.</td><td>{{ r.kontakt.kundennummer }}</td></tr>{% endif %}
+      <tr><td>Datum</td><td>{{ r.rechnungsdatum | datum }}</td></tr>
+      {% if r.leistung_art == "leistungszeitraum" %}
+      <tr><td>Lieferzeitraum</td><td>{{ r.leistung_von | datum }} – {{ r.leistung_bis | datum }}</td></tr>
+      {% else %}
+      <tr><td>Lieferdatum</td><td>{{ r.leistung_von | datum }}</td></tr>
+      {% endif %}
+    </table>
+  </div>
+{% endblock %}
+{% block inhalt %}
+  <div class="inhalt">
+    <h1>{{ r.titel }} {{ r.anzeige_nummer }}</h1>
+    <p class="text">Wir liefern Ihnen folgende Waren und Leistungen.</p>
+
+    <table class="posten">
+      <thead>
+        <tr>{% if d.zeige_pos %}<th>Pos.</th>{% endif %}<th>Bezeichnung</th><th class="zahl">Menge</th></tr>
+      </thead>
+      <tbody>
+        {% set nr = namespace(i=0) %}
+        {% for p in r.positionen %}
+        {% if p.typ == "text" %}
+        <tr class="freitext">{% if d.zeige_pos %}<td></td>{% endif %}<td colspan="2">{{ p.bezeichnung }}{% if p.beschreibung %}<div class="beschreibung">{{ p.beschreibung }}</div>{% endif %}</td></tr>
+        {% else %}
+        {% set nr.i = nr.i + 1 %}
+        <tr>
+          {% if d.zeige_pos %}<td>{{ nr.i }}</td>{% endif %}
+          <td>{{ p.bezeichnung }}{% if p.beschreibung %}<div class="beschreibung">{{ p.beschreibung }}</div>{% endif %}</td>
+          <td class="zahl">{{ p.menge_tausendstel | menge }} {{ p.einheit or "" }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="zahlung">
+      <div>
+        <p class="text">Erhalten am: ______________________&nbsp;&nbsp;&nbsp; Unterschrift: ______________________</p>
+      </div>
+    </div>
+  </div>
+{% endblock %}

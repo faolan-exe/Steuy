@@ -1,0 +1,62 @@
+{% extends "basis.html" %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Import/Export – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Einstellungen</h1></div>
+{{ reiter("einstellungen.import_export") }}
+
+<section class="karte">
+  <div class="karte-kopf"><h2>Daten importieren{{ hilfe("import") }}</h2></div>
+  <div class="karte-inhalt">
+    <p class="hinweis">Du kommst von einem anderen Programm, z. B. Lexware Office? Zuerst Kontakte und Artikel, dann das Belegarchiv mit Rechnungen und Eingangsbelegen. Wie du die Dateien in Lexware exportierst, steht weiter unten.</p>
+    {% if darf("stammdaten") %}
+    <a class="knopf" href="{{ url_for('importieren.start', art='kontakte') }}">Kontakte importieren</a>
+    <a class="knopf" href="{{ url_for('importieren.start', art='artikel') }}">Artikel importieren</a>
+    {% endif %}
+    {% if darf("buchen") %}
+    <a class="knopf knopf-primaer" href="{{ url_for('importieren.archiv_start') }}">Belegarchiv importieren</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="karte abstand-oben" id="lexware">
+  <div class="karte-kopf"><h2>Anleitung: Umzug von Lexware Office</h2></div>
+  <div class="karte-inhalt">
+    <p class="hinweis">In Lexware: <strong>Export</strong> im Menü. Wähle <em>Individueller Zeitraum</em> (01.01. bis 31.12.) und exportiere <strong>ein Jahr nach dem anderen</strong>, nur abgeschlossene Monate. Die Dateien enthalten Geschäftsdaten: Lade sie nur in deine eigene steuy-Installation hoch.</p>
+    <div class="tabellenrahmen">
+      <table class="tabelle">
+        <thead><tr><th>Schritt</th><th>Export in Lexware</th><th>Das macht steuy daraus</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>Anwenderdaten</strong>: Kontakte (Link unten auf der Export-Seite)</td><td>Kunden und Lieferanten mit Adresse, E-Mail und Nummer (<em>Kontakte importieren</em>)</td></tr>
+          <tr><td>2</td><td><strong>Belege/Belegbilder mit Buchungsvorschlag (DATEV-Format)</strong>, Datei <code>DATEV-Export_Belegbilder_mit_Belegdaten_….zip</code></td><td>Alle Rechnungen und Eingangsbelege mit PDF als Buchungen, Stornos werden erkannt (<em>Belegarchiv importieren</em>)</td></tr>
+          <tr><td>3</td><td><strong>Listen im CSV-Format exportieren</strong>, Datei <code>CSV-Export_Belege_….zip</code></td><td>Listen mit „bezahlt am“: <code>Export_RE…</code> (Eingangsrechnungen) und <code>Export_RA…</code> (Ausgangsrechnungen). steuy trägt die Zahlungen bei den passenden Ausgaben und Einnahmen ein (zusammen mit dem Belegarchiv hochladen). Wichtig: Das ZIP muss beide Dateien enthalten.</td></tr>
+          <tr><td>4</td><td><strong>Kontoumsätze der Geschäftskonten</strong> (Girokonten, PayPal)</td><td>Nur nötig für Rechnungen, die in den Listen aus Schritt 3 fehlen. Der Abgleich ist noch nicht eingebaut.</td></tr>
+          <tr><td>5</td><td><strong>Anwenderdaten</strong>: Produkte/Services</td><td>Artikel (<em>Artikel importieren</em>)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="hinweis abstand-oben">Nicht nötig: „Belege (alle Belege zum Archivieren)“ (die PDFs stecken schon in Schritt 2), „Konten (CSV-Format)“ und die Betriebsprüfungs-Exporte. Der Anlagenspiegel nur, wenn du Anschaffungen über mehrere Jahre abschreibst.</p>
+
+    <h3>Wer wurde schon bezahlt?</h3>
+    <p>Der DATEV-Export (Schritt 2) enthält <strong>kein Zahlungsdatum</strong>, nur Rechnungsdatum und Fälligkeit. Alle Buchungen kommen deshalb als <strong>offen</strong> herein und erscheinen unter „Zu prüfen“. Für die EÜR zählt das Zahlungsdatum (Zuflussprinzip), das rät steuy nicht. Steuy übernimmt das Datum aus den Listen (Schritt 3), Zahlungsart „Sonstige“, bei Ausgaben und Einnahmen. Die Liste der Ausgangsrechnungen führt nur bezahlte Rechnungen: Was dort fehlt, bleibt offen und erscheint unter „Zu prüfen“.</p>
+
+    <h3>Ablauf in steuy</h3>
+    <ol>
+      <li>Kontakte importieren (optional, sonst legt der Belegimport sie mit Name, Ort und USt-IdNr. an).</li>
+      <li><em>Belegarchiv importieren</em>: alle ZIP-Dateien (Belegarchiv und CSV-Listen) auf einmal wählen, <strong>Vorschau</strong> ansehen, dann <strong>Jetzt importieren</strong>. Doppelte Belege (z. B. Jahres- und Monatsexport) überspringt steuy.</li>
+      <li>Unter „Zu prüfen“: Entwürfe kategorisieren (bei Bewirtung, Werkzeugen, Software und Anschaffungen rät steuy nicht) und Zahlungen erfassen.</li>
+      <li>Unter <a href="{{ url_for('einstellungen.rechnungen') }}">Einstellungen → Rechnungen</a> die nächste freie Rechnungsnummer eintragen, z. B. 131 für RE0131.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Daten exportieren</h2></div>
+  <div class="karte-inhalt">
+    <p class="hinweis">Alle Daten und Dateien als ZIP, z. B. für einen Umzug oder die Steuerberatung. Passwörter sind nicht enthalten.</p>
+    <a class="knopf" href="{{ url_for('auswertung.gesamtexport_zip') }}">Gesamtexport herunterladen</a>
+    {% if darf("export") %}<a class="knopf" href="{{ url_for('auswertung.wechsel') }}">Zu anderer Software wechseln</a>{% endif %}
+  </div>
+</section>
+{% endblock %}

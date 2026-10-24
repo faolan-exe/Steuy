@@ -1,0 +1,50 @@
+{% extends "basis.html" %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Rechte – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("einstellungen.rechte") }}
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <section class="karte">
+    <div class="karte-kopf"><h2>Was darf welche Rolle?</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Admins haben immer alle Rechte. Einstellungen, Nutzerverwaltung und Jahresabschluss bleiben Admins vorbehalten.</p>
+    </div>
+    <div class="tabellenrahmen">
+      <table class="tabelle rechtetabelle">
+        <thead>
+          <tr>
+            <th>Recht</th>
+            <th class="mitte">Admin</th>
+            {% for rolle in rollen %}<th class="mitte">{{ rollen_namen[rolle] }}</th>{% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for recht in rechte %}
+          <tr>
+            <td>{{ rechte_namen[recht] }}</td>
+            <td class="mitte"><input type="checkbox" checked disabled aria-label="Admin: {{ rechte_namen[recht] }}"></td>
+            {% for rolle in rollen %}
+            <td class="mitte">
+              {% if recht in einstellbar %}
+              <input type="checkbox" name="{{ rolle.value }}:{{ recht.value }}" value="y" {% if recht in matrix[rolle] %}checked{% endif %} aria-label="{{ rollen_namen[rolle] }}: {{ rechte_namen[recht] }}">
+              {% else %}
+              <input type="checkbox" disabled {% if recht not in nur_admin %}checked{% endif %} aria-label="{{ rollen_namen[rolle] }}: {{ rechte_namen[recht] }} (fest)">
+              {% endif %}
+            </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <button type="submit" class="knopf knopf-primaer">Rechte speichern</button>
+  </div>
+</form>
+{% endblock %}

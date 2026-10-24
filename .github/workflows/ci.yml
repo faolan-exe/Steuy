@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: steuy
+          POSTGRES_DB: steuy_test
+          # Nur im kurzlebigen CI-Container erreichbar, daher ohne Passwort
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U steuy"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://steuy@localhost:5432/steuy_test
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Systembibliotheken für PDF (ADR 0008)
+        run: sudo apt-get update -q && sudo apt-get install -y -q libpango-1.0-0 libpangoft2-1.0-0 fonts-dejavu-core tesseract-ocr tesseract-ocr-deu
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --locked
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Tests
+        run: uv run pytest
+
+  docker:
+    # Baut das Image, startet App und Datenbank wie auf einem Server und prüft die Sicherung
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zufällige Zugangsdaten nur für diesen Lauf
+        run: printf 'SECRET_KEY=%s\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 32)" "$(openssl rand -hex 16)" > .env
+      - name: Bauen und starten
+        run: docker compose up -d --build --wait
+      - name: App antwortet
+        run: |
+          curl -fsS http://127.0.0.1:8000/gesund
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8000/einrichtung)" = 200
+      - name: PDF und Texterkennung im Image
+        run: docker compose exec -T app python -c "import weasyprint, pytesseract; weasyprint.HTML(string='<p>Test</p>').write_pdf(); print(pytesseract.get_languages(config=''))"
+      - name: Sicherung und Wiederherstellung
+        run: |
+          scripts/docker-sicherung.sh "$RUNNER_TEMP/sicherung"
+          scripts/docker-wiederherstellen.sh "$(ls -d "$RUNNER_TEMP"/sicherung/steuy-*)"
+          docker compose up -d --wait
+          curl -fsS http://127.0.0.1:8000/gesund
+      - name: Zeitplan-Dienst läuft
+        run: |
+          docker compose ps zeitplan --format '{{.State}}' | grep -q running
+          docker compose exec -T app flask erinnerungen
+      - name: Logs bei Fehler
+        if: failure()
+        run: docker compose logs

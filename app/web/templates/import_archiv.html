@@ -1,0 +1,74 @@
+{% extends "basis.html" %}
+{% block titel %}Belegarchiv importieren – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Belegarchiv aus Lexware importieren</h1></div>
+
+{% if ergebnisse is none %}
+<form method="post" action="{{ url_for('importieren.archiv') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <section class="karte">
+    <div class="karte-inhalt">
+      <p class="hinweis">In Lexware Office: <em>Export → DATEV-Export Belegbilder mit Belegdaten</em>. Das ZIP enthält deine Rechnungen und Eingangsbelege mit PDF. steuy legt daraus Kontakte, Belege und Buchungen an. Zuerst siehst du nur eine Vorschau, es wird nichts gespeichert. Welche weiteren Dateien du aus Lexware exportieren kannst, steht in der <a href="{{ url_for('einstellungen.import_export') }}#lexware">Anleitung zum Umzug von Lexware</a>.</p>
+      <p class="hinweis"><strong>Zahlungen stehen nicht im Export.</strong> Alle Buchungen kommen deshalb als <em>offen</em> herein und zählen erst in der EÜR, wenn du die Zahlung erfasst. Stornos aus Lexware (negativer Betrag, gleiche Rechnungsnummer) storniert steuy am übernommenen Original. Andere Gutschriften übernimmt der Import nicht, die erfasst du von Hand. Die Listen „CSV-Export Belege“ (mit „bezahlt am“) trägst du im selben Schritt mit hoch: Danach sind die Ausgaben bezahlt. Überschneiden sich Dateien (z. B. Jahres- und Monatsexport), werden doppelte Belege übersprungen.</p>
+      <div class="feldgruppe">
+        <input class="feld" type="file" name="dateien" id="dateien" accept=".zip,.csv,application/zip,text/csv" multiple required>
+        <label class="feldlabel" for="dateien">ZIP-Dateien: Belegarchiv und Listen (am besten ein Jahr nach dem anderen)</label>
+      </div>
+    </div>
+  </section>
+  <div class="formular-fuss"><button class="knopf knopf-primaer" type="submit">Vorschau anzeigen</button></div>
+</form>
+{% else %}
+{% for name, e in ergebnisse %}
+<section class="karte">
+  <div class="karte-kopf"><h2>{{ name }}{% if e.art == "zahlungen" %} <small>Liste der {{ e.liste }}</small>{% endif %}</h2></div>
+  <div class="karte-inhalt">
+    {% if e.art == "zahlungen" %}
+    <p><strong>{{ e.erfasst }}</strong> {{ "Zahlungen erfasst" if fertig else "Zahlungen würden erfasst" }} bei den {{ e.liste }} (Zahlungsdatum aus „bezahlt am“, Zahlungsart „Sonstige“).</p>
+    {% if e.mehrdeutig %}<p>{{ e.mehrdeutig | length }} nicht eindeutig zuzuordnen (gleiche Nummer, Datum und Betrag, aber verschiedene Zahlungsdaten), bitte von Hand erfassen:</p><ul>{% for z in e.mehrdeutig %}<li>{{ z }}</li>{% endfor %}</ul>{% endif %}
+    {% if e.entwuerfe %}<p>{{ e.entwuerfe | length }} sind noch Buchungsentwürfe. Beim Festschreiben („Zu prüfen“) das Zahlungsdatum gleich mit angeben:</p><ul>{% for z in e.entwuerfe %}<li>{{ z }}</li>{% endfor %}</ul>{% endif %}
+    {% if e.ohne_treffer %}<p>{{ e.ohne_treffer | length }} ohne passende Buchung (nicht importiert, schon bezahlt oder in Lexware storniert):</p><ul>{% for z in e.ohne_treffer %}<li>{{ z }}</li>{% endfor %}</ul>{% endif %}
+    {% if e.probleme %}<p>Nicht erfasst:</p><ul>{% for p in e.probleme %}<li>{{ p }}</li>{% endfor %}</ul>{% endif %}
+    {% elif e.probleme and not e.neu and not e.uebersprungen %}
+    <p class="fehlermeldung" role="alert">{{ e.probleme | join(" ") }}</p>
+    {% else %}
+    <p><strong>{{ e.neu }}</strong> {{ "Buchungen angelegt" if fertig else "Buchungen würden angelegt" }}:
+      {{ e.festgeschrieben }} festgeschrieben (offen), {{ e.entwuerfe }} als Entwurf unter „Zu prüfen“.
+      {% if e.kontakte_neu %}Neue Kontakte: {{ e.kontakte_neu }}.{% endif %}
+      {% if e.storniert %}Davon {{ e.storniert }} {{ "storniert" if fertig else "würden storniert" }} (Storno aus Lexware, gleiche Rechnungsnummer).{% endif %}</p>
+    {% if e.entwurf_gruende %}
+    <p>Als Entwurf, weil steuy die Kategorie nicht raten soll:</p>
+    <ul>{% for grund, anzahl in e.entwurf_gruende.items() %}<li>{{ anzahl }} × {{ grund }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if e.gutschriften %}
+    <p>{{ e.gutschriften | length }} Gutschriften ohne passende Rechnung nicht übernommen (bitte von Hand erfassen):</p>
+    <ul>{% for g in e.gutschriften %}<li>{{ g }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if e.uebersprungen %}
+    <p>{{ e.uebersprungen | length }} übersprungen:</p>
+    <ul>{% for u in e.uebersprungen %}<li>{{ u }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if e.probleme %}
+    <p>Nicht lesbar:</p>
+    <ul>{% for p in e.probleme %}<li>{{ p }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% endif %}
+  </div>
+</section>
+{% endfor %}
+{% if fertig %}
+<div class="formular-fuss">
+  <a class="knopf" href="{{ url_for('importieren.archiv_start') }}">Weitere Dateien</a>
+  <a class="knopf knopf-primaer" href="{{ url_for('allgemein.pruefen') }}">Zu prüfen</a>
+</div>
+{% else %}
+<form method="post" action="{{ url_for('importieren.archiv') }}" class="formular-fuss" data-bestaetigen="Jetzt importieren? Festgeschriebene Buchungen lassen sich später nur noch stornieren." data-bestaetigen-knopf="Ja, importieren">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="token" value="{{ token }}">
+  <a class="knopf" href="{{ url_for('importieren.archiv_start') }}">Abbrechen</a>
+  <button class="knopf knopf-primaer" type="submit" name="aktion" value="importieren">Jetzt importieren</button>
+</form>
+{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,88 @@
+{% from "icons.html" import icon %}
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titel %}steuy{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='js/positionen.js') }}" defer></script>
+</head>
+<body>
+  <header class="leiste">
+    <a class="marke" href="{{ url_for('allgemein.start') }}"><span class="punkt"></span><span>steuy</span></a>
+    {% block navigation %}
+    <nav class="hauptnavi" aria-label="Hauptnavigation">
+      {% set bald = "kommt in einer späteren Version" %}
+      {% set bereich = nav_aktiv or request.blueprint %}
+      <a href="{{ url_for('allgemein.start') }}" {% if request.endpoint == 'allgemein.start' %}class="aktiv" aria-current="page"{% endif %}>Dashboard</a>
+      <a href="{{ url_for('allgemein.pruefen') }}" {% if request.endpoint == 'allgemein.pruefen' %}class="aktiv" aria-current="page"{% endif %}>Zu prüfen</a>
+      <a href="{{ url_for('angebote.angebote') }}" {% if bereich == 'angebote' %}class="aktiv" aria-current="page"{% endif %}>Angebote</a>
+      <a href="{{ url_for('rechnungen.liste') }}" {% if bereich == 'rechnungen' %}class="aktiv" aria-current="page"{% endif %}>Rechnungen</a>
+      <a href="{{ url_for('belege.liste') }}" {% if bereich == 'belege' %}class="aktiv" aria-current="page"{% endif %}>Belege</a>
+      <span class="bald" title="{{ bald }}">Finanzen</span>
+      <a href="{{ url_for('kontakte.liste') }}" {% if bereich == 'kontakte' %}class="aktiv" aria-current="page"{% endif %}>Kontakte</a>
+      <a href="{{ url_for('artikel.liste') }}" {% if bereich == 'artikel' %}class="aktiv" aria-current="page"{% endif %}>Artikel</a>
+      {% if darf("auswertungen") %}<a href="{{ url_for('auswertung.euer') }}" {% if bereich == 'auswertung' %}class="aktiv" aria-current="page"{% endif %}>Auswertung</a>{% endif %}
+    </nav>
+    <div class="leiste-rechts">
+      <a class="leiste-knopf" href="{{ url_for('allgemein.suche_seite') }}" title="Suchen: Kunden, Rechnungen, Belege, Beträge" aria-label="Suche">{{ icon("suche") }}</a>
+      <a class="leiste-knopf optional" href="{{ url_for('profil.profil') }}#darstellung" title="Hilfe-Fragezeichen ein- oder ausschalten" aria-label="Hilfe-Einstellungen">{{ icon("hilfe") }}</a>
+      {% if darf("einstellungen") %}
+      <a class="leiste-knopf{% if request.blueprint == 'einstellungen' %} aktiv{% endif %}" href="{{ url_for('einstellungen.firmendaten') }}" title="Einstellungen" aria-label="Einstellungen">{{ icon("einstellungen") }}</a>
+      {% endif %}
+      {% if current_user.is_authenticated %}
+      <details class="nutzermenue">
+        <summary class="leiste-knopf" title="{{ current_user.name }}" aria-label="Profil">{{ icon("nutzer") }}</summary>
+        <div class="menue">
+          <div class="menue-kopf">
+            <strong>{{ current_user.name }}</strong>
+            <span>{{ current_user.email }}</span>
+            <span>Rolle: {{ current_user.rolle | capitalize }}</span>
+          </div>
+          <a class="menue-eintrag" href="{{ url_for('profil.profil') }}">Profil und Sicherheit</a>
+          <form method="post" action="{{ url_for('auth.abmelden') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="menue-eintrag">Abmelden</button>
+          </form>
+        </div>
+      </details>
+      {% endif %}
+    </div>
+    {% endblock %}
+  </header>
+  <main class="inhalt {% block inhalt_klasse %}{% endblock %}">
+    {% with meldungen = get_flashed_messages() %}
+    {% for meldung in meldungen %}
+    <div class="meldung" role="status">{{ icon("haken") }} {{ meldung }}</div>
+    {% endfor %}
+    {% endwith %}
+    {% block inhalt %}{% endblock %}
+  </main>
+  {% if rundgang %}
+  <aside class="rundgang" id="rundgang" role="dialog" aria-labelledby="rundgang-titel" data-licht="{{ rundgang.schritt.licht or '' }}" data-endpunkt="{{ rundgang.schritt.endpunkt }}">
+    <div class="rundgang-kopf">
+      <span class="rundgang-zaehler">Rundgang · Schritt {{ rundgang.nummer }} von {{ rundgang.anzahl }}</span>
+      <div class="rundgang-balken" role="meter" aria-valuemin="0" aria-valuemax="{{ rundgang.anzahl }}" aria-valuenow="{{ rundgang.nummer }}"><span style="width: {{ (rundgang.nummer * 100 / rundgang.anzahl) | round(0) | int }}%"></span></div>
+    </div>
+    <h2 id="rundgang-titel">{{ rundgang.schritt.titel }}</h2>
+    {% for absatz in rundgang.absaetze %}<p>{{ absatz }}</p>{% endfor %}
+    <div class="rundgang-fuss">
+      <form method="post" action="{{ url_for('rundgang.beenden') }}" data-bestaetigen="Rundgang beenden? Du findest ihn jederzeit im Profil wieder." data-bestaetigen-knopf="Beenden">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="knopf knopf-text" type="submit">Beenden</button>
+      </form>
+      <span class="rundgang-abstand"></span>
+      {% if not rundgang.erster %}
+      <form method="post" action="{{ url_for('rundgang.zurueck') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Zurück</button></form>
+      {% endif %}
+      <form method="post" action="{{ url_for('rundgang.weiter') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-primaer" type="submit" autofocus>{{ "Fertig" if rundgang.letzter else "Weiter" }}</button></form>
+    </div>
+    {% if request.endpoint != rundgang.schritt.endpunkt %}<a class="rundgang-seite" href="{{ url_for('rundgang.schritt') }}">Zur Seite dieses Schritts</a>{% endif %}
+  </aside>
+  <script src="{{ url_for('static', filename='js/rundgang.js') }}" defer></script>
+  {% endif %}
+</body>
+</html>

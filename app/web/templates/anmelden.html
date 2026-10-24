@@ -1,0 +1,22 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% block titel %}Anmelden – steuy{% endblock %}
+{% block navigation %}{% endblock %}
+{% block inhalt_klasse %}mittig{% endblock %}
+{% block inhalt %}
+<section class="karte anmeldekarte">
+  <div class="karte-kopf">
+    <h1>Anmelden</h1>
+  </div>
+  <div class="karte-inhalt">
+    {% if gewerbe %}<p class="hinweis">{{ gewerbe.name }}</p>{% endif %}
+    {% if fehler %}<div class="fehlermeldung" role="alert">{{ fehler }}</div>{% endif %}
+    <form method="post" novalidate>
+      {{ formular.csrf_token }}
+      {{ feld(formular.email) }}
+      {{ feld(formular.passwort) }}
+      <button type="submit" class="knopf knopf-primaer knopf-voll">Anmelden</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

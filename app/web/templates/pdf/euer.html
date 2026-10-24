@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>EÜR {{ e.jahr }} – {{ gewerbe.name }}</title>
+<style>
+  @page { size: A4; margin: 18mm 18mm 20mm 20mm;
+    @bottom-right { content: "Seite " counter(page) " von " counter(pages); font-size: 8pt; color: #666; } }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, "DejaVu Sans", sans-serif; font-size: 9.5pt; color: #222; }
+  h1 { font-size: 15pt; margin: 0 0 1mm; }
+  .unter { color: #555; margin-bottom: 6mm; }
+  h2 { font-size: 11pt; margin: 6mm 0 2mm; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 8pt; color: #555; border-bottom: 0.6pt solid #222; padding: 1mm; }
+  td { padding: 1.3mm 1mm; border-bottom: 0.3pt solid #ccc; vertical-align: top; }
+  .z { width: 12mm; } .kz { width: 12mm; color: #555; }
+  .b { text-align: right; white-space: nowrap; width: 28mm; }
+  .summe td { font-weight: 700; border-top: 0.6pt solid #222; border-bottom: 0; }
+  .gewinn td { font-weight: 700; font-size: 11pt; border-bottom: 1.5pt double #222; }
+  .hinweis { margin-top: 3mm; padding: 2mm 3mm; background: #fdf0e3; color: #8a4500; }
+  .klein { font-size: 8pt; color: #666; margin-top: 8mm; }
+</style>
+</head>
+<body>
+  <h1>Einnahmen-Überschuss-Rechnung {{ e.jahr }}</h1>
+  <div class="unter">{{ gewerbe.name }} · {{ gewerbe.inhaber }}{% if gewerbe.steuernummer %} · Steuernummer {{ gewerbe.steuernummer }}{% endif %}<br>
+    Zeilen und Kennzahlen nach Vordruck Anlage EÜR {{ e.vordruck_jahr }} · erstellt am {{ heute | datum }}</div>
+  {% for h in e.hinweise %}<div class="hinweis">{{ h }}</div>{% endfor %}
+
+  {% for titel, liste, summe, summentext in [
+    ("1. Betriebseinnahmen", e.einnahmen, e.summe_einnahmen, "Summe Betriebseinnahmen" ~ (" (Zeile " ~ e.summen.einnahmen_zeile ~ ")" if e.summen else "")),
+    ("2. Betriebsausgaben", e.ausgaben, e.summe_ausgaben, "Summe Betriebsausgaben" ~ (" (Zeile " ~ e.summen.ausgaben_zeile ~ ")" if e.summen else "")),
+  ] %}
+  <h2>{{ titel }}</h2>
+  <table>
+    <thead><tr><th class="z">Zeile</th><th class="kz">Kz</th><th>Bezeichnung</th><th class="b">EUR</th></tr></thead>
+    <tbody>
+      {% for zeile, betrag, _ in liste %}
+      <tr><td class="z">{{ zeile.nummer if zeile.nummer > 0 else "–" }}</td><td class="kz">{{ zeile.kennzahl or "" }}</td><td>{{ zeile.bezeichnung }}</td><td class="b">{{ betrag | euro }}</td></tr>
+      {% endfor %}
+      <tr class="summe"><td></td><td></td><td>{{ summentext }}</td><td class="b">{{ summe | euro }}</td></tr>
+    </tbody>
+  </table>
+  {% endfor %}
+
+  <h2>3. Ermittlung des Gewinns</h2>
+  <table>
+    <tbody>
+      <tr><td class="z">{{ e.summen.gewinn_einnahmen_zeile if e.summen else "" }}</td><td>Summe der Betriebseinnahmen</td><td class="b">{{ e.summe_einnahmen | euro }}</td></tr>
+      <tr><td class="z">{{ e.summen.gewinn_ausgaben_zeile if e.summen else "" }}</td><td>abzüglich Summe der Betriebsausgaben</td><td class="b">{{ e.summe_ausgaben | euro }}</td></tr>
+      <tr class="gewinn"><td></td><td>{{ "Gewinn" if e.gewinn >= 0 else "Verlust" }}</td><td class="b">{{ e.gewinn | euro }}</td></tr>
+    </tbody>
+  </table>
+  <p class="klein">Ermittelt nach Zahlungsdatum (§ 11 EStG). Abschreibungen (Anlage AVEÜR), steuerfreie Einnahmen und Hinzurechnungen sind nicht enthalten. Keine Steuerberatung.</p>
+</body>
+</html>

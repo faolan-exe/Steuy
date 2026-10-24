@@ -1,0 +1,111 @@
+name: LXC-Installation
+
+# Spielt die Anleitung docs/lxc.md in einem echten LXC-Container durch: frisches Ubuntu bzw.
+# Debian mit aktivierter Verschachtelung (wie in Proxmox), Skript ausführen, Ergebnis prüfen.
+on:
+  pull_request:
+    paths:
+      - scripts/lxc-installieren.sh
+      - scripts/docker-*.sh
+      - Dockerfile
+      - docker-compose.yml
+      - docs/lxc.md
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/lxc.yml
+  workflow_dispatch:
+
+jobs:
+  lxc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ["ubuntu:24.04", "images:debian/12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: LXD einrichten
+        run: |
+          sudo snap install lxd 2> /dev/null || sudo snap refresh lxd || true
+          sudo lxd waitready
+          sudo lxd init --auto
+          # Docker auf dem Runner sperrt sonst das Netz der Container
+          sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT || true
+          sudo iptables -I DOCKER-USER -o lxdbr0 -j ACCEPT || true
+
+      - name: Container wie in Proxmox anlegen (2 GB, Nesting)
+        run: |
+          sudo lxc launch "${{ matrix.image }}" steuy \
+            -c security.nesting=true -c limits.memory=2GiB -c limits.cpu=2
+          for i in $(seq 1 60); do
+            sudo lxc exec steuy -- getent hosts download.docker.com > /dev/null 2>&1 && break
+            sleep 2
+          done
+          sudo lxc exec steuy -- getent hosts download.docker.com
+
+      - name: Code in den Container kopieren (wie bei privatem Repository)
+        run: |
+          tar czf - --exclude=.git --exclude=.env . |
+            sudo lxc exec steuy -- sh -c 'mkdir -p /opt/steuy && tar xzf - -C /opt/steuy'
+
+      - name: Installationsskript ausführen
+        run: |
+          sudo lxc exec steuy -- sh /opt/steuy/scripts/lxc-installieren.sh | tee install.log
+
+      - name: Von außen erreichbar, mit genau der Adresse, die das Skript nennt
+        run: |
+          # Die Adresse aus der Abschlussmeldung, so wie sie ein Nutzer im Browser eingeben würde
+          IP="$(grep -o 'http://[0-9][0-9.]*' install.log | tail -1 | sed 's#http://##')"
+          echo "Das Skript nennt: $IP"
+          test -n "$IP"
+          # Muss die Adresse des Containers im Netz sein, nicht ein Docker-Netz (172.x)
+          echo "$IP" | grep -qv '^172\.' || { echo "Falsche Adresse (Docker-Netz)"; exit 1; }
+          curl -fsS "http://$IP/gesund"
+          curl -fsS "http://$IP/einrichtung" | grep -q "Willkommen bei steuy"
+          echo "IP=$IP" >> "$GITHUB_ENV"
+
+      - name: Große Belege kommen durch nginx (Upload-Limit)
+        run: |
+          head -c 5000000 /dev/zero > gross.csv
+          code="$(curl -s -o /dev/null -w '%{http_code}' -F datei=@gross.csv "http://$IP/import/zuordnen")"
+          echo "Antwort: $code"
+          test "$code" != "413" && test "$code" != "000"
+
+      - name: Alle Dienste laufen
+        run: |
+          sudo lxc exec steuy -- sh -c 'cd /opt/steuy && docker compose ps'
+          sudo lxc exec steuy -- sh -c 'cd /opt/steuy && docker compose ps --format "{{.Service}} {{.State}}"' | sort > dienste.txt
+          cat dienste.txt
+          grep -q "^app running" dienste.txt
+          grep -q "^db running" dienste.txt
+          grep -q "^zeitplan running" dienste.txt
+
+      - name: Zweiter Lauf (Update) verändert nichts
+        run: |
+          vorher="$(sudo lxc exec steuy -- sh -c 'cd /opt/steuy && sha256sum .env /etc/nginx/sites-available/steuy')"
+          sudo lxc exec steuy -- sh /opt/steuy/scripts/lxc-installieren.sh
+          nachher="$(sudo lxc exec steuy -- sh -c 'cd /opt/steuy && sha256sum .env /etc/nginx/sites-available/steuy')"
+          test "$vorher" = "$nachher"
+          curl -fsS "http://$IP/gesund"
+
+      - name: Neustart des Containers, steuy kommt von allein wieder
+        run: |
+          sudo lxc restart steuy
+          for i in $(seq 1 60); do
+            curl -fsS "http://$IP/gesund" > /dev/null 2>&1 && exit 0
+            sleep 3
+          done
+          curl -fsS "http://$IP/gesund"
+
+      - name: Sicherung im Container klappt
+        run: |
+          sudo lxc exec steuy -- sh -c 'cd /opt/steuy && scripts/docker-sicherung.sh /var/backups/steuy'
+          sudo lxc exec steuy -- sh -c 'ls /var/backups/steuy/*/ && test -s /var/backups/steuy/*/datenbank.dump'
+
+      - name: Logs bei Fehler
+        if: failure()
+        run: |
+          sudo lxc exec steuy -- sh -c 'cd /opt/steuy && docker compose ps -a; docker compose logs --tail 80' || true
+          sudo lxc exec steuy -- sh -c 'systemctl status nginx --no-pager; nginx -t; journalctl -u docker --no-pager | tail -40' || true

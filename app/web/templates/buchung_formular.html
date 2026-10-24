@@ -1,0 +1,78 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, auswahl, haken %}
+{% block titel %}{{ "Buchung bearbeiten" if buchung else "Beleg erfassen" }} – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('belege.liste') }}" aria-label="Zurück zur Liste">‹</a> {{ "Buchung bearbeiten" if buchung else ("Beleg erfassen" if beleg else "Buchung ohne Datei") }}{% if buchung %} <small>Entwurf</small>{% endif %}</h1>
+  <div class="aktionen">
+    {% if beleg and not buchung and darf("belege") %}
+    <form method="post" action="{{ url_for('belege.verwerfen', beleg_id=beleg.id) }}" data-bestaetigen="Beleg verwerfen? Die Datei bleibt im Archiv, erscheint aber nicht mehr unter „Zu prüfen“.">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf knopf-text gefahr" type="submit">Verwerfen</button>
+    </form>
+    {% endif %}
+    {% if buchung and darf("belege") %}
+    <form method="post" action="{{ url_for('belege.buchung_loeschen', buchung_id=buchung.id) }}" data-bestaetigen="Entwurf löschen?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf knopf-text gefahr" type="submit">Entwurf löschen</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% if hinweis %}<div class="meldung">{{ hinweis }}</div>{% endif %}
+<div class="{{ 'belegansicht' if beleg else '' }}">
+  {% if beleg %}
+  <section class="karte pdfrahmen belegvorschau">
+    {% if beleg.mime == "application/xml" %}
+    <div class="karte-inhalt"><p class="hinweis">E-Rechnung (XML). <a href="{{ url_for('belege.datei', beleg_id=beleg.id) }}" target="_blank">Original öffnen</a></p>
+      {% if beleg.vorschlag %}<dl class="angaben">
+        <dt>Rechnungssteller</dt><dd>{{ beleg.vorschlag.lieferant or "–" }}</dd>
+        <dt>Rechnungsnummer</dt><dd>{{ beleg.vorschlag.belegnummer or "–" }}</dd>
+        <dt>Betrag</dt><dd>{{ beleg.vorschlag.betrag_cent | euro if beleg.vorschlag.betrag_cent else "–" }}</dd>
+      </dl>{% endif %}
+    </div>
+    {% elif beleg.mime.startswith("image/") %}
+    <img src="{{ url_for('belege.datei', beleg_id=beleg.id) }}" alt="Beleg {{ beleg.dateiname }}">
+    {% else %}
+    <iframe src="{{ url_for('belege.datei', beleg_id=beleg.id) }}" title="Beleg {{ beleg.dateiname }}"></iframe>
+    {% endif %}
+  </section>
+  {% endif %}
+  <form method="post" novalidate class="buchungsformular">
+    {{ formular.csrf_token }}
+    <section class="karte">
+      <div class="karte-inhalt">
+        {{ auswahl(formular.art) }}
+        <div class="feldraster">
+          {{ feld(formular.kontakt_id) }}
+          {{ feld(formular.partner, hinweis="Name, falls kein Kontakt gewählt ist.") }}
+          {{ feld(formular.belegdatum) }}
+          {{ feld(formular.belegnummer) }}
+          {{ feld(formular.betrag) }}
+          {{ feld(formular.betrieblich_prozent, hinweis="Bei privater Mitnutzung, z. B. 50 % fürs Handy.") }}
+          {{ feld(formular.kategorie_id, klasse="ganz") }}
+          {{ feld(formular.beschreibung, klasse="ganz") }}
+        </div>
+        {% if gwg_hinweis %}
+        <div class="meldung warnung">Über 952 € brutto: Ist das eine Anschaffung, die länger genutzt wird? Computer und Software zählen voll im Kaufjahr. Andere Anschaffungen über 800 € netto werden über mehrere Jahre abgeschrieben. Das unterstützt steuy in einem der nächsten Schritte. Bis dahin bitte mit der Steuerberatung klären.</div>
+        {% endif %}
+      </div>
+    </section>
+    <section class="karte abstand-oben">
+      <div class="karte-inhalt">
+        {{ haken(formular.bereits_bezahlt) }}
+        <div class="feldraster nur-bezahlt">
+          {{ feld(formular.bezahlt_am) }}
+          {{ feld(formular.zahlungsart) }}
+        </div>
+        <p class="hinweis">Für die EÜR zählt das Zahlungsdatum. Noch nicht bezahlt? Dann erscheint die Ausgabe unter „Zu prüfen“, bis du die Zahlung erfasst.</p>
+      </div>
+    </section>
+    <div class="formular-fuss">
+      <button class="knopf knopf-text" type="submit" name="aktion" value="speichern">Als Entwurf speichern</button>
+      {% if darf("buchen") %}<button class="knopf knopf-primaer" type="submit" name="aktion" value="festschreiben">Festschreiben</button>{% endif %}
+    </div>
+    <p class="hinweis rechts">Festgeschriebene Buchungen lassen sich nicht mehr ändern, nur stornieren.{{ hilfe("festschreiben") }}</p>
+  </form>
+</div>
+{% endblock %}

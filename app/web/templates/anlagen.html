@@ -1,0 +1,35 @@
+{% extends "basis.html" %}
+{% block titel %}Anlagen {{ jahr }} – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('auswertung.euer', jahr=jahr) }}" aria-label="Zur EÜR">‹</a> Anlagenverzeichnis{{ hilfe("anlagenverzeichnis") }} <small>{{ jahr }}</small></h1>
+  <div class="aktionen">
+    <a class="knopf" href="{{ url_for('anlagen.verzeichnis_seite', jahr=jahr - 1) }}">‹ {{ jahr - 1 }}</a>
+    <a class="knopf" href="{{ url_for('anlagen.verzeichnis_seite', jahr=jahr + 1) }}">{{ jahr + 1 }} ›</a>
+  </div>
+</div>
+<section class="karte">
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Anlagegut</th><th>Angeschafft</th><th class="rechts">Kosten</th><th>Dauer</th><th class="rechts">AfA {{ jahr }}</th><th class="rechts">Restwert 31.12.</th></tr></thead>
+      <tbody>
+        {% for z in zeilen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=z.anlagegut.buchung_id) }}">{{ z.anlagegut.bezeichnung }}</a><div class="hinweis">{{ arten[z.anlagegut.art][0] }}</div></td>
+          <td>{{ z.anlagegut.anschaffungsdatum | datum }}</td>
+          <td class="rechts betrag">{{ z.anlagegut.anschaffungskosten_cent | euro }}</td>
+          <td>{{ z.anlagegut.nutzungsdauer_jahre }} {{ "Jahr" if z.anlagegut.nutzungsdauer_jahre == 1 else "Jahre" }}</td>
+          <td class="rechts betrag">{{ z.afa_cent | euro }}</td>
+          <td class="rechts betrag">{{ z.restbuchwert_cent | euro }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="leer">Keine Anlagegüter in {{ jahr }}.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% if summen %}
+<p class="hinweis">Für die Anlage EÜR: {% for kz, betrag in summen.items() %}Kennzahl {{ kz }}: {{ betrag | euro }}{% if not loop.last %} · {% endif %}{% endfor %}. Die Einzelwerte gehören in die Anlage AVEÜR. Bitte vor der Abgabe von der Steuerberatung prüfen lassen.</p>
+{% endif %}
+{% endblock %}

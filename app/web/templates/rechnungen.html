@@ -1,0 +1,42 @@
+{% extends "basis.html" %}
+{% from "teile.html" import kunde, rechnungsstatus %}
+{% block titel %}{{ "Angebote" if angebote else "Rechnungen" }} – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>{{ "Angebote" if angebote else "Rechnungen" }}{% if angebote %}{{ hilfe("angebot") }}{% endif %}</h1>
+  {% if darf("entwuerfe") %}
+  <form method="post" action="{{ url_for('angebote.angebot_neu') if angebote else url_for('rechnungen.neu') }}" class="aktionen">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="knopf knopf-primaer" type="submit">+ {{ "Neues Angebot" if angebote else "Neue Rechnung" }}</button>
+  </form>
+  {% endif %}
+</div>
+<nav class="reiter" aria-label="Filter">
+  {% for schluessel, name in filter_namen.items() %}
+  <a href="{{ url_for('angebote.angebote' if angebote else 'rechnungen.liste', filter=schluessel) }}" {% if filter == schluessel %}class="aktiv" aria-current="page"{% endif %}>{{ name }}</a>
+  {% endfor %}
+</nav>
+<section class="karte">
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead>
+        <tr><th>Nummer</th><th>Kunde</th><th>Datum</th><th>{{ "Gültig bis" if angebote else "Fällig" }}</th><th>Status</th><th class="rechts">Betrag</th></tr>
+      </thead>
+      <tbody>
+        {% for r in rechnungen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.anzeige_nummer }}</a>{% if r.belegart == "korrektur" %}<div class="hinweis">Rechnungskorrektur</div>{% endif %}</td>
+          <td>{{ kunde(r) }}</td>
+          <td>{{ r.rechnungsdatum | datum }}</td>
+          <td>{{ (r.gueltig_bis if angebote else r.faellig_am) | datum }}</td>
+          <td>{{ rechnungsstatus(r) }}</td>
+          <td class="rechts betrag">{{ r.summe_cent | euro }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="leer">{{ "Noch keine Angebote." if angebote else "Noch keine Rechnungen." }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

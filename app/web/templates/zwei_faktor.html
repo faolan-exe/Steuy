@@ -1,0 +1,27 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% block titel %}Zwei-Faktor-Anmeldung – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Zwei-Faktor-Anmeldung einrichten</h1></div>
+<section class="karte">
+  <div class="karte-inhalt einrichtung2fa">
+    <div class="qrbox" aria-label="QR-Code für die Authenticator-App">{{ qr | safe }}</div>
+    <div>
+      <ol class="schrittliste">
+        <li>Öffne deine Authenticator-App und füge ein neues Konto hinzu.</li>
+        <li>Scanne den QR-Code. Geht das nicht, gib diesen Schlüssel von Hand ein:<br><code class="schluessel">{{ geheimnis }}</code></li>
+        <li>Gib den 6-stelligen Code ein, den die App anzeigt.</li>
+      </ol>
+      <form method="post" novalidate>
+        {{ formular.csrf_token }}
+        {{ feld(formular.code) }}
+        <button class="knopf knopf-primaer abstand-oben" type="submit">Bestätigen und einschalten</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% if mail_moeglich %}
+<p class="hinweis abstand-oben">Kein Smartphone oder keine App? <a href="{{ url_for('profil.zwei_faktor_mail') }}">Stattdessen einen Code per E-Mail bekommen</a>. Das ist etwas weniger sicher als eine App, aber viel sicherer als nur ein Passwort.</p>
+{% endif %}
+{% endblock %}

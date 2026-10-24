@@ -1,0 +1,184 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% from "icons.html" import icon %}
+{% from "teile.html" import kunde, belegkette %}
+{% set nav_aktiv = "angebote" if r.belegart == "angebot" else "rechnungen" %}
+{% macro mahn_knopf(stufe, ab, klasse) -%}
+<form method="post" action="{{ url_for('rechnungen.mahnung_erstellen', rechnung_id=r.id) }}"{% if ab and ab > heute %} data-bestaetigen="Die {{ stufe.bezeichnung }} ist laut Zeitplan erst ab dem {{ ab | datum }} fällig. Wenn du sie jetzt schon erstellst, bekommt dein Kunde weniger Zeit zu zahlen als vorgesehen. Trotzdem erstellen?" data-bestaetigen-knopf="Trotzdem erstellen"{% endif %}>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="{{ klasse }}" type="submit">{{ stufe.bezeichnung }} erstellen</button>
+</form>
+{%- endmacro %}
+{% block titel %}{{ r.titel }} {{ r.anzeige_nummer }} – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('angebote.angebote') if r.belegart == 'angebot' else url_for('rechnungen.detail', rechnung_id=r.bezug_id) if r.belegart == 'lieferschein' else url_for('rechnungen.liste') }}" aria-label="{{ 'Zurück zur Rechnung' if r.belegart == 'lieferschein' else 'Zurück zur Liste' }}">‹</a> {{ r.titel }} {{ r.anzeige_nummer }}
+    <small>{{ kunde(r, leer='') }}</small></h1>
+  <div class="aktionen">
+    {% if r.belegart == "angebot" %}
+      {% if r.status == "offen" and darf("rechnungen_versenden") %}
+      <form method="post" action="{{ url_for('rechnungen.ablehnen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit">Abgelehnt</button></form>
+      <form method="post" action="{{ url_for('rechnungen.annehmen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Angenommen</button></form>
+      {% endif %}
+      {% if r.status != "abgelehnt" and darf("entwuerfe") and not rechnung_aus_angebot_vorhanden %}
+      <form method="post" action="{{ url_for('rechnungen.in_rechnung', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">In Rechnung umwandeln</button></form>
+      {% endif %}
+    {% elif r.ist_rechnung and r.status == "offen" and r.bezahlt_cent == 0 and darf("rechnungen_versenden") %}
+      <form method="post" action="{{ url_for('rechnungen.stornieren', rechnung_id=r.id) }}" data-bestaetigen="Rechnung stornieren? Es entsteht eine Rechnungskorrektur mit eigener Nummer. Die Rechnung selbst bleibt unverändert erhalten."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text gefahr" type="submit">Stornieren</button></form>
+    {% elif r.ist_rechnung and r.status in ("teilbezahlt", "bezahlt") and r.bezahlt_cent > 0 and darf("rechnungen_versenden") %}
+      <span class="knopf knopf-text gefahr" aria-disabled="true" title="Auf diese Rechnung ist Geld eingegangen. Erst die Zahlung rückgängig machen, dann lässt sie sich stornieren.">Stornieren</span>
+    {% endif %}
+    {% if r.ist_rechnung and not r.ist_entwurf and r.status != "storniert" and darf("rechnungen_versenden") %}
+      {% if lieferscheine %}
+      <a class="knopf" href="{{ url_for('rechnungen.detail', rechnung_id=lieferscheine[0].id) }}">Lieferschein {{ lieferscheine[0].nummer }}</a>
+      {% else %}
+      <form method="post" action="{{ url_for('rechnungen.lieferschein_erstellen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Lieferschein erstellen</button></form>
+      {% endif %}
+    {% endif %}
+    {% if r.ist_rechnung and naechste_mahnstufe and not r.gesperrt_fuer_mahnungen and darf("rechnungen_versenden") %}
+      {{ mahn_knopf(naechste_mahnstufe, mahnstufe_ab, "knopf") }}
+    {% endif %}
+    {% if r.pdf_sha256 and darf("rechnungen_versenden") %}<a class="knopf" href="{{ url_for('rechnungen.senden', rechnung_id=r.id) }}">Per E-Mail senden</a>{% endif %}
+    <a class="knopf knopf-primaer" href="{{ url_for('rechnungen.pdf_anzeigen', rechnung_id=r.id, herunterladen=1) }}">PDF herunterladen</a>
+  </div>
+</div>
+<div class="raster-zwei">
+  <section class="karte">
+    <div class="karte-kopf"><h2>Details</h2></div>
+    <dl class="angaben">
+      {% if r.belegart != "lieferschein" %}
+      <dt>Status</dt><dd>{{ "Korrektur" if r.belegart == "korrektur" else r.status | capitalize }}</dd>
+      <dt>Gesamtbetrag</dt><dd><strong>{{ r.summe_cent | euro }}</strong></dd>
+      {% endif %}
+      {% if r.ist_rechnung and r.status in ("teilbezahlt", "bezahlt") and r.bezahlt_cent > 0 %}
+      <dt>Stornieren</dt><dd class="hinweis">Nicht möglich, solange Zahlungen eingegangen sind. Erst die Zahlung unter „Zahlungen“ rückgängig machen.</dd>
+      {% endif %}
+      {% if r.bezahlt_cent %}<dt>Bezahlt</dt><dd>{{ r.bezahlt_cent | euro }}</dd>{% endif %}
+      {% if r.offen_cent %}<dt>Offen</dt><dd><strong>{{ r.offen_cent | euro }}</strong></dd>{% endif %}
+      <dt>{{ {"angebot": "Angebotsdatum", "lieferschein": "Lieferscheindatum"}.get(r.belegart, "Rechnungsdatum") }}</dt><dd>{{ r.rechnungsdatum | datum }}</dd>
+      {% if r.faellig_am %}<dt>Fällig am</dt><dd>{{ r.faellig_am | datum }}</dd>{% endif %}
+      {% if r.gueltig_bis %}<dt>Gültig bis</dt><dd>{{ r.gueltig_bis | datum }}</dd>{% endif %}
+      {% if r.bezug %}<dt>{{ {"korrektur": "Storniert", "lieferschein": "Zu Rechnung"}.get(r.belegart, "Aus Angebot") }}</dt><dd><a href="{{ url_for('rechnungen.detail', rechnung_id=r.bezug.id) }}">{{ r.bezug.belegname }} {{ r.bezug.nummer }}</a></dd>{% endif %}
+      {% if r.finalisiert_am %}<dt>Finalisiert</dt><dd>{{ r.finalisiert_am.strftime("%d.%m.%Y %H:%M") }}</dd>{% endif %}
+      {% if r.kontakt %}<dt>Kontakt</dt><dd><a href="{{ url_for('kontakte.detail', kontakt_id=r.kontakt.id) }}">{{ r.kontakt.name }}</a></dd>{% endif %}
+      {% if r.pdf_sha256 %}<dt>Prüfsumme (SHA-256){{ hilfe("pruefsumme") }}</dt><dd class="pruefsumme">{{ r.pdf_sha256 }}</dd>{% endif %}
+    </dl>
+    {% if r.versand %}
+    <div class="karte-kopf" id="versand"><h2>Versand{{ hilfe("versand") }}</h2></div>
+    <ul class="versandliste">
+      {% for v in r.versand %}
+      <li{% if not v.erfolgreich %} class="fehlgeschlagen"{% endif %}>
+        <strong>{{ v.gesendet_am.strftime("%d.%m.%Y %H:%M") }}</strong> an {{ v.an }}
+        <div class="hinweis">{{ v.anhang }}{% if v.absender %} · {{ v.absender.name }}{% endif %}{% if not v.erfolgreich %} · <span class="fehlertext">nicht verschickt: {{ v.fehler }}</span>{% endif %}</div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+  <div class="spalte">
+  {% if r.ist_rechnung %}
+  <section class="karte" id="zahlungen">
+    <div class="karte-kopf"><h2>Zahlungen{{ hilfe("zahlungen") }}</h2></div>
+    {% if r.zahlungen %}
+    <div class="tabellenrahmen">
+      <table class="tabelle">
+        <thead><tr><th>Datum</th><th>Art</th><th class="rechts">Betrag</th><th>Hinweis</th><th></th></tr></thead>
+        <tbody>
+          {% for z in r.zahlungen %}
+          <tr{% if z.storno_von_id or ist_storniert(z) %} class="durchgestrichen"{% endif %}>
+            <td><a href="{{ url_for('rechnungen.zahlung_detail', rechnung_id=r.id, zahlung_id=z.id) }}" title="Details zur Zahlung">{{ z.datum | datum }}</a></td>
+            <td>{{ zahlungsarten[z.zahlungsart] }}{% if z.nachweis_sha256 %} <a href="{{ url_for('rechnungen.zahlung_nachweis', rechnung_id=r.id, zahlung_id=z.id) }}" target="_blank" title="Nachweis öffnen">{{ icon("beleg") }}</a>{% endif %}</td>
+            <td class="rechts betrag">{{ z.betrag_cent | euro }}</td>
+            <td>
+              {% if z.storno_von_id %}Gegenbuchung{{ hilfe("gegenbuchung") }}{% elif ist_storniert(z) %}rückgängig gemacht{% endif %}
+              {% set gebuehr = offene_gebuehr(z.betrag_cent, z.angekommen_cent) %}
+              {% if gebuehr > 0 and not ist_storniert(z) %}<span class="status status-orange">Gebühr {{ gebuehr | euro }}</span>{% endif %}
+              {% if z.referenz and not z.storno_von_id %}<div class="hinweis">Ref. {{ z.referenz }}</div>{% endif %}
+              {% if z.notiz and not z.storno_von_id %}<div class="hinweis">{{ z.notiz }}</div>{% endif %}
+            </td>
+            <td class="rechts">
+              {% if darf("zahlungen") and not z.storno_von_id and not ist_storniert(z) %}
+              <form method="post" action="{{ url_for('rechnungen.zahlung_rueckgaengig', rechnung_id=r.id, zahlung_id=z.id) }}" data-bestaetigen="Diese Zahlung rückgängig machen? Es entsteht eine Gegenbuchung.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="knopf knopf-text" type="submit">Rückgängig</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="karte-inhalt"><p class="leer">Noch keine Zahlung eingegangen.</p></div>
+    {% endif %}
+    {% if darf("zahlungen") and r.offen_cent > 0 %}
+    <form method="post" action="{{ url_for('rechnungen.zahlung_erfassen', rechnung_id=r.id) }}#zahlungen" novalidate enctype="multipart/form-data" class="karte-inhalt zahlungsformular">
+      {{ formular.csrf_token }}
+      <h3>Zahlung erfassen</h3>
+      <div class="feldraster">
+        {{ feld(formular.datum) }}
+        {{ feld(formular.betrag, hinweis="Vorbelegt mit dem offenen Rest.") }}
+        {{ feld(formular.zahlungsart) }}
+        {{ feld(formular.angekommen, hinweis="Nur wenn weniger ankam, z. B. wegen PayPal-Gebühr.") }}
+        {{ feld(formular.referenz, hinweis="z. B. PayPal-Transaktions-ID oder Verwendungszweck.") }}
+        {{ feld(formular.nachweis, hinweis="Kontoauszug oder PayPal-Beleg als PDF, JPG oder PNG.") }}
+        {{ feld(formular.notiz, klasse="ganz") }}
+      </div>
+      <div class="formular-fuss"><button class="knopf knopf-primaer" type="submit">Zahlung erfassen</button></div>
+    </form>
+    {% endif %}
+  </section>
+  {% if r.mahnungen or r.offen_cent > 0 or r.gesperrt_fuer_mahnungen %}
+  <section class="karte" id="mahnungen">
+    <div class="karte-kopf"><h2>Mahnungen{{ hilfe("mahnungen") }}</h2></div>
+    {% if r.gesperrt_fuer_mahnungen %}
+    <div class="karte-inhalt"><div class="meldung warnung">Mahnsperre{% if r.mahnsperre_grund %}: {{ r.mahnsperre_grund }}{% elif not r.mahnsperre %} für den Kontakt{% endif %}</div></div>
+    {% endif %}
+    {% if r.mahnungen %}
+    <div class="tabellenrahmen">
+      <table class="tabelle">
+        <thead><tr><th>Stufe</th><th>Datum</th><th>Frist bis</th><th class="rechts">Offen</th><th></th></tr></thead>
+        <tbody>
+          {% for m in r.mahnungen %}
+          <tr>
+            <td><a href="{{ url_for('rechnungen.mahnung_detail', rechnung_id=r.id, mahnung_id=m.id) }}">{{ m.bezeichnung }}</a></td>
+            <td>{{ m.datum | datum }}</td>
+            <td>{{ m.frist_bis | datum }}</td>
+            <td class="rechts betrag">{{ m.offen_cent | euro }}</td>
+            <td class="rechts"><a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF</a>{% if darf("rechnungen_versenden") %} <a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Senden</a>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% elif r.offen_cent > 0 %}
+    <div class="karte-inhalt"><p class="leer">Noch keine Mahnung.</p></div>
+    {% endif %}
+    {% if darf("rechnungen_versenden") and r.offen_cent > 0 %}
+    <div class="karte-inhalt mahnaktionen">
+      {% if naechste_mahnstufe and not r.gesperrt_fuer_mahnungen %}
+      {{ mahn_knopf(naechste_mahnstufe, mahnstufe_ab, "knopf") }}
+      {% endif %}
+      <form method="post" action="{{ url_for('rechnungen.mahnsperre', rechnung_id=r.id) }}" class="mahnsperre">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% if r.mahnsperre %}
+        <button class="knopf knopf-text" type="submit">Mahnsperre aufheben</button>
+        {% else %}
+        <input type="hidden" name="sperre" value="y">
+        <input class="feld" name="grund" placeholder="Grund, z. B. Ratenzahlung" aria-label="Grund für die Mahnsperre">
+        <button class="knopf knopf-text" type="submit">Mahnsperre setzen</button>
+        {% endif %}
+      </form>
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+  {% endif %}
+  {{ belegkette(kette) }}
+  <section class="karte pdfrahmen">
+    <iframe src="{{ url_for('rechnungen.pdf_anzeigen', rechnung_id=r.id) }}" title="PDF: {{ r.titel }} {{ r.anzeige_nummer }}"></iframe>
+  </section>
+  </div>
+</div>
+{% endblock %}

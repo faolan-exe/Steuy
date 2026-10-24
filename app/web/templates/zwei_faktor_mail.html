@@ -1,0 +1,25 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% block titel %}Zwei-Faktor-Anmeldung per E-Mail – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Code per E-Mail einrichten</h1></div>
+<section class="karte">
+  <div class="karte-inhalt">
+    <ol class="schrittliste">
+      <li>Wir haben einen 6-stelligen Code an <strong>{{ current_user.email }}</strong> geschickt.</li>
+      <li>Gib ihn hier ein. Ab dann schickt steuy bei jeder Anmeldung einen neuen Code an diese Adresse.</li>
+    </ol>
+    <form method="post" novalidate>
+      {{ formular.csrf_token }}
+      {{ feld(formular.code) }}
+      <button class="knopf knopf-primaer abstand-oben" type="submit">Bestätigen und einschalten</button>
+    </form>
+    <form method="post" class="abstand-oben">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf knopf-text" type="submit" name="neu" value="1">Code erneut senden</button>
+    </form>
+    <p class="hinweis abstand-oben">Wichtig: Wer Zugriff auf dein E-Mail-Postfach hat, kann damit auch steuy öffnen. Schütze dein Postfach mit einem starken Passwort. Lieber eine Authenticator-App? <a href="{{ url_for('profil.zwei_faktor') }}">Hier entlang</a>.</p>
+  </div>
+</section>
+{% endblock %}

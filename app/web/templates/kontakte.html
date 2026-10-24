@@ -1,0 +1,19 @@
+{% extends "basis.html" %}
+{% from "formular.html" import listenkopf with context %}
+{% block titel %}Kontakte – steuy{% endblock %}
+{% block inhalt %}
+{{ listenkopf("Kontakte" ~ (" (Archiv)" if archiv else ""), "kontakte.liste", filter, filter_namen, suche, archiv, "Neuen Kontakt anlegen", "Nach Name, Nummer, Ort oder E-Mail suchen") }}
+<section class="karte">
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead>
+        <tr><th>Nr.</th><th>Name</th><th>Straße</th><th>Ort</th><th>Typ</th></tr>
+      </thead>
+      <tbody id="zeilen">
+        {% include "kontakte_zeilen.html" %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% if darf("stammdaten") and not archiv %}<p class="hinweis">Umstieg von einem anderen Programm? <a href="{{ url_for('importieren.start', art='kontakte') }}">Kontakte aus einer CSV-Datei importieren</a></p>{% endif %}
+{% endblock %}

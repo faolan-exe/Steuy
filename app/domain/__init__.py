@@ -1,0 +1,1 @@
+"""Fachlogik ohne Flask-Import."""

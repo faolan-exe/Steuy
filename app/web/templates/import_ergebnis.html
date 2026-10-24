@@ -1,0 +1,19 @@
+{% extends "basis.html" %}
+{% block titel %}Import fertig – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Import fertig</h1></div>
+<section class="karte">
+  <div class="karte-inhalt">
+    <p><strong>{{ ergebnis.neu }}</strong> {{ "Kontakte" if art == "kontakte" else "Artikel" }} angelegt.</p>
+    {% if ergebnis.doppelt %}<p>{{ ergebnis.doppelt | length }} übersprungen, weil schon vorhanden:</p>
+    <ul>{% for nr, text in ergebnis.doppelt %}<li>Zeile {{ nr }}: {{ text }}</li>{% endfor %}</ul>{% endif %}
+    {% if ergebnis.fehler %}<p>{{ ergebnis.fehler | length }} nicht übernommen:</p>
+    <ul>{% for nr, text in ergebnis.fehler %}<li>Zeile {{ nr }}: {{ text }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+</section>
+<div class="formular-fuss">
+  <a class="knopf" href="{{ url_for('importieren.start', art=art) }}">Weitere Datei</a>
+  <a class="knopf knopf-primaer" href="{{ url_for('kontakte.liste') if art == 'kontakte' else url_for('artikel.liste') }}">Zur Liste</a>
+</div>
+{% endblock %}

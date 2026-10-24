@@ -1,0 +1,1 @@
+"""Anbindungen an externe Systeme."""

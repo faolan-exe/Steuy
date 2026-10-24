@@ -1,0 +1,14 @@
+{% for k in kontakte %}
+<tr>
+  <td class="nummer">{{ k.nummer }}</td>
+  <td><a class="zeilenlink" href="{{ url_for('kontakte.detail', kontakt_id=k.id) }}">{{ k.name }}</a></td>
+  <td>{{ k.strasse or "" }}</td>
+  <td>{{ k.plz or "" }} {{ k.ort or "" }}</td>
+  <td>
+    {% if k.ist_kunde %}<span class="status status-an">Kunde</span>{% endif %}
+    {% if k.ist_lieferant %}<span class="status status-blau">Lieferant</span>{% endif %}
+  </td>
+</tr>
+{% else %}
+<tr><td colspan="5" class="leer">{{ "Keine Treffer." if suche else "Noch keine Kontakte." }}</td></tr>
+{% endfor %}

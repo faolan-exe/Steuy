@@ -1,0 +1,37 @@
+{# Kleine Bausteine, die auf mehreren Seiten vorkommen. #}
+{% macro kunde(r, leer="–") -%}
+{% if r.kontakt_id and r.kontakt %}<a href="{{ url_for('kontakte.detail', kontakt_id=r.kontakt_id) }}" title="Kundenprofil öffnen">{{ r.empfaenger_name or r.kontakt.name }}</a>{% else %}{{ r.empfaenger_name or leer }}{% endif %}
+{%- endmacro %}
+
+{% macro rechnungsstatus(r) -%}
+{% if r.status == "entwurf" %}<span class="status status-aus">Entwurf</span>
+{% elif r.status == "offen" and r.belegart == "rechnung" %}<span class="status status-orange">offen</span>
+{% elif r.status == "teilbezahlt" %}<span class="status status-blau">teilbezahlt</span>
+{% elif r.belegart == "korrektur" %}<span class="status status-aus">Korrektur</span>
+{% elif r.status == "offen" and r.belegart == "angebot" %}<span class="status status-orange">offen</span>
+{% elif r.status in ("bezahlt", "angenommen") %}<span class="status status-an">{{ r.status }}</span>
+{% else %}<span class="status status-aus">{{ r.status }}</span>{% endif %}
+{%- endmacro %}
+
+
+{% macro belegkette(kette) -%}
+{% if kette | length > 1 %}
+<section class="karte" id="zusammenhang">
+  <div class="karte-kopf"><h2>Zusammengehörige Belege{{ hilfe("belegkette") }}</h2></div>
+  <ul class="belegkette">
+    {% for e in kette %}
+    {% set b = e.beleg %}
+    <li class="{{ 'aktuell' if e.aktuell }}" style="margin-left: {{ e.tiefe * 1.25 }}rem">
+      {% if e.mahnung %}
+      {% if e.aktuell %}<strong>{{ e.mahnung.bezeichnung }}</strong>{% else %}<a href="{{ url_for('rechnungen.mahnung_detail', rechnung_id=b.id, mahnung_id=e.mahnung.id) }}">{{ e.mahnung.bezeichnung }}</a>{% endif %}
+      <span class="hinweis">Mahnung vom {{ e.mahnung.datum | datum }}</span>
+      {% else %}
+      {% if e.aktuell %}<strong>{{ b.belegname }} {{ b.anzeige_nummer }}</strong>{% else %}<a href="{{ url_for('rechnungen.detail', rechnung_id=b.id) }}">{{ b.belegname }} {{ b.anzeige_nummer }}</a>{% endif %}
+      <span class="hinweis">{{ b.rechnungsdatum | datum }}{% if b.ist_rechnung or b.belegart == "angebot" %} · {{ b.summe_cent | euro }}{% endif %}{% if b.belegart != "lieferschein" %} · {{ b.status }}{% endif %}</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{%- endmacro %}

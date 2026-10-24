@@ -1,0 +1,30 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% block titel %}Anmelden – steuy{% endblock %}
+{% block navigation %}{% endblock %}
+{% block inhalt_klasse %}mittig{% endblock %}
+{% block inhalt %}
+<section class="karte anmeldekarte">
+  <div class="karte-kopf"><h1>Bestätigen</h1></div>
+  <div class="karte-inhalt">
+    {% if nutzer and nutzer.zwei_faktor_art == "mail" %}
+    <p class="hinweis">Wir haben dir einen 6-stelligen Code per E-Mail geschickt. Er gilt 10 Minuten. Keine Mail bekommen? Spam-Ordner prüfen oder einen Wiederherstellungscode nutzen.</p>
+    {% else %}
+    <p class="hinweis">Gib den 6-stelligen Code aus deiner Authenticator-App ein. Handy nicht zur Hand? Dann einen deiner Wiederherstellungscodes.</p>
+    {% endif %}
+    {% if fehler %}<div class="fehlermeldung" role="alert">{{ fehler }}</div>{% endif %}
+    <form method="post" novalidate>
+      {{ formular.csrf_token }}
+      {{ formular.code(class_="feld codefeld", placeholder="123 456", autocomplete="one-time-code", inputmode="numeric", autofocus=true, **{"aria-label": "Code"}) }}
+      <button type="submit" class="knopf knopf-primaer knopf-voll abstand-oben">Anmelden</button>
+    </form>
+    {% if nutzer and nutzer.zwei_faktor_art == "mail" %}
+    <form method="post" action="{{ url_for('auth.code_neu_senden') }}" class="abstand-oben">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="knopf knopf-text">Code erneut senden</button>
+    </form>
+    {% endif %}
+    <p class="hinweis abstand-oben"><a href="{{ url_for('auth.anmelden') }}">Zurück</a></p>
+  </div>
+</section>
+{% endblock %}

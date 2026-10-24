@@ -1,0 +1,54 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, auswahl, haken %}
+{% block titel %}{{ "Kontakt bearbeiten" if kontakt else "Neuer Kontakt" }} – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>{{ "Kontakt bearbeiten" if kontakt else "Neuer Kontakt" }}</h1>
+</div>
+<form method="post" novalidate class="kontaktformular">
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>Kontakt</h2></div>
+    <div class="karte-inhalt">
+      {{ auswahl(formular.art) }}
+      <div class="feldraster">
+        <div class="ganz nur-firma">{{ feld(formular.firmenname) }}</div>
+        <div class="schmal nur-person">{{ feld(formular.anrede) }}</div>
+        <div class="schmal nur-person">{{ feld(formular.vorname) }}</div>
+        <div class="schmal nur-person">{{ feld(formular.nachname) }}</div>
+        {{ feld(formular.typ, hinweis="Kunden bekommen eine Kundennummer ab 10000, Lieferanten eine Lieferantennummer ab 70000.") }}
+      </div>
+    </div>
+  </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Adresse und Kontakt</h2></div>
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        {{ feld(formular.adresszusatz, klasse="ganz") }}
+        {{ feld(formular.strasse, klasse="ganz") }}
+        {{ feld(formular.plz, klasse="schmal") }}
+        {{ feld(formular.ort, klasse="breit") }}
+        {{ feld(formular.land, klasse="ganz") }}
+        {{ feld(formular.email) }}
+        {{ feld(formular.telefon) }}
+      </div>
+    </div>
+  </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Steuerangaben und Notiz</h2></div>
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        {{ feld(formular.steuernummer) }}
+        {{ feld(formular.ust_idnr) }}
+        {{ feld(formular.notiz, klasse="ganz") }}
+      </div>
+      {{ haken(formular.mahnsperre) }}
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <a class="knopf knopf-text" href="{{ url_for('kontakte.detail', kontakt_id=kontakt.id) if kontakt else url_for('kontakte.liste') }}">Abbrechen</a>
+    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+  </div>
+</form>
+{% endblock %}

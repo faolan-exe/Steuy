@@ -1,0 +1,35 @@
+{% extends "basis.html" %}
+{% block titel %}Gebühren erfassen – steuy{% endblock %}
+{% block inhalt_klasse %}mittel{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('allgemein.pruefen') }}" aria-label="Zurück">‹</a> Gebühren erfassen</h1>
+</div>
+<p class="hinweis">Wähle die Gebühren aus, z. B. alle eines Monats aus der PayPal-Abrechnung. steuy bucht sie als eine Ausgabe in der Kategorie „Gebühren“. Für die EÜR zählt jede Gebühr am Tag der jeweiligen Zahlung.</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <section class="karte">
+    <div class="tabellenrahmen">
+      <table class="tabelle">
+        <thead><tr><th><span class="unsichtbar">Auswahl</span></th><th>Datum</th><th>Rechnung</th><th>Art</th><th class="rechts">Gebühr</th></tr></thead>
+        <tbody>
+          {% for z in zahlungen %}
+          <tr>
+            <td><input type="checkbox" name="zahlung" value="{{ z.id }}" checked aria-label="Gebühr vom {{ z.datum | datum }} auswählen"></td>
+            <td>{{ z.datum | datum }}</td>
+            <td>{{ z.rechnung.nummer if z.rechnung else "–" }}</td>
+            <td>{{ z.zahlungsart | zahlungsart }}</td>
+            <td class="rechts betrag">{{ (z.betrag_cent - z.angekommen_cent) | euro }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="leer">Keine offenen Gebühren.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% if zahlungen %}
+  <div class="formular-fuss"><button class="knopf knopf-primaer" type="submit">Als Ausgabe buchen</button></div>
+  {% endif %}
+</form>
+{% endblock %}

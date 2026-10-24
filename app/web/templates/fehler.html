@@ -1,0 +1,16 @@
+{% extends "basis.html" %}
+{% block titel %}{{ titel }} – steuy{% endblock %}
+{% block inhalt_klasse %}mittig{% endblock %}
+{% block inhalt %}
+<section class="karte fehlerkarte">
+  <div class="karte-kopf"><h1>{{ titel }}</h1></div>
+  <div class="karte-inhalt">
+    <p>{{ text }}</p>
+    <div class="formular-fuss">
+      <a class="knopf" href="javascript:history.back()">Zurück</a>
+      <a class="knopf knopf-primaer" href="{{ url_for('allgemein.start') }}">Zur Übersicht</a>
+    </div>
+    <p class="hinweis">Fehler {{ status }}</p>
+  </div>
+</section>
+{% endblock %}

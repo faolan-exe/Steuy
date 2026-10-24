@@ -1,0 +1,65 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Nutzer – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("einstellungen.nutzer") }}
+
+<section class="karte">
+  <div class="karte-kopf"><h2>Personen mit Zugang</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead>
+        <tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th>2FA</th><th>Status</th><th><span class="unsichtbar">Aktion</span></th></tr>
+      </thead>
+      <tbody>
+        {% for person in nutzerliste %}
+        <tr>
+          <td>{{ person.name }}</td>
+          <td>{{ person.email }}</td>
+          <td>{{ rollen[person.rolle] }}</td>
+          <td>{% if person.totp_aktiv %}<span class="status status-an">an</span>{% else %}<span class="status status-aus">aus</span>{% endif %}</td>
+          <td>
+            {% if not person.aktiv %}<span class="status status-aus">deaktiviert</span>
+            {% elif person.abgelaufen %}<span class="status status-aus">abgelaufen</span>
+            {% elif person.zugang_bis %}<span class="status status-an">bis {{ person.zugang_bis.strftime("%d.%m.%Y") }}</span>
+            {% else %}<span class="status status-an">aktiv</span>{% endif %}
+          </td>
+          <td class="rechts"><a class="knopf knopf-text" href="{{ url_for('einstellungen.nutzer_bearbeiten', nutzer_id=person.id) }}">Bearbeiten</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<form method="post" action="{{ url_for('einstellungen.zwei_faktor_pflicht') }}" class="karte abstand-oben karte-inhalt pflichtschalter">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label class="haken"><input type="checkbox" name="pflicht" value="y" {% if gewerbe.zwei_faktor_pflicht %}checked{% endif %} onchange="this.form.submit()"> <span><strong>Zwei-Faktor-Anmeldung für alle verpflichtend</strong><br><span class="hinweis">Wer sie noch nicht eingerichtet hat, wird nach der Anmeldung direkt dorthin geführt.</span></span></label>
+  <noscript><button class="knopf" type="submit">Speichern</button></noscript>
+</form>
+
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Person hinzufügen</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Gib der Person das erste Passwort selbst weiter. Was die Rollen dürfen, legst du unter „Rechte“ fest.</p>
+      <div class="feldraster">
+        {{ feld(formular.name) }}
+        {{ feld(formular.email) }}
+        {{ feld(formular.rolle) }}
+        {{ feld(formular.zugang_bis, hinweis="Optional, z. B. für einen befristeten Steuerberater-Zugang.") }}
+        {{ feld(formular.passwort, hinweis="Mindestens 10 Zeichen.") }}
+      </div>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <button type="submit" class="knopf knopf-primaer">Hinzufügen</button>
+  </div>
+</form>
+{% endblock %}

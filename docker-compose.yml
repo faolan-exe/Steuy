@@ -1,0 +1,68 @@
+# Betrieb mit Docker. Vorher .env anlegen (siehe .env.example und docs/betrieb.md).
+# Start: docker compose up -d   ·   Update: git pull && docker compose up -d --build
+services:
+  app:
+    build: .
+    image: steuy:lokal
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY in der .env setzen}
+      DATABASE_URL: postgresql+psycopg://steuy:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD in der .env setzen}@db:5432/steuy
+      ABLAGE_VERZEICHNIS: /daten/ablage
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-0}
+      PROXY_ANZAHL: ${PROXY_ANZAHL:-0}
+      TEXTERKENNUNG: ${TEXTERKENNUNG:-1}
+      WEB_WORKER: ${WEB_WORKER:-2}
+      BASIS_URL: ${BASIS_URL:-}
+      UPDATE_REPO: ${UPDATE_REPO:-faolan-exe/Steuy}
+      UPDATE_TOKEN: ${UPDATE_TOKEN:-}
+      UPDATE_VERZEICHNIS: /daten/update
+    ports:
+      # Nur lokal erreichbar. Von außen per Reverse Proxy mit HTTPS (docs/betrieb.md).
+      - "127.0.0.1:${PORT:-8000}:8000"
+    volumes:
+      - ablage:/daten/ablage
+      # Anfrage und Stand des Updates (nur im LXC-Setup beschreibbar, siehe docs/lxc.md)
+      - ./update:/daten/update
+    depends_on:
+      db:
+        condition: service_healthy
+
+  zeitplan:
+    # Stündlich: Shop-Abruf und wöchentliche Zusammenfassung (geht nur einmal pro Woche raus)
+    build: .
+    image: steuy:lokal
+    restart: unless-stopped
+    # Der Healthcheck im Image prüft den Webserver, den gibt es hier nicht.
+    # „--wait“ braucht trotzdem einen: gesund, solange der Container läuft.
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      start_period: 5s
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY in der .env setzen}
+      DATABASE_URL: postgresql+psycopg://steuy:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD in der .env setzen}@db:5432/steuy
+      BASIS_URL: ${BASIS_URL:-}
+    command: ["sh", "-c", "while true; do flask shop-abruf || true; flask mahnlauf || true; flask erinnerungen || true; sleep 3600; done"]
+    depends_on:
+      app:
+        condition: service_healthy
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: steuy
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD in der .env setzen}
+      POSTGRES_DB: steuy
+    volumes:
+      - pgdaten:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U steuy -d steuy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ablage:
+  pgdaten:

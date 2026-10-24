@@ -1,0 +1,33 @@
+{% extends "basis.html" %}
+{% from "teile.html" import kunde, belegkette %}
+{% set nav_aktiv = "rechnungen" %}
+{% block titel %}{{ m.bezeichnung }} {{ r.nummer }} – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}#mahnungen" aria-label="Zurück zur Rechnung">‹</a> {{ m.bezeichnung }} <small>zu Rechnung {{ r.nummer }}</small></h1>
+  <div class="aktionen">
+    {% if darf("rechnungen_versenden") %}<a class="knopf" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Per E-Mail senden</a>{% endif %}
+    <a class="knopf knopf-primaer" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF öffnen</a>
+  </div>
+</div>
+<div class="raster-zwei">
+  <section class="karte">
+    <div class="karte-kopf"><h2>Details</h2></div>
+    <dl class="angaben">
+      <dt>Rechnung</dt><dd><a href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">Rechnung {{ r.nummer }}</a></dd>
+      <dt>Kunde</dt><dd>{{ kunde(r) }}</dd>
+      <dt>Mahnstufe</dt><dd>{{ m.stufe }} · {{ m.bezeichnung }}</dd>
+      <dt>Datum</dt><dd>{{ m.datum | datum }}</dd>
+      <dt>Frist bis</dt><dd>{{ m.frist_bis | datum }}</dd>
+      <dt>Offen</dt><dd><strong>{{ m.offen_cent | euro }}</strong></dd>
+      <dt>Prüfsumme (SHA-256){{ hilfe("pruefsumme") }}</dt><dd class="pruefsumme">{{ m.pdf_sha256 }}</dd>
+    </dl>
+  </section>
+  <div class="spalte">
+    {{ belegkette(kette) }}
+    <section class="karte pdfrahmen">
+      <iframe src="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" title="PDF: {{ m.bezeichnung }} {{ r.nummer }}"></iframe>
+    </section>
+  </div>
+</div>
+{% endblock %}

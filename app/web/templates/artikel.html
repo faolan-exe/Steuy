@@ -1,0 +1,20 @@
+{% extends "basis.html" %}
+{% from "formular.html" import listenkopf with context %}
+{% block titel %}Artikel – steuy{% endblock %}
+{% block inhalt %}
+{{ listenkopf("Artikel" ~ (" (Archiv)" if archiv else ""), "artikel.liste", filter, filter_namen, suche, archiv, "Neuer Artikel", "Nach Bezeichnung, Beschreibung oder Nummer suchen") }}
+<section class="karte">
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead>
+        <tr><th>Bezeichnung</th><th>Beschreibung</th><th>Einheit</th><th class="rechts">Preis</th></tr>
+      </thead>
+      <tbody id="zeilen">
+        {% include "artikel_zeilen.html" %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<p class="hinweis">Als Kleinunternehmer nach § 19 UStG stellst du keine Umsatzsteuer in Rechnung. Der Preis ist der Endpreis.</p>
+{% if darf("stammdaten") and not archiv %}<p class="hinweis">Umstieg von einem anderen Programm? <a href="{{ url_for('importieren.start', art='artikel') }}">Artikel aus einer CSV-Datei importieren</a></p>{% endif %}
+{% endblock %}

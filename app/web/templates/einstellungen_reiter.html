@@ -1,0 +1,18 @@
+{% macro reiter(aktiv) -%}
+<nav class="reiter" aria-label="Einstellungen">
+  {% for endpunkt, text, recht in [
+    ("einstellungen.firmendaten", "Firmendaten", "einstellungen"),
+    ("einstellungen.rechnungen", "Rechnungen", "einstellungen"),
+    ("einstellungen.drucklayout", "Drucklayout", "einstellungen"),
+    ("einstellungen.mahnwesen", "Mahnwesen", "einstellungen"),
+    ("einstellungen.email", "E-Mail", "einstellungen"),
+    ("shop.einstellungen", "Shop", "einstellungen"),
+    ("einstellungen.import_export", "Import/Export", "einstellungen"),
+    ("einstellungen.update", "Update", "einstellungen"),
+    ("einstellungen.nutzer", "Nutzer", "nutzer_verwalten"),
+    ("einstellungen.rechte", "Rechte", "nutzer_verwalten"),
+  ] if darf(recht) %}
+  <a href="{{ url_for(endpunkt) }}" {% if aktiv == endpunkt %}class="aktiv" aria-current="page"{% endif %}>{{ text }}</a>
+  {% endfor %}
+</nav>
+{%- endmacro %}

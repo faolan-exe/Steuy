@@ -1,0 +1,74 @@
+{% extends "pdf/brief.html" %}
+{% block titel %}{{ r.titel }} {{ r.anzeige_nummer }}{% endblock %}
+{% block info %}
+  <div class="info">
+    <table>
+      <tr><td>{{ {"angebot": "Angebotsnr.", "korrektur": "Korrekturnr."}.get(r.belegart, "Rechnungsnr.") }}</td><td>{{ r.anzeige_nummer }}</td></tr>
+      {% if r.belegart == "korrektur" and r.bezug %}<tr><td>zu Rechnung</td><td>{{ r.bezug.nummer }} vom {{ r.bezug.rechnungsdatum | datum }}</td></tr>{% endif %}
+      {% if r.kontakt and r.kontakt.kundennummer %}<tr><td>Kundennr.</td><td>{{ r.kontakt.kundennummer }}</td></tr>{% endif %}
+      <tr><td>{{ "Angebotsdatum" if r.belegart == "angebot" else "Datum" if r.belegart == "korrektur" else "Rechnungsdatum" }}</td><td>{{ r.rechnungsdatum | datum }}</td></tr>
+      {% if r.belegart == "angebot" %}<tr><td>Gültig bis</td><td>{{ gueltig | datum }}</td></tr>{% endif %}
+      {% if r.leistung_art == "leistungszeitraum" %}
+      <tr><td>Leistungszeitraum</td><td>{{ r.leistung_von | datum }} – {{ r.leistung_bis | datum }}</td></tr>
+      {% elif r.leistung_art == "lieferdatum" %}
+      <tr><td>Lieferdatum</td><td>{{ r.leistung_von | datum }}</td></tr>
+      {% else %}
+      <tr><td>Leistungsdatum</td><td>{{ r.leistung_von | datum }}</td></tr>
+      {% endif %}
+    </table>
+  </div>
+
+{% endblock %}
+{% block inhalt %}
+  <div class="inhalt">
+    <h1>{{ r.titel }} {{ r.anzeige_nummer }}</h1>
+    {% if r.einleitung %}<p class="text">{{ r.einleitung }}</p>{% endif %}
+
+    <table class="posten">
+      <thead>
+        <tr>{% if d.zeige_pos %}<th>Pos.</th>{% endif %}<th>Bezeichnung</th><th class="zahl">Menge</th><th class="zahl">Einzelpreis</th><th class="zahl">Betrag</th></tr>
+      </thead>
+      <tbody>
+        {% set nr = namespace(i=0) %}
+        {% for p in r.positionen %}
+        {% if p.typ == "text" %}
+        <tr class="freitext">{% if d.zeige_pos %}<td></td>{% endif %}<td colspan="4">{{ p.bezeichnung }}{% if p.beschreibung %}<div class="beschreibung">{{ p.beschreibung }}</div>{% endif %}</td></tr>
+        {% else %}
+        {% set nr.i = nr.i + 1 %}
+        <tr>
+          {% if d.zeige_pos %}<td>{{ nr.i }}</td>{% endif %}
+          <td>{{ p.bezeichnung }}{% if p.beschreibung %}<div class="beschreibung">{{ p.beschreibung }}</div>{% endif %}{% if p.rabatt_bp %}<div class="beschreibung">abzüglich {{ p.rabatt_bp | prozent }} % Rabatt</div>{% endif %}</td>
+          <td class="zahl">{{ p.menge_tausendstel | menge }} {{ p.einheit or "" }}</td>
+          <td class="zahl">{{ p.einzelpreis_cent | euro }}</td>
+          <td class="zahl">{{ p.betrag_cent | euro }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="summe">
+      <table>
+        <tr class="gesamt"><td>{{ "Angebotssumme" if r.belegart == "angebot" else "Gesamtbetrag" }}</td><td>{{ r.summe_cent | euro }}</td></tr>
+      </table>
+    </div>
+
+    <p class="hinweis">{{ r.hinweis_steuerbefreiung }}</p>
+
+    <div class="zahlung">
+      {% if qr %}
+      <div class="qr">{{ qr | safe }}Mit Banking-App scannen</div>
+      {% endif %}
+      <div>
+        {% if r.belegart == "angebot" %}
+        <p class="text">Dieses Angebot ist gültig bis zum <strong>{{ gueltig | datum }}</strong>. Über Ihren Auftrag freuen wir uns.</p>
+        {% elif r.belegart == "korrektur" %}
+        <p class="text">Der Betrag der Rechnung {{ r.bezug.nummer if r.bezug else "" }} wird damit nicht mehr fällig.</p>
+        {% else %}
+        <p class="text">Bitte überweisen Sie den Betrag von <strong>{{ r.summe_cent | euro }}</strong> bis zum <strong>{{ faellig | datum }}</strong>{% if iban %} auf das Konto {{ a.kontoinhaber or a.name }}, IBAN {{ iban }}{% endif %}. Verwendungszweck: {{ r.anzeige_nummer }}.</p>
+        {% endif %}
+        {% if r.nachbemerkung %}<p class="text">{{ r.nachbemerkung }}</p>{% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

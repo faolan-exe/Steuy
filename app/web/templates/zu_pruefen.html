@@ -1,0 +1,288 @@
+{% extends "basis.html" %}
+{% from "teile.html" import kunde %}
+{% block titel %}Zu prüfen – steuy{% endblock %}
+{% macro rechnungszeilen(liste, ueberfaellig=False) -%}
+<table class="tabelle klickbar">
+  <thead><tr><th>Nummer</th><th>Kunde</th><th>Fällig</th><th>Status</th><th class="rechts">Offen</th></tr></thead>
+  <tbody>
+    {% for r in liste %}
+    <tr>
+      <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.nummer }}</a></td>
+      <td>{{ kunde(r) }}</td>
+      <td{% if ueberfaellig %} class="ueberfaellig"{% endif %}>{{ r.faellig_am | datum }}{% if ueberfaellig %} ({{ (heute - r.faellig_am).days }} Tage){% endif %}</td>
+      <td>{% if r.status == "teilbezahlt" %}<span class="status status-blau">teilbezahlt</span>{% else %}<span class="status status-orange">offen</span>{% endif %}</td>
+      <td class="rechts betrag">{{ r.offen_cent | euro }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{%- endmacro %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Zu prüfen{{ hilfe("zu_pruefen") }}</h1>
+</div>
+{% if not offen.anzahl %}
+<section class="karte"><div class="karte-inhalt"><p class="leer">Alles erledigt. Hier erscheint, was noch eine Entscheidung braucht.</p></div></section>
+{% endif %}
+
+{% if offen.mahnungen %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Mahnung fällig{{ hilfe("mahnungen") }}</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Rechnung</th><th>Kunde</th><th>Fällig seit</th><th>Nächste Stufe</th><th class="rechts">Offen</th></tr></thead>
+      <tbody>
+        {% for r, stufe in offen.mahnungen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}#mahnungen">{{ r.nummer }}</a></td>
+          <td>{{ kunde(r) }}</td>
+          <td class="ueberfaellig">{{ r.faellig_am | datum }}</td>
+          <td><span class="status status-orange">{{ stufe.bezeichnung }}</span></td>
+          <td class="rechts betrag">{{ r.offen_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.ueberfaellig %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Überfällige Rechnungen</h2></div>
+  <div class="tabellenrahmen">{{ rechnungszeilen(offen.ueberfaellig, True) }}</div>
+</section>
+{% endif %}
+
+{% if offen.offen %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Offene Rechnungen</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">Ist das Geld angekommen? Dann die Rechnung öffnen und „Zahlung erfassen“.</p></div>
+  <div class="tabellenrahmen">{{ rechnungszeilen(offen.offen) }}</div>
+</section>
+{% endif %}
+
+{% if offen.jahreswechsel %}
+<section class="karte abstand-unten" id="jahreswechsel">
+  <div class="karte-kopf"><h2>Zahlungen am Jahreswechsel{{ hilfe("jahreswechsel") }}</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">Regelmäßige Zahlungen (z. B. Miete, Abo), die bis 10 Tage vor oder nach Silvester gezahlt <strong>und</strong> in dieser Zeit fällig waren, zählen in dem Jahr, zu dem sie gehören. Beispiel: Miete für Januar, gezahlt am 28.12., gehört ins neue Jahr. Im Zweifel: Steuerberatung fragen.</p></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Gezahlt am</th><th>Wofür</th><th class="rechts">Betrag</th><th>Zählt in der EÜR …</th></tr></thead>
+      <tbody>
+        {% for z in offen.jahreswechsel %}
+        {% set anderes = z.datum.year + 1 if z.datum.month == 12 else z.datum.year - 1 %}
+        <tr>
+          <td>{{ z.datum | datum }}</td>
+          <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=z.buchung_id) }}">{{ z.buchung.partner or z.buchung.kategorie.name }}</a>{% if z.buchung.beschreibung %}<div class="hinweis">{{ z.buchung.beschreibung }}</div>{% endif %}</td>
+          <td class="rechts betrag">{{ z.betrag_cent | euro }}</td>
+          <td>{% if darf("buchen") %}<form method="post" action="{{ url_for('belege.jahreswechsel', zahlung_id=z.id) }}" class="passwortaktion">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="knopf" type="submit" name="jahr" value="{{ anderes }}">{{ anderes }}</button>
+            <button class="knopf knopf-text" type="submit" name="jahr" value="{{ z.datum.year }}">{{ z.datum.year }} (wie gezahlt)</button>
+          </form>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.shop_freigabe or offen.shop_hinweise or shop_verbunden %}
+<section class="karte abstand-unten" id="shop">
+  <div class="karte-kopf zwischen"><h2>Shop{{ hilfe("shop") }}</h2>
+    {% if shop_verbunden and darf("rechnungen_versenden") %}
+    <form method="post" action="{{ url_for('shop.abrufen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="zurueck" value="{{ url_for('allgemein.pruefen') }}#shop"><button class="knopf knopf-text" type="submit">Jetzt abrufen</button></form>
+    {% endif %}
+  </div>
+  {% if offen.shop_freigabe %}
+  <div class="karte-inhalt"><p class="hinweis">Neue Bestellungen aus dem Shop. Mit „Freigeben“ bekommt die Rechnung ihre Nummer, wird an den Kunden geschickt und eine Zahlung aus dem Shop wird übernommen. Vorher prüfen oder ändern: auf die Bestellung klicken.</p></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Bestellung</th><th>Kunde</th><th>Bezahlt am</th><th class="rechts">Betrag</th><th></th></tr></thead>
+      <tbody>
+        {% for b in offen.shop_freigabe %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.bearbeiten', rechnung_id=b.rechnung_id) }}">#{{ b.nummer }}</a>{% if b.hinweis %}<div class="hinweis fehlertext">{{ b.hinweis }}</div>{% endif %}</td>
+          <td>{{ kunde(b.rechnung) }}</td>
+          <td>{{ b.bezahlt_am | datum if b.bezahlt_am else "noch offen" }}</td>
+          <td class="rechts betrag">{{ b.summe_cent | euro }}</td>
+          <td class="rechts">{% if darf("rechnungen_versenden") %}<form method="post" action="{{ url_for('shop.freigabe', eintrag_id=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-primaer" type="submit">Freigeben</button></form>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% set hinweise = offen.shop_hinweise | rejectattr("rechnung.ist_entwurf") | list %}
+  {% if hinweise %}
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Bestellung</th><th>Hinweis</th><th></th></tr></thead>
+      <tbody>
+        {% for b in hinweise %}
+        <tr>
+          <td>{% if b.rechnung_id %}<a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=b.rechnung_id) }}">#{{ b.nummer }}</a>{% else %}#{{ b.nummer }}{% endif %}</td>
+          <td>{{ b.hinweis }}</td>
+          <td class="rechts">{% if darf("rechnungen_versenden") %}<form method="post" action="{{ url_for('shop.hinweis_erledigt', eintrag_id=b.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit">Erledigt</button></form>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% if not offen.shop_freigabe and not hinweise %}<div class="karte-inhalt"><p class="leer">Nichts aus dem Shop zu tun.{% if g_shop_abruf %} Zuletzt abgerufen: {{ g_shop_abruf.strftime("%d.%m.%Y %H:%M") }}.{% endif %}</p></div>{% endif %}
+</section>
+{% endif %}
+
+{% if offen.gebuehren %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Gebühren noch nicht erfasst{{ hilfe("gebuehr") }}</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">Hier kam weniger an als bezahlt wurde, meist wegen Gebühren von PayPal oder Kartenzahlung. Die Gebühr ist eine Ausgabe.</p>
+    {% if darf("buchen") %}<a class="knopf" href="{{ url_for('belege.gebuehren') }}">Gebühren als Ausgabe buchen</a>{% endif %}</div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Datum</th><th>Rechnung</th><th>Art</th><th class="rechts">Gezahlt</th><th class="rechts">Angekommen</th><th class="rechts">Gebühr</th></tr></thead>
+      <tbody>
+        {% for z in offen.gebuehren %}
+        <tr>
+          <td>{{ z.datum | datum }}</td>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=z.rechnung_id) }}">{{ z.rechnung.nummer }}</a></td>
+          <td>{{ z.zahlungsart | zahlungsart }}</td>
+          <td class="rechts betrag">{{ z.betrag_cent | euro }}</td>
+          <td class="rechts betrag">{{ z.angekommen_cent | euro }}</td>
+          <td class="rechts betrag">{{ (z.betrag_cent - z.angekommen_cent) | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.belege %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Neue Belege</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Datei</th><th>Erkannt</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for b in offen.belege %}
+        {% set v = b.vorschlag or {} %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.beleg', beleg_id=b.id) }}">{{ b.dateiname }}</a></td>
+          <td>{{ v.lieferant or "–" }}</td>
+          <td class="rechts betrag">{{ v.betrag_cent | euro if v.betrag_cent else "–" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.offene_ausgaben %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Unbezahlte Ausgaben</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Lieferant</th><th>Belegdatum</th><th class="rechts">Offen</th></tr></thead>
+      <tbody>
+        {% for b in offen.offene_ausgaben %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=b.id) }}">{{ b.partner or "–" }}</a></td>
+          <td>{{ b.belegdatum | datum }}</td>
+          <td class="rechts betrag">{{ b.offen_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.offene_einnahmen %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Unbezahlte Einnahmen</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Kunde</th><th>Belegdatum</th><th class="rechts">Offen</th></tr></thead>
+      <tbody>
+        {% for b in offen.offene_einnahmen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=b.id) }}">{{ b.partner or "–" }}</a></td>
+          <td>{{ b.belegdatum | datum }}</td>
+          <td class="rechts betrag">{{ b.offen_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.buchungsentwuerfe %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Buchungsentwürfe{{ hilfe("festschreiben") }}</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">Bitte zeitnah festschreiben (GoBD).</p></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Partner</th><th>Belegdatum</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for b in offen.buchungsentwuerfe %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=b.id) }}">{{ b.partner or "Entwurf" }}</a></td>
+          <td>{{ b.belegdatum | datum }}</td>
+          <td class="rechts betrag">{{ b.betrag_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.angebote %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Offene Angebote{{ hilfe("angebot") }}</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">Hat der Kunde geantwortet? Dann als angenommen oder abgelehnt markieren oder direkt in eine Rechnung umwandeln.</p></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Angebot</th><th>Kunde</th><th>Gültig bis</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for r in offen.angebote %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.nummer }}</a></td>
+          <td>{{ kunde(r) }}</td>
+          <td{% if r.gueltig_bis and r.gueltig_bis < heute %} class="ueberfaellig"{% endif %}>{{ r.gueltig_bis | datum }}</td>
+          <td class="rechts betrag">{{ r.summe_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.entwuerfe %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Entwürfe von Rechnungen und Angeboten</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Entwurf</th><th>Kunde</th><th>Angelegt</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for r in offen.entwuerfe %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.belegname }}-Entwurf</a></td>
+          <td>{{ kunde(r) }}</td>
+          <td>{{ r.erstellt_am.date() | datum }}</td>
+          <td class="rechts betrag">{{ r.summe_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "basis.html" %}
+{% set nav_aktiv = "angebote" if r.belegart == "angebot" else "rechnungen" %}
+{% block titel %}Vorschau – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('rechnungen.bearbeiten', rechnung_id=r.id) }}" aria-label="Zurück zum Bearbeiten">‹</a> Vorschau</h1>
+  <div class="aktionen">
+    <a class="knopf" href="{{ url_for('rechnungen.bearbeiten', rechnung_id=r.id) }}">Bearbeiten</a>
+    {% if darf("rechnungen_versenden") %}
+    <form method="post" action="{{ url_for('rechnungen.finalisieren', rechnung_id=r.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf knopf-primaer" type="submit" {% if fehler %}disabled aria-disabled="true"{% endif %}>Finalisieren</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% if fehler %}
+<div class="fehlermeldung" role="alert">
+  <div>
+    <strong>Vor dem Finalisieren fehlt noch:</strong>
+    <ul>{% for f in fehler %}<li>{{ f }}</li>{% endfor %}</ul>
+  </div>
+</div>
+{% else %}
+<div class="meldung">Alles vollständig. Beim Finalisieren bekommt {{ "das Angebot" if r.belegart == "angebot" else "die Rechnung" }} eine Nummer und kann danach nicht mehr geändert werden.</div>
+{% endif %}
+{% if not darf("rechnungen_versenden") %}
+<p class="hinweis">Finalisieren darf deine Rolle nicht. Bitte jemanden mit dem Recht „Rechnungen finalisieren und versenden“ fragen.</p>
+{% endif %}
+<section class="karte pdfrahmen">
+  <iframe src="{{ url_for('rechnungen.pdf_anzeigen', rechnung_id=r.id) }}" title="Vorschau der Rechnung"></iframe>
+</section>
+{% endblock %}

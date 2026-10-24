@@ -1,0 +1,38 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, haken %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}{{ person.name }} – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("einstellungen.nutzer") }}
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>{{ person.name }}</h2></div>
+    <div class="karte-inhalt">
+      {% if fehler %}<div class="fehlermeldung" role="alert">{{ fehler }}</div>{% endif %}
+      <div class="feldraster">
+        {{ feld(formular.name) }}
+        {{ feld(formular.email) }}
+        {{ feld(formular.rolle) }}
+        {{ feld(formular.zugang_bis, hinweis="Leer lassen für unbefristeten Zugang.") }}
+        {{ feld(formular.neues_passwort, hinweis="Nur ausfüllen, um das Passwort zurückzusetzen.") }}
+      </div>
+      {{ haken(formular.aktiv) }}
+      <p class="hinweis">Zwei-Faktor-Anmeldung: {{ "eingeschaltet" if person.totp_aktiv else "aus" }}.</p>
+      <p class="hinweis">Personen werden nie gelöscht, damit das Änderungsprotokoll vollständig bleibt. Zum Sperren den Haken „Zugang aktiv“ entfernen.</p>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    {% if person.totp_aktiv %}<button class="knopf knopf-text gefahr" type="submit" form="zuruecksetzen">2FA zurücksetzen</button>{% endif %}
+    <a class="knopf knopf-text" href="{{ url_for('einstellungen.nutzer') }}">Abbrechen</a>
+    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+  </div>
+</form>
+<form id="zuruecksetzen" method="post" action="{{ url_for('einstellungen.zwei_faktor_zuruecksetzen', nutzer_id=person.id) }}" data-bestaetigen="Zwei-Faktor-Anmeldung dieser Person zurücksetzen, z. B. weil das Handy verloren ist?">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+{% endblock %}

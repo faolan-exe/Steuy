@@ -1,0 +1,182 @@
+{% extends "basis.html" %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Drucklayout – steuy{% endblock %}
+{% block inhalt_klasse %}breit-editor{% endblock %}
+{% macro vorschaubild(nr) -%}
+{# Kleine Skizze je Layout (Seite von oben, Kopf, Anschrift, Tabelle) #}
+<svg viewBox="0 0 60 80" width="60" height="80" aria-hidden="true">
+  <rect x="0.5" y="0.5" width="59" height="79" fill="#fff" stroke="#c9c9c9"/>
+  {% if nr == 1 %}
+  <rect x="38" y="6" width="16" height="7" fill="#999"/>
+  <rect x="8" y="24" width="20" height="6" fill="#ccc"/>
+  <rect x="8" y="42" width="44" height="1.5" fill="#444"/>
+  {% elif nr == 2 %}
+  <rect x="8" y="6" width="16" height="7" fill="#999"/>
+  <rect x="8" y="24" width="20" height="6" fill="#ccc"/>
+  <rect x="8" y="38" width="30" height="3" fill="var(--gruen)"/>
+  <rect x="8" y="43" width="44" height="2" fill="var(--gruen)"/>
+  {% elif nr == 3 %}
+  <rect x="22" y="6" width="16" height="7" fill="#999"/>
+  <rect x="8" y="24" width="20" height="6" fill="#ccc"/>
+  <rect x="10" y="38" width="40" height="0.8" fill="var(--gruen)"/>
+  <rect x="10" y="44" width="40" height="0.8" fill="var(--gruen)"/>
+  {% elif nr == 4 %}
+  <rect x="0.5" y="0.5" width="59" height="14" fill="var(--gruen)"/>
+  <rect x="8" y="4" width="14" height="7" fill="#fff"/>
+  <rect x="8" y="24" width="20" height="6" fill="#ccc"/>
+  <rect x="8" y="42" width="44" height="4" fill="var(--gruen)"/>
+  {% else %}
+  <rect x="0.5" y="0.5" width="4" height="79" fill="var(--gruen)"/>
+  <rect x="10" y="6" width="16" height="7" fill="#999"/>
+  <rect x="10" y="24" width="20" height="6" fill="#ccc"/>
+  <rect x="10" y="42" width="42" height="4" fill="#cfe5d8"/>
+  {% endif %}
+  <rect x="8" y="50" width="44" height="1" fill="#ddd"/><rect x="8" y="55" width="44" height="1" fill="#ddd"/><rect x="8" y="60" width="44" height="1" fill="#ddd"/>
+</svg>
+{%- endmacro %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Einstellungen</h1></div>
+{{ reiter("einstellungen.drucklayout") }}
+
+<div class="layouteditor">
+  <section class="karte vorschau">
+    <div class="karte-kopf"><h2>Vorschau</h2><span class="hinweis">Aktualisiert sich beim Ändern. Gilt für Rechnungen, Angebote, Lieferscheine und Mahnungen.</span></div>
+    <div class="vorschaurahmen" id="vorschaurahmen">
+      <iframe id="vorschau" title="Vorschau der Rechnung" src="{{ url_for('einstellungen.drucklayout_vorschau') }}"></iframe>
+    </div>
+  </section>
+
+  <div class="spalte">
+    <section class="karte">
+      <div class="karte-kopf"><h2>Logo</h2></div>
+      <div class="karte-inhalt">
+        {% if logo %}
+        <div class="logoansicht"><img src="{{ logo }}" alt="Dein Logo"></div>
+        <form method="post" action="{{ url_for('einstellungen.drucklayout_logo_entfernen') }}" class="abstand-oben">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="knopf knopf-text gefahr" type="submit">Logo entfernen</button>
+        </form>
+        {% else %}
+        <p class="hinweis">Ohne Logo steht dein Firmenname im Kopf.</p>
+        {% endif %}
+        <form method="post" action="{{ url_for('einstellungen.drucklayout_logo') }}" enctype="multipart/form-data" class="abstand-oben">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="feldgruppe">
+            <input class="feld" type="file" name="logo" id="logo" accept="image/png,image/jpeg" required>
+            <label class="feldlabel" for="logo">{{ "Anderes Logo" if logo else "Logo hochladen" }} (PNG oder JPG, bis 2 MB)</label>
+          </div>
+          <button class="knopf abstand-oben" type="submit">Hochladen</button>
+        </form>
+      </div>
+    </section>
+
+    <form method="post" id="layoutform" class="spalte" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <section class="karte">
+        <div class="karte-kopf"><h2>Layout</h2></div>
+        <div class="karte-inhalt layoutwahl">
+          {% for nr, (name, text) in layouts.items() %}
+          <label class="layoutkarte">
+            <input type="radio" name="layout" value="{{ nr }}" {% if d.layout == nr %}checked{% endif %}>
+            <span class="layoutinhalt">{{ vorschaubild(nr) }}<strong>{{ nr }} {{ name }}</strong><small>{{ text }}</small></span>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="karte">
+        <div class="karte-kopf"><h2>Farbe und Logo-Größe</h2></div>
+        <div class="karte-inhalt">
+          <div class="feldgruppe">
+            <input class="farbfeld" type="color" name="akzent" id="akzent" value="{{ d.akzent }}">
+            <label class="feldlabel" for="akzent">Akzentfarbe</label>
+          </div>
+          <div class="farbvorschlaege">
+            {% for f in farben %}<button type="button" class="farbpunkt" style="background: {{ f }}" data-farbe="{{ f }}" title="{{ f }}" aria-label="Farbe {{ f }}"></button>{% endfor %}
+          </div>
+          <div class="feldgruppe abstand-oben">
+            <select class="feld" name="logo_position" id="logo_position">
+              {% for schluessel, name in logo_positionen.items() %}<option value="{{ schluessel }}" {% if d.logo_position == schluessel %}selected{% endif %}>{{ name }}</option>{% endfor %}
+            </select>
+            <label class="feldlabel" for="logo_position">Platz von Logo und Firmenname</label>
+          </div>
+          <div class="feldgruppe abstand-oben">
+            <input class="feld" type="range" name="logo_prozent" id="logo_prozent" min="{{ grenzen.logo[0] }}" max="{{ grenzen.logo[1] }}" step="5" value="{{ d.logo_prozent }}">
+            <label class="feldlabel" for="logo_prozent">Logo-Größe: <output id="logo_ausgabe">{{ d.logo_prozent }}</output> %</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="karte">
+        <div class="karte-kopf"><h2>Schrift</h2></div>
+        <div class="karte-inhalt feldraster">
+          <div class="feldgruppe ganz">
+            <select class="feld" name="schrift" id="schrift">
+              {% for schluessel, (name, _) in schriften.items() %}<option value="{{ schluessel }}" {% if d.schrift == schluessel %}selected{% endif %}>{{ name }}</option>{% endfor %}
+            </select>
+            <label class="feldlabel" for="schrift">Schriftart</label>
+          </div>
+          <div class="feldgruppe">
+            <input class="feld" type="number" name="schrift_text" id="schrift_text" min="{{ grenzen.text[0] }}" max="{{ grenzen.text[1] }}" value="{{ d.schrift_text }}">
+            <label class="feldlabel" for="schrift_text">Fließtext (pt)</label>
+          </div>
+          <div class="feldgruppe">
+            <input class="feld" type="number" name="schrift_titel" id="schrift_titel" min="{{ grenzen.titel[0] }}" max="{{ grenzen.titel[1] }}" value="{{ d.schrift_titel }}">
+            <label class="feldlabel" for="schrift_titel">Überschrift (pt)</label>
+          </div>
+        </div>
+      </section>
+
+      <section class="karte">
+        <div class="karte-kopf"><h2>Weitere Einstellungen</h2></div>
+        <div class="karte-inhalt haken-liste">
+          <label><input type="checkbox" name="zeige_firmenname" value="y" {% if d.zeige_firmenname %}checked{% endif %}> Firmenname neben dem Logo anzeigen</label>
+          <label><input type="checkbox" name="zeige_absenderzeile" value="y" {% if d.zeige_absenderzeile %}checked{% endif %}> Absenderzeile über der Anschrift</label>
+          <label><input type="checkbox" name="zeige_pos" value="y" {% if d.zeige_pos %}checked{% endif %}> Positionsnummern in der Tabelle</label>
+          <label><input type="checkbox" name="gesamt_grau" value="y" {% if d.gesamt_grau %}checked{% endif %}> Gesamtsumme grau hinterlegen</label>
+          <label><input type="checkbox" name="zeige_fusszeile" value="y" {% if d.zeige_fusszeile %}checked{% endif %}> Fußzeile drucken</label>
+          <label><input type="checkbox" name="zeige_steuer" value="y" {% if d.zeige_steuer %}checked{% endif %}> Steuernummer und USt-IdNr. in der Fußzeile</label>
+          <label><input type="checkbox" name="zeige_bank" value="y" {% if d.zeige_bank %}checked{% endif %}> Bankverbindung in der Fußzeile</label>
+        </div>
+      </section>
+
+      <div class="formular-fuss">
+        <button class="knopf knopf-text" type="submit" formaction="{{ url_for('einstellungen.drucklayout_zuruecksetzen') }}" formnovalidate>Standardwerte</button>
+        <button class="knopf knopf-primaer" type="submit">Speichern</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function () {
+  var form = document.getElementById("layoutform");
+  var rahmen = document.getElementById("vorschaurahmen");
+  var bild = document.getElementById("vorschau");
+  var basis = bild.getAttribute("src").split("?")[0];
+  var timer;
+  function skalieren() {
+    var s = Math.min(1, rahmen.clientWidth / 840);
+    bild.style.transform = "scale(" + s + ")";
+    rahmen.style.height = Math.round(1180 * s) + "px";
+  }
+  function aktualisieren() {
+    var q = new URLSearchParams();
+    new FormData(form).forEach(function (v, k) { if (k !== "csrf_token") q.append(k, v); });
+    bild.src = basis + "?" + q.toString();
+  }
+  function verzoegert() { clearTimeout(timer); timer = setTimeout(aktualisieren, 250); }
+  form.addEventListener("input", function (e) {
+    if (e.target.id === "logo_prozent") document.getElementById("logo_ausgabe").textContent = e.target.value;
+    verzoegert();
+  });
+  form.addEventListener("change", verzoegert);
+  document.querySelectorAll(".farbpunkt").forEach(function (b) {
+    b.addEventListener("click", function () { document.getElementById("akzent").value = b.dataset.farbe; verzoegert(); });
+  });
+  window.addEventListener("resize", skalieren);
+  skalieren();
+  aktualisieren();
+})();
+</script>
+{% endblock %}

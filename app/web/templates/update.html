@@ -1,0 +1,93 @@
+{% extends "basis.html" %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Update – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Einstellungen</h1></div>
+{{ reiter("einstellungen.update") }}
+
+<section class="karte">
+  <div class="karte-kopf"><h2>Version</h2></div>
+  <div class="karte-inhalt">
+    <p>Installiert: <strong>steuy {{ version }}</strong></p>
+
+    {% if status.zustand in ("angefragt", "laeuft") %}
+    <div class="meldung" role="status" id="update-lauf" data-ziel="{{ status.version }}" data-url="{{ url_for('einstellungen.update_fortschritt') }}">
+      Update auf {{ status.version }} läuft: <span id="update-schritt">{{ status.get("schritt") or "wird gestartet" }}</span>.
+      Das dauert einige Minuten, die Seite lädt danach von selbst neu. Bitte nichts schließen und keine Buchungen erfassen.
+    </div>
+    {% elif status.zustand == "fehlgeschlagen" %}
+    <div class="meldung warnung" role="alert">
+      Das letzte Update auf {{ status.version }} ist fehlgeschlagen. Die vorherige Version läuft weiter, es ist nichts verloren.
+      {% if status.get("meldung") %}<div class="hinweis">{{ status.meldung }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if ergebnis.zustand == "aktuell" %}
+    <p class="meldung" role="status">Bereits aktuelle Version. Du hast die neueste Version ({{ ergebnis.neueste }}).</p>
+    {% elif ergebnis.zustand == "fehler" %}
+    <p class="meldung warnung" role="alert">{{ ergebnis.meldung }}</p>
+    {% endif %}
+    <a class="knopf knopf-text" href="{{ url_for('einstellungen.update', pruefen=1) }}">Nach Updates suchen</a>
+  </div>
+</section>
+
+{% if ergebnis.zustand in ("neu", "uebersprungen") %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Neue Version {{ ergebnis.neueste }}</h2></div>
+  <div class="karte-inhalt">
+    {% if ergebnis.titel and ergebnis.titel != ergebnis.neueste %}<p><strong>{{ ergebnis.titel }}</strong></p>{% endif %}
+    {% for abschnitt, eintraege in ergebnis.notizen %}
+    <h3>{{ {"Neu": "Das ist neu", "Behoben": "Das wurde behoben", "Geändert": "Das hat sich geändert"}.get(abschnitt, abschnitt) }}</h3>
+    <ul>{% for e in eintraege %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% else %}
+    <p class="hinweis">Zu dieser Version gibt es keine Beschreibung.</p>
+    {% endfor %}
+    {% if ergebnis.link %}<p class="hinweis"><a href="{{ ergebnis.link }}" target="_blank" rel="noopener noreferrer">Alle Änderungen auf GitHub ansehen</a></p>{% endif %}
+
+    {% if ergebnis.zustand == "uebersprungen" %}
+    <p class="hinweis">Du hast diese Version übersprungen.</p>
+    <form method="post" action="{{ url_for('einstellungen.update_ueberspringen') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="aktion" value="doch">
+      <button class="knopf" type="submit">Doch aktualisieren</button>
+    </form>
+    {% elif not automatisch %}
+    <p class="meldung warnung">Das Update per Knopfdruck gibt es nur bei der Installation im LXC mit dem Installationsskript. Sonst im Ordner von steuy: <code>git pull && docker compose up -d --build</code>. Mehr dazu in <code>docs/betrieb.md</code>.</p>
+    {% elif status.zustand in ("angefragt", "laeuft") %}
+    <p class="hinweis">Ein Update läuft bereits.</p>
+    {% else %}
+    <div class="formular-fuss">
+      <form method="post" action="{{ url_for('einstellungen.update_ueberspringen') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="knopf knopf-text" type="submit">Überspringen</button>
+      </form>
+      <form method="post" action="{{ url_for('einstellungen.update_starten') }}" data-bestaetigen="Auf {{ ergebnis.neueste }} aktualisieren? Vorher legt steuy eine Sicherung an. Das Update dauert einige Minuten, steuy ist in dieser Zeit kurz nicht erreichbar." data-bestaetigen-knopf="Jetzt updaten">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="knopf knopf-primaer" type="submit">Updaten</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+<script>
+(function () {
+  var box = document.getElementById("update-lauf");
+  if (!box) return;
+  var ziel = box.dataset.ziel, url = box.dataset.url;
+  function pruefen() {
+    fetch(url, { credentials: "same-origin" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (s) {
+        if (!s) return;
+        if (s.schritt) document.getElementById("update-schritt").textContent = s.schritt;
+        if (s.zustand === "fertig" || s.zustand === "fehlgeschlagen") { location.href = location.pathname; }
+      })
+      .catch(function () { /* während des Neustarts nicht erreichbar: weiter versuchen */ });
+  }
+  setInterval(pruefen, 4000);
+})();
+</script>
+{% endblock %}

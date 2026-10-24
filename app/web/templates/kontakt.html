@@ -1,0 +1,120 @@
+{% extends "basis.html" %}
+{% from "teile.html" import rechnungsstatus %}
+{% from "icons.html" import icon %}
+{% block titel %}{{ kontakt.name }} – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('kontakte.liste') }}" aria-label="Zurück zur Liste">‹</a> {{ kontakt.name }}{% if kontakt.archiviert %} <small>archiviert</small>{% endif %}</h1>
+  {% if darf("stammdaten") %}
+  <div class="aktionen">
+    <form method="post" action="{{ url_for('kontakte.archivieren', kontakt_id=kontakt.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf" type="submit">{{ "Wiederherstellen" if kontakt.archiviert else "Archivieren" }}</button>
+    </form>
+    <a class="knopf knopf-primaer" href="{{ url_for('kontakte.bearbeiten', kontakt_id=kontakt.id) }}">Bearbeiten</a>
+  </div>
+  {% endif %}
+</div>
+<div class="raster-zwei">
+  <section class="karte">
+    <div class="karte-kopf"><h2>{{ "Firma" if kontakt.art == "firma" else "Person" }}</h2></div>
+    <dl class="angaben">
+      {% if kontakt.kundennummer %}<dt>Kunden-Nr.</dt><dd>{{ kontakt.kundennummer }}{% if not kontakt.ist_kunde %} (kein Kunde mehr){% endif %}</dd>{% endif %}
+      {% if kontakt.lieferantennummer %}<dt>Lieferanten-Nr.</dt><dd>{{ kontakt.lieferantennummer }}{% if not kontakt.ist_lieferant %} (kein Lieferant mehr){% endif %}</dd>{% endif %}
+      {% if kontakt.anrede %}<dt>Anrede</dt><dd>{{ kontakt.anrede }}</dd>{% endif %}
+      <dt>Rechnungsadresse</dt>
+      <dd>
+        {% if kontakt.adresszusatz %}{{ kontakt.adresszusatz }}<br>{% endif %}
+        {{ kontakt.strasse or "–" }}<br>
+        {{ kontakt.plz or "" }} {{ kontakt.ort or "" }}{% if kontakt.land != "Deutschland" %}<br>{{ kontakt.land }}{% endif %}
+      </dd>
+      {% if kontakt.email %}<dt>E-Mail</dt><dd><a href="mailto:{{ kontakt.email }}">{{ kontakt.email }}</a></dd>{% endif %}
+      {% if kontakt.telefon %}<dt>Telefon</dt><dd>{{ kontakt.telefon }}</dd>{% endif %}
+      {% if kontakt.steuernummer %}<dt>Steuernummer</dt><dd>{{ kontakt.steuernummer }}</dd>{% endif %}
+      {% if kontakt.ust_idnr %}<dt>USt-IdNr.</dt><dd>{{ kontakt.ust_idnr }}</dd>{% endif %}
+      {% if kontakt.mahnsperre %}<dt>Mahnsperre</dt><dd>Dieser Kontakt wird nicht gemahnt.</dd>{% endif %}
+      {% if kontakt.notiz %}<dt>Notiz (intern)</dt><dd class="notiz">{{ kontakt.notiz }}</dd>{% endif %}
+    </dl>
+  </section>
+  <section class="karte">
+    <div class="karte-kopf"><h2>Überblick</h2></div>
+    <div class="karte-inhalt">
+      {% if u.ueberfaellig %}<div class="meldung warnung">{{ u.ueberfaellig | length }} {{ "Rechnung ist" if u.ueberfaellig | length == 1 else "Rechnungen sind" }} überfällig.</div>{% endif %}
+      <dl class="angaben">
+        {% if kontakt.ist_kunde or u.rechnungen %}
+        <dt>Noch offen</dt><dd>{% if u.offen_cent %}<strong>{{ u.offen_cent | euro }}</strong> aus {{ u.anzahl_offen }} {{ "Rechnung" if u.anzahl_offen == 1 else "Rechnungen" }}{% else %}nichts offen{% endif %}</dd>
+        <dt>Bezahlt insgesamt</dt><dd>{{ u.umsatz_cent | euro }}</dd>
+        {% if u.offene_angebote %}<dt>Offene Angebote</dt><dd>{{ u.offene_angebote | length }}</dd>{% endif %}
+        {% endif %}
+        {% if kontakt.ist_lieferant or u.buchungen %}
+        <dt>Ausgaben insgesamt</dt><dd>{{ u.ausgaben_cent | euro }}</dd>
+        {% if u.zu_zahlen_cent %}<dt>Noch zu bezahlen</dt><dd><strong>{{ u.zu_zahlen_cent | euro }}</strong></dd>{% endif %}
+        {% endif %}
+      </dl>
+      {% if darf("entwuerfe") and kontakt.ist_kunde and not kontakt.archiviert %}
+      <div class="aktionen abstand-oben">
+        <form method="post" action="{{ url_for('angebote.angebot_neu') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="kontakt_id" value="{{ kontakt.id }}">
+          <button class="knopf" type="submit">Neues Angebot</button>
+        </form>
+        <form method="post" action="{{ url_for('rechnungen.neu') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="kontakt_id" value="{{ kontakt.id }}">
+          <button class="knopf knopf-primaer" type="submit">Neue Rechnung</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+{% macro belegtabelle(liste, titel, leertext, angebote=False) %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>{{ titel }}</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Nummer</th><th>Datum</th><th>{{ "Gültig bis" if angebote else "Fällig" }}</th><th>Status</th><th class="rechts">Betrag</th>{% if not angebote %}<th class="rechts">Offen</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for r in liste %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.anzeige_nummer }}</a>{% if r.belegart == "korrektur" %}<div class="hinweis">Rechnungskorrektur</div>{% endif %}</td>
+          <td>{{ r.rechnungsdatum | datum }}</td>
+          <td>{{ (r.gueltig_bis if angebote else r.faellig_am) | datum }}</td>
+          <td>{{ rechnungsstatus(r) }}</td>
+          <td class="rechts betrag">{{ r.summe_cent | euro }}</td>
+          {% if not angebote %}<td class="rechts betrag">{% if r.offen_cent %}<strong>{{ r.offen_cent | euro }}</strong>{% else %}–{% endif %}</td>{% endif %}
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="leer">{{ leertext }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endmacro %}
+
+{% if kontakt.ist_kunde or u.rechnungen %}{{ belegtabelle(u.rechnungen, "Rechnungen", "Noch keine Rechnungen an diesen Kontakt.") }}{% endif %}
+{% if u.angebote %}{{ belegtabelle(u.angebote, "Angebote", "", angebote=True) }}{% endif %}
+{% if kontakt.ist_lieferant or u.buchungen %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Einnahmen und Ausgaben</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Datum</th><th>Beschreibung</th><th>Kategorie</th><th>Status</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for b in u.buchungen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=b.id) }}">{{ b.belegdatum | datum }}</a></td>
+          <td>{{ b.belegnummer or "" }}{% if b.beschreibung %} {{ b.beschreibung }}{% endif %}{% if b.beleg_id %} {{ icon("beleg") }}{% endif %}</td>
+          <td>{{ b.kategorie.name if b.kategorie else "–" }}</td>
+          <td>{% if b.ist_entwurf %}<span class="status status-aus">Entwurf</span>{% elif b.storno_von_id %}<span class="status status-aus">Storno</span>{% elif b.offen_cent %}<span class="status status-orange">offen</span>{% else %}<span class="status status-an">{{ "Ausgabe" if b.art == "ausgabe" else "Einnahme" }}</span>{% endif %}</td>
+          <td class="rechts betrag">{{ b.betrag_cent | euro }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="leer">Noch keine Belege von diesem Kontakt.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

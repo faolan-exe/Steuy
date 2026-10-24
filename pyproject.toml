@@ -1,0 +1,50 @@
+[project]
+name = "steuy"
+license = "LicenseRef-PolyForm-Shield-1.0.0"
+license-files = ["LICENSE"]
+version = "0.5.0"
+description = "Einfache Buchhaltung (EÜR) für Kleinunternehmer nach § 19 UStG"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "flask>=3.1",
+    "flask-sqlalchemy>=3.1",
+    "flask-migrate>=4.1",
+    "sqlalchemy>=2.0.36",
+    "psycopg[binary]>=3.2",
+    "python-dotenv>=1.0",
+    "flask-login>=0.6.3",
+    "flask-wtf>=1.3.0",
+    "argon2-cffi>=25.1.0",
+    "email-validator>=2.3.0",
+    "weasyprint>=70.0",
+    "segno>=1.6.6",
+    "defusedxml>=0.7.1",
+    "pypdf>=6.21.2",
+    "pytesseract>=0.3.13",
+    "pypdfium2>=5.14.0",
+    "pyotp>=2.10.0",
+    "cryptography>=50.0.2",
+    "gunicorn>=23.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.8",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]

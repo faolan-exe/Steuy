@@ -1,0 +1,40 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, auswahl %}
+{% block titel %}Anlagegut – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1><a class="zurueck" href="{{ url_for('belege.buchung', buchung_id=b.id) }}" aria-label="Zurück">‹</a> Über mehrere Jahre abschreiben{{ hilfe("afa") }}</h1></div>
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-inhalt">
+      <p class="hinweis">{{ b.partner or "Ausgabe" }} vom {{ b.belegdatum | datum }} über <strong>{{ b.betrag_cent | euro }}</strong>. Teure Anschaffungen zählen nicht auf einmal als Ausgabe, sondern verteilt über die Jahre, in denen du sie nutzt. Ausnahme: Computer und Software zählen voll im Jahr der Anschaffung.</p>
+      <div class="feldgruppe ganz">
+        <div class="feldlabel-statisch">{{ formular.art.label.text }}{{ feldhilfe(formular.art) }}</div>
+        {{ auswahl(formular.art) }}
+      </div>
+      <div class="feldraster abstand-oben">
+        {{ feld(formular.bezeichnung, klasse="ganz") }}
+        {{ feld(formular.anschaffungsdatum, hinweis="Tag der Lieferung bzw. Übergabe, meist das Rechnungsdatum.") }}
+        {{ feld(formular.nutzungsdauer_jahre, hinweis="Nur bei „anderes“. Vorschläge siehe unten.") }}
+      </div>
+      {% if dauern %}
+      <details class="abstand-oben"><summary>Übliche Nutzungsdauern laut AfA-Tabelle</summary>
+        <table class="tabelle"><tbody>{% for d in dauern %}<tr><td>{{ d.bezeichnung }}</td><td class="rechts">{{ d.jahre }} Jahre</td></tr>{% endfor %}</tbody></table>
+        <p class="hinweis">{{ dauern[0].quelle }}. Nicht dabei? Frag deine Steuerberatung oder schau in die amtliche AfA-Tabelle.</p>
+      </details>
+      {% endif %}
+    </div>
+  </section>
+  {% if vorschau %}
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>So wird abgeschrieben</h2></div>
+    <table class="tabelle"><tbody>{% for jahr, betrag in vorschau.items() %}<tr><td>{{ jahr }}</td><td class="rechts betrag">{{ betrag | euro }}</td></tr>{% endfor %}</tbody></table>
+  </section>
+  {% endif %}
+  <div class="formular-fuss">
+    <button class="knopf" type="submit" name="aktion" value="vorschau">Vorschau</button>
+    <button class="knopf knopf-primaer" type="submit" name="aktion" value="anlegen">Anlegen</button>
+  </div>
+</form>
+{% endblock %}

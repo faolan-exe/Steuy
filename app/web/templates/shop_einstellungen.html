@@ -1,0 +1,57 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, haken %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Shop – Einstellungen – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("shop.einstellungen") }}
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>WooCommerce{{ hilfe("shop") }}</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Verbinde deinen Shop, damit steuy Bestellungen abruft und dafür Rechnungen schreibt. Schalte im Shop eigene Rechnungs-Plugins ab, sonst gibt es doppelte Rechnungsnummern. Abgerufen wird stündlich (Docker) oder mit „Jetzt abrufen“.</p>
+      {% if eingerichtet %}<p><span class="status status-an">verbunden</span>{% if g_.shop_letzter_abruf %} <span class="hinweis">Zuletzt abgerufen: {{ g_.shop_letzter_abruf.strftime("%d.%m.%Y %H:%M") }}</span>{% endif %}</p>{% else %}<p><span class="status status-aus">nicht verbunden</span></p>{% endif %}
+      <div class="feldraster">
+        {{ feld(formular.shop_url, klasse="ganz") }}
+        {{ feld(formular.shop_schluessel, hinweis="Leer lassen, um den gespeicherten zu behalten." if g_.shop_schluessel else "Beginnt mit ck_") }}
+        {{ feld(formular.shop_geheimnis, hinweis="Leer lassen, um das gespeicherte zu behalten." if g_.shop_geheimnis else "Beginnt mit cs_") }}
+      </div>
+      {{ haken(formular.shop_auto_versand) }}
+      {% if eingerichtet %}<label class="haken"><input type="checkbox" name="trennen" value="y"> <span>Verbindung trennen (bereits importierte Bestellungen bleiben)</span></label>{% endif %}
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+  </div>
+</form>
+{% if eingerichtet %}
+<div class="formular-fuss">
+  <form method="post" action="{{ url_for('shop.verbindung_testen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="knopf">Verbindung testen</button></form>
+  <form method="post" action="{{ url_for('shop.abrufen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="zurueck" value="{{ url_for('shop.einstellungen') }}"><button type="submit" class="knopf">Jetzt abrufen</button></form>
+</div>
+{% endif %}
+{% if letzte %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Zuletzt aus dem Shop</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Bestellung</th><th>Status im Shop</th><th>Rechnung</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for b in letzte %}
+        <tr>
+          <td>#{{ b.nummer }}</td>
+          <td>{{ b.status }}</td>
+          <td>{% if b.rechnung %}<a href="{{ url_for('rechnungen.detail', rechnung_id=b.rechnung_id) }}">{{ b.rechnung.anzeige_nummer }}</a>{% else %}–{% endif %}</td>
+          <td class="rechts betrag">{{ b.summe_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

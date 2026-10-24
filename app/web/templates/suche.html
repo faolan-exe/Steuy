@@ -1,0 +1,66 @@
+{% extends "basis.html" %}
+{% from "teile.html" import rechnungsstatus %}
+{% block titel %}Suche – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Suche</h1></div>
+<form method="get" action="{{ url_for('allgemein.suche_seite') }}" role="search" class="suchformular">
+  <div class="feldgruppe">
+    <input class="feld" type="search" name="q" id="q" value="{{ q }}" placeholder=" " autofocus autocomplete="off">
+    <label class="feldlabel" for="q">Kunde, Rechnungsnummer, Beleg oder Betrag</label>
+  </div>
+  <button class="knopf knopf-primaer" type="submit">Suchen</button>
+</form>
+<p class="hinweis">Findet Kontakte, Rechnungen, Angebote, Ausgaben und Einnahmen, Belege und Artikel. Beträge gibst du mit Komma ein, z. B. 807,60.</p>
+
+{% if zu_kurz %}
+<p class="leer">Bitte mindestens 2 Zeichen eingeben.</p>
+{% elif q and not anzahl %}
+<div class="karte"><div class="karte-inhalt"><p class="leer">Nichts gefunden für „{{ q }}“.</p></div></div>
+{% endif %}
+
+{% if ergebnis.kontakte %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Kontakte</h2></div>
+  <ul class="trefferliste">
+    {% for k in ergebnis.kontakte %}<li><a href="{{ url_for('kontakte.detail', kontakt_id=k.id) }}">{{ k.name }}</a> <span class="hinweis">{% if k.nummer %}Nr. {{ k.nummer }} · {% endif %}{{ k.ort or "" }}</span></li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if ergebnis.rechnungen %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Rechnungen und Angebote</h2></div>
+  <ul class="trefferliste">
+    {% for r in ergebnis.rechnungen %}<li><a href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.titel }} {{ r.anzeige_nummer }}</a> <span class="hinweis">{{ r.empfaenger_name or "ohne Empfänger" }} · {{ r.rechnungsdatum | datum }} · {{ r.summe_cent | euro }}</span> {{ rechnungsstatus(r) }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if ergebnis.buchungen %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Ausgaben und Einnahmen</h2></div>
+  <ul class="trefferliste">
+    {% for b in ergebnis.buchungen %}<li><a href="{{ url_for('belege.buchung', buchung_id=b.id) }}">{{ b.partner or b.beschreibung or ("Ausgabe" if b.art == "ausgabe" else "Einnahme") }}</a> <span class="hinweis">{{ b.belegnummer or "" }} {{ b.belegdatum | datum }} · {{ b.betrag_cent | euro }}{% if b.storno_von_id %} · Storno{% endif %}</span></li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if ergebnis.belege %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Belege</h2></div>
+  <ul class="trefferliste">
+    {% for b in ergebnis.belege %}<li><a href="{{ url_for('belege.beleg', beleg_id=b.id) }}">{{ b.dateiname }}</a> <span class="hinweis">{{ b.hochgeladen_am.strftime("%d.%m.%Y") }}{% if b.verbucht %} · verbucht{% else %} · noch nicht verbucht{% endif %}</span></li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if ergebnis.artikel %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Artikel</h2></div>
+  <ul class="trefferliste">
+    {% for a in ergebnis.artikel %}<li><a href="{{ url_for('artikel.bearbeiten', artikel_id=a.id) }}">{{ a.bezeichnung }}</a> <span class="hinweis">{{ a.preis_cent | euro }}{% if a.artikelnummer %} · {{ a.artikelnummer }}{% endif %}</span></li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

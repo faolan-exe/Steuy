@@ -1,0 +1,17 @@
+{% extends "basis.html" %}
+{% block titel %}Wiederherstellungscodes – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Wiederherstellungscodes</h1></div>
+<div class="meldung">Die Zwei-Faktor-Anmeldung ist eingeschaltet.</div>
+<section class="karte">
+  <div class="karte-inhalt">
+    <p><strong>Bewahre diese Codes sicher auf</strong>, z. B. ausgedruckt oder im Passwortmanager. Jeder Code funktioniert einmal, falls dein Handy weg ist. Sie werden nur jetzt angezeigt.</p>
+    <ul class="codeliste">{% for c in codes %}<li><code>{{ c }}</code></li>{% endfor %}</ul>
+    <div class="formular-fuss">
+      <button class="knopf" type="button" onclick="window.print()">Drucken</button>
+      <a class="knopf knopf-primaer" href="{{ url_for('profil.profil') }}">Fertig</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

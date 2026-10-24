@@ -1,0 +1,69 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, haken, firmenfelder %}
+{% block titel %}Einrichtung – steuy{% endblock %}
+{% block navigation %}{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Willkommen bei steuy</h1>
+</div>
+<p class="einleitung">In drei Schritten ist dein Gewerbe eingerichtet. Alle Angaben lassen sich später in den Einstellungen ändern.</p>
+
+<form method="post" novalidate class="schritte">
+  {{ formular.csrf_token }}
+
+  <section class="karte schritt">
+    <div class="karte-kopf"><h2><span class="schrittnummer">1</span> Dein Gewerbe</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Diese Angaben stehen später auf deinen Rechnungen.</p>
+      {{ firmenfelder(formular) }}
+    </div>
+  </section>
+
+  <section class="karte schritt">
+    <div class="karte-kopf"><h2><span class="schrittnummer">2</span> Passt steuy zu dir?</h2></div>
+    <div class="karte-inhalt">
+      <p>steuy ist für <strong>Kleinunternehmer nach § 19 UStG</strong>: Du weist auf Rechnungen keine Umsatzsteuer aus. Das geht, wenn dein Umsatz im letzten Jahr höchstens <strong>{{ grenze.vorjahr_cent | euro }}</strong> betragen hat und im laufenden Jahr unter <strong>{{ grenze.laufendes_jahr_cent | euro }}</strong> bleibt.</p>
+      {{ haken(formular.einzelunternehmen) }}
+      {{ haken(formular.umsatz_passt) }}
+      <p class="hinweis">Unsicher? Frag dein Finanzamt oder eine Steuerberatung. steuy ersetzt keine Steuerberatung.</p>
+    </div>
+  </section>
+
+  <section class="karte schritt">
+    <div class="karte-kopf"><h2><span class="schrittnummer">3</span> Wie fit bist du?</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Danach richten wir einen Rundgang durch steuy für dich ein. Er erklärt, was wo ist und warum. Anfänger bekommen mehr Erklärungen, Experten können ihn überspringen.</p>
+      <fieldset class="auswahlgruppe">
+        <legend>{{ formular.erfahrung.label.text }}</legend>
+        {% for wert, text in formular.erfahrung.choices %}
+        <label class="haken"><input type="radio" name="erfahrung" value="{{ wert }}" {% if formular.erfahrung.data == wert %}checked{% endif %}> <span>{{ text }}</span></label>
+        {% endfor %}
+      </fieldset>
+      <fieldset class="auswahlgruppe">
+        <legend>{{ formular.kennt_steuy.label.text }}</legend>
+        {% for wert, text in formular.kennt_steuy.choices %}
+        <label class="haken"><input type="radio" name="kennt_steuy" value="{{ wert }}" {% if formular.kennt_steuy.data == wert %}checked{% endif %}> <span>{{ text }}</span></label>
+        {% endfor %}
+      </fieldset>
+    </div>
+  </section>
+
+  <section class="karte schritt">
+    <div class="karte-kopf"><h2><span class="schrittnummer">4</span> Dein Zugang</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Mit diesem Konto meldest du dich an. Du bist Admin und kannst später weitere Personen einladen.</p>
+      <div class="feldraster">
+        {{ feld(formular.admin_name, klasse="ganz") }}
+        {{ feld(formular.admin_email, klasse="ganz") }}
+        {{ feld(formular.passwort, hinweis="Mindestens 10 Zeichen.") }}
+        {{ feld(formular.passwort_wiederholen) }}
+      </div>
+    </div>
+  </section>
+
+  <div class="formular-fuss">
+    <button type="submit" class="knopf knopf-primaer">Einrichtung abschließen</button>
+  </div>
+</form>
+{% endblock %}

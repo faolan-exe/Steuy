@@ -1,0 +1,37 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% block titel %}Wechsel-Export – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Daten für andere Software{{ hilfe("wechsel_export") }}</h1>
+</div>
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>Was im Export steckt</h2></div>
+    <div class="karte-inhalt">
+      <ul class="schrittliste">
+        <li><strong>Buchungen im DATEV-Format</strong> je Jahr: Jede Zahlung wird als Buchung übergeben. Lexware Office, sevDesk, DATEV und viele andere Programme lesen dieses Format ein.</li>
+        <li><strong>Kunden, Lieferanten und Artikel</strong> als CSV. Beim Import ordnest du die Spalten im Importdialog der neuen Software zu.</li>
+      </ul>
+      <p class="hinweis">Rechnungs-PDFs und Belege bekommst du über den <a href="{{ url_for('auswertung.euer') }}">Export für die Steuerberatung</a>. Alle Rohdaten liefert der Gesamtexport in den Einstellungen.</p>
+    </div>
+  </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Angaben für DATEV</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Die Konten sind Vorschläge (z. B. 8195 bzw. 4185 für Erlöse als Kleinunternehmer). Lass sie vor dem Import von deiner Steuerberatung oder in der neuen Software prüfen. Berater- und Mandantennummer bekommst du von deiner Steuerberatung, für andere Programme reichen die Vorgaben.</p>
+      <div class="feldraster">
+        {{ feld(formular.kontenrahmen) }}
+        {{ feld(formular.beraternummer) }}
+        {{ feld(formular.mandantennummer) }}
+      </div>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <a class="knopf knopf-text" href="{{ url_for('auswertung.euer') }}">Abbrechen</a>
+    <button type="submit" class="knopf knopf-primaer">Export herunterladen</button>
+  </div>
+</form>
+{% endblock %}

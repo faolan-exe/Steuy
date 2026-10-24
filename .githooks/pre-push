@@ -1,0 +1,8 @@
+#!/bin/sh
+while read local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_ref" = "refs/heads/main" ]; then
+    echo "Direkter Push auf main ist gesperrt. Bitte Branch + PR."
+    exit 1
+  fi
+done
+exit 0

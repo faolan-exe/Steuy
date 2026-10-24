@@ -1,0 +1,63 @@
+{% extends "basis.html" %}
+{% block titel %}EÜR {{ e.jahr }} – steuy{% endblock %}
+{% macro zeilen(liste) -%}
+{% for zeile, betrag, posten in liste %}
+<details class="euerzeile">
+  <summary>
+    <span class="zeilennr">{{ zeile.nummer if zeile.nummer > 0 else "–" }}</span>
+    <span class="kz">{{ zeile.kennzahl or "" }}</span>
+    <span class="bez">{{ zeile.bezeichnung }}</span>
+    <span class="betrag">{{ betrag | euro }}</span>
+  </summary>
+  <table class="tabelle posten">
+    <tbody>
+      {% for p in posten %}
+      <tr><td>{{ p.datum | datum }}</td><td>{{ p.text }}</td><td class="rechts betrag">{{ p.betrag_cent | euro }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</details>
+{% else %}
+<p class="leer">Keine Posten.</p>
+{% endfor %}
+{%- endmacro %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einnahmen-Überschuss-Rechnung{{ hilfe("euer") }} <small>{{ e.jahr }}</small></h1>
+  <div class="aktionen">
+    <form method="get" class="jahreswahl">
+      <select class="feld" name="jahr" aria-label="Jahr" onchange="this.form.submit()">
+        {% for j in jahre %}<option value="{{ j }}" {% if j == e.jahr %}selected{% endif %}>{{ j }}</option>{% endfor %}
+      </select>
+    </form>
+    <a class="knopf" href="{{ url_for('anlagen.verzeichnis_seite', jahr=e.jahr) }}">Anlagen</a>
+    <a class="knopf" href="{{ url_for('auswertung.euer_csv', jahr=e.jahr) }}">CSV</a>
+    {% if darf("export") %}<a class="knopf" href="{{ url_for('auswertung.export_zip', jahr=e.jahr) }}" title="EÜR, Zahlungen, Rechnungen und Belege als ZIP">Export für Steuerberatung</a><a class="knopf" href="{{ url_for('auswertung.wechsel') }}" title="Buchungen (DATEV) und Stammdaten für andere Software">Wechsel-Export</a>{% endif %}
+    <a class="knopf knopf-primaer" href="{{ url_for('auswertung.euer_pdf', jahr=e.jahr) }}" target="_blank">PDF</a>
+  </div>
+</div>
+{% for h in e.hinweise %}<div class="meldung warnung">{{ h }}</div>{% endfor %}
+<p class="hinweis">Nach Zahlungsdatum (Zuflussprinzip{{ hilfe("zuflussprinzip") }}). Beträge so in die Anlage EÜR in ELSTER übertragen. Bei Ausgaben zählt nur der betriebliche Anteil. Keine Steuerberatung.</p>
+
+<div class="kennzahlen euerkopf karte">
+  <div class="kennzahl"><span class="bezeichnung"><span class="farbpunkt einnahme"></span>Betriebseinnahmen</span><span class="wert">{{ e.summe_einnahmen | euro }}</span></div>
+  <div class="kennzahl"><span class="bezeichnung"><span class="farbpunkt ausgabe"></span>Betriebsausgaben</span><span class="wert">{{ e.summe_ausgaben | euro }}</span></div>
+  <div class="kennzahl"><span class="bezeichnung">{{ "Gewinn" if e.gewinn >= 0 else "Verlust" }}{{ hilfe("gewinn") }}</span><span class="wert">{{ e.gewinn | euro }}</span></div>
+</div>
+
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>1. Betriebseinnahmen</h2></div>
+  <div class="euerkopfzeile"><span>Zeile</span><span>Kz</span><span>Bezeichnung</span><span>Betrag</span></div>
+  {{ zeilen(e.einnahmen) }}
+  <div class="euersumme"><span>Summe Betriebseinnahmen{% if e.summen %} (Zeile {{ e.summen.einnahmen_zeile }}, Kz {{ e.summen.einnahmen_kz }}){% endif %}</span><span>{{ e.summe_einnahmen | euro }}</span></div>
+</section>
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>2. Betriebsausgaben</h2></div>
+  <div class="euerkopfzeile"><span>Zeile</span><span>Kz</span><span>Bezeichnung</span><span>Betrag</span></div>
+  {{ zeilen(e.ausgaben) }}
+  <div class="euersumme"><span>Summe Betriebsausgaben{% if e.summen %} (Zeile {{ e.summen.ausgaben_zeile }}, Kz {{ e.summen.ausgaben_kz }}){% endif %}</span><span>{{ e.summe_ausgaben | euro }}</span></div>
+</section>
+<section class="karte abstand-oben">
+  <div class="euersumme gross"><span>{{ "Gewinn" if e.gewinn >= 0 else "Verlust" }}{% if e.summen %} (Zeile {{ e.summen.gewinn_einnahmen_zeile }} abzüglich Zeile {{ e.summen.gewinn_ausgaben_zeile }}){% endif %}</span><span>{{ e.gewinn | euro }}</span></div>
+</section>
+{% endblock %}

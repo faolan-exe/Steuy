@@ -1,0 +1,52 @@
+{% extends "pdf/brief.html" %}
+{% block titel %}{{ m.bezeichnung }} zu {{ r.nummer }}{% endblock %}
+{% block info %}
+  <div class="info">
+    <table>
+      <tr><td>Datum</td><td>{{ m.datum | datum }}</td></tr>
+      <tr><td>Rechnungsnr.</td><td>{{ r.nummer }}</td></tr>
+      <tr><td>Rechnungsdatum</td><td>{{ r.rechnungsdatum | datum }}</td></tr>
+      {% if r.kontakt and r.kontakt.kundennummer %}<tr><td>Kundennr.</td><td>{{ r.kontakt.kundennummer }}</td></tr>{% endif %}
+    </table>
+  </div>
+{% endblock %}
+{% block inhalt %}
+  <div class="inhalt">
+    <h1>{{ m.bezeichnung }}</h1>
+    <p class="text">Guten Tag,</p>
+    <p class="text">{{ text }}</p>
+
+    <table class="posten">
+      <thead>
+        <tr><th>Rechnung</th><th>vom</th><th>fällig seit</th><th class="zahl">Rechnungsbetrag</th><th class="zahl">offen</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>{{ r.nummer }}</td>
+          <td>{{ r.rechnungsdatum | datum }}</td>
+          <td>{{ r.faellig_am | datum }}</td>
+          <td class="zahl">{{ r.summe_cent | euro }}</td>
+          <td class="zahl">{{ m.offen_cent | euro }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="summe">
+      <table>
+        <tr class="gesamt"><td>Offener Betrag</td><td>{{ m.offen_cent | euro }}</td></tr>
+      </table>
+    </div>
+
+    <div class="zahlung">
+      {% if qr %}
+      <div class="qr">{{ qr | safe }}Mit Banking-App scannen</div>
+      {% endif %}
+      <div>
+        <p class="text">Bitte überweisen Sie den offenen Betrag von <strong>{{ m.offen_cent | euro }}</strong> bis zum <strong>{{ m.frist_bis | datum }}</strong>{% if iban %} auf das Konto {{ a.kontoinhaber or a.name }}, IBAN {{ iban }}{% endif %}. Verwendungszweck: {{ r.nummer }}.</p>
+        <p class="text">Falls Sie inzwischen bezahlt haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.</p>
+        <p class="text">Mit freundlichen Grüßen<br>{{ a.inhaber }}</p>
+        {% if m.automatisch %}<p class="text" style="font-size: 8pt; color: #666;">Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

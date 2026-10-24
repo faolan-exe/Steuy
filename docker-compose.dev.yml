@@ -1,0 +1,21 @@
+# Nur für die Entwicklung: PostgreSQL ohne lokale Installation.
+# Start: docker compose -f docker-compose.dev.yml up -d
+# Dann in der .env:
+#   DATABASE_URL=postgresql+psycopg://steuy@localhost:5432/steuy
+#   TEST_DATABASE_URL=postgresql+psycopg://steuy@localhost:5432/steuy_test
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: steuy
+      POSTGRES_DB: steuy
+      # Nur für die Entwicklung und nur an 127.0.0.1 gebunden, daher ohne Passwort
+      POSTGRES_HOST_AUTH_METHOD: trust
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdaten:/var/lib/postgresql/data
+      - ./scripts/dev-db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  pgdaten:

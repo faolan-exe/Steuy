@@ -1,0 +1,95 @@
+{% extends "basis.html" %}
+{% from "icons.html" import icon %}
+{% block titel %}Belege – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Belege{{ hilfe("beleg") }}</h1>
+  {% if darf("belege") %}
+  <div class="aktionen">
+    <a class="knopf" href="{{ url_for('belege.neue_buchung') }}">Buchung ohne Datei</a>
+  </div>
+  {% endif %}
+</div>
+<nav class="reiter" aria-label="Filter">
+  {% for schluessel, name in filter_namen.items() %}
+  <a href="{{ url_for('belege.liste', filter=schluessel) }}" {% if filter == schluessel %}class="aktiv" aria-current="page"{% endif %}>{{ name }}{% if schluessel == "pruefen" and anzahl_neu %}<span class="zaehler-badge">{{ anzahl_neu }}</span>{% endif %}</a>
+  {% endfor %}
+</nav>
+
+{% if darf("belege") %}
+<form method="post" action="{{ url_for('belege.hochladen') }}" enctype="multipart/form-data" class="ablagezone" id="ablagezone">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>
+    {{ icon("plus") }}
+    <span><strong>Belege hinzufügen</strong> (hier ablegen oder auswählen)<br>
+    <span class="hinweis">PDF, JPG, PNG oder XML (E-Rechnung{{ hilfe("e_rechnung") }}), max. 20 MB pro Datei. Mehrere auf einmal möglich.</span></span>
+    <input type="file" name="dateien" multiple accept=".pdf,.jpg,.jpeg,.png,.xml,application/pdf,image/jpeg,image/png,text/xml,application/xml" onchange="this.form.submit()">
+  </label>
+  <noscript><button class="knopf" type="submit">Hochladen</button></noscript>
+</form>
+<script>
+  (function () {
+    var zone = document.getElementById("ablagezone");
+    var feld = zone.querySelector("input[type=file]");
+    ["dragenter", "dragover"].forEach(function (e) {
+      zone.addEventListener(e, function (ev) { ev.preventDefault(); zone.classList.add("ziel"); });
+    });
+    ["dragleave", "drop"].forEach(function (e) {
+      zone.addEventListener(e, function (ev) { ev.preventDefault(); zone.classList.remove("ziel"); });
+    });
+    zone.addEventListener("drop", function (ev) {
+      feld.files = ev.dataTransfer.files;
+      zone.submit();
+    });
+  })();
+</script>
+{% endif %}
+
+<section class="karte">
+  <div class="tabellenrahmen">
+    {% if filter in ("pruefen", "verworfen") %}
+    <table class="tabelle klickbar">
+      <thead><tr><th>Datei</th><th>Erkannt</th><th>Hochgeladen</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for b in belege %}
+        {% set v = b.vorschlag or {} %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.beleg', beleg_id=b.id) }}">{{ b.dateiname }}</a></td>
+          <td>{{ v.lieferant or "–" }}{% if v.belegnummer %}<div class="hinweis">{{ v.belegnummer }}</div>{% endif %}</td>
+          <td>{{ b.hochgeladen_am.date() | datum }}</td>
+          <td class="rechts betrag">{{ v.betrag_cent | euro if v.betrag_cent else "–" }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="leer">{{ "Keine neuen Belege." if filter == "pruefen" else "Keine verworfenen Belege." }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <table class="tabelle klickbar">
+      <thead><tr><th>Partner</th><th>Datum</th><th>Kategorie</th><th>Status</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for b in buchungen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=b.id) }}">{{ b.partner or "–" }}</a>
+            <div class="hinweis">{{ "Einnahme" if b.art == "einnahme" else "Ausgabe" }}{% if b.belegnummer %} · {{ b.belegnummer }}{% endif %}</div></td>
+          <td>{{ b.belegdatum | datum }}</td>
+          <td>{{ b.kategorie.name if b.kategorie else "–" }}</td>
+          <td>
+            {% set s = b.zahlstatus %}
+            {% if s == "entwurf" %}<span class="status status-aus">Entwurf</span>
+            {% elif s == "offen" %}<span class="status status-orange">offen</span>
+            {% elif s == "teilbezahlt" %}<span class="status status-blau">teilbezahlt</span>
+            {% elif s == "bezahlt" %}<span class="status status-an">bezahlt</span>
+            {% else %}<span class="status status-aus">storniert</span>{% endif %}
+          </td>
+          <td class="rechts betrag">{{ b.betrag_cent | euro }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="leer">Keine Buchungen.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

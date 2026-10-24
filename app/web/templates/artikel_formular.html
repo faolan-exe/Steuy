@@ -1,0 +1,46 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, auswahl %}
+{% block titel %}{{ "Artikel bearbeiten" if artikel else "Neuer Artikel" }} – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('artikel.liste') }}" aria-label="Zurück zur Liste">‹</a> {{ "Artikel bearbeiten" if artikel else "Neuer Artikel" }}</h1>
+  {% if artikel %}
+  <div class="aktionen">
+    <form method="post" action="{{ url_for('artikel.archivieren', artikel_id=artikel.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf" type="submit">{{ "Wiederherstellen" if artikel.archiviert else "Archivieren" }}</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>Stammdaten</h2></div>
+    <div class="karte-inhalt">
+      {{ auswahl(formular.typ) }}
+      <div class="feldraster">
+        {{ feld(formular.bezeichnung, klasse="ganz") }}
+        {{ feld(formular.beschreibung, klasse="ganz", hinweis="Erscheint auf Angeboten und Rechnungen.") }}
+        {{ feld(formular.artikelnummer) }}
+        {{ feld(formular.gtin) }}
+      </div>
+    </div>
+  </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Preis</h2></div>
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        {{ feld(formular.preis, hinweis="Endpreis in Euro, z. B. 65,00. Negativ für Rabatte.") }}
+        {{ feld(formular.einheit) }}
+        {{ feld(formular.notiz, klasse="ganz") }}
+      </div>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <a class="knopf knopf-text" href="{{ url_for('artikel.liste') }}">Abbrechen</a>
+    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+  </div>
+</form>
+{% endblock %}

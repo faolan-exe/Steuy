@@ -1,0 +1,51 @@
+{% extends "basis.html" %}
+{% block titel %}Spalten zuordnen – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1><a class="zurueck" href="{{ url_for('importieren.start', art=art, typ=typ) }}" aria-label="Zurück">‹</a> Spalten zuordnen <small>{{ anzahl }} {{ "Zeile" if anzahl == 1 else "Zeilen" }}</small></h1></div>
+<form method="post" action="{{ url_for('importieren.ausfuehren') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="art" value="{{ art }}">
+  <input type="hidden" name="typ" value="{{ typ }}">
+  <input type="hidden" name="daten" value="{{ daten }}">
+  {% if ergebnis %}
+  <section class="karte abstand-unten">
+    <div class="karte-kopf"><h2>Vorschau</h2></div>
+    <div class="karte-inhalt">
+      <p><strong>{{ ergebnis.neu }}</strong> {{ "würde angelegt" if ergebnis.neu == 1 else "würden angelegt" }}, {{ ergebnis.doppelt | length }} {{ "ist schon vorhanden" if ergebnis.doppelt | length == 1 else "sind schon vorhanden" }}, {{ ergebnis.fehler | length }} mit Fehlern.</p>
+      {% for nr, text in (ergebnis.fehler + ergebnis.doppelt)[:20] %}<div class="hinweis">Zeile {{ nr }}: {{ text }}</div>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% if fehlend %}<div class="meldung warnung">Bitte noch zuordnen: {{ fehlend | join(", ") }}</div>{% endif %}
+  <section class="karte">
+    <div class="karte-kopf"><h2>Welche Spalte gehört wohin?</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">steuy hat die Spalten anhand ihrer Namen vorgeschlagen. Prüfe die Zuordnung, besonders beim Preis: Als Kleinunternehmer gilt der Endpreis.</p>
+      <div class="feldraster">
+        {% for feld, (beschriftung, _) in felder.items() %}
+        <div class="feldgruppe">
+          <select class="feld" name="feld_{{ feld }}" id="feld_{{ feld }}">
+            <option value="">– nicht übernehmen –</option>
+            {% for spalte in kopf %}<option value="{{ loop.index0 }}" {% if zuordnung[feld] == loop.index0 %}selected{% endif %}>{{ spalte or "Spalte " ~ loop.index }}</option>{% endfor %}
+          </select>
+          <label class="feldlabel" for="feld_{{ feld }}">{{ beschriftung }}</label>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Die ersten Zeilen der Datei</h2></div>
+    <div class="tabellenrahmen">
+      <table class="tabelle">
+        <thead><tr>{% for spalte in kopf %}<th>{{ spalte }}</th>{% endfor %}</tr></thead>
+        <tbody>{% for zeile in beispiele %}<tr>{% for wert in zeile %}<td>{{ wert }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+      </table>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <button class="knopf" type="submit" name="aktion" value="pruefen">Prüfen</button>
+    <button class="knopf knopf-primaer" type="submit" name="aktion" value="importieren" {% if fehlend %}disabled{% endif %}>Importieren</button>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% block titel %}Profil – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Profil <small>{{ current_user.name }}</small></h1></div>
+
+<section class="karte">
+  <div class="karte-kopf"><h2>Zwei-Faktor-Anmeldung{{ hilfe("zwei_faktor") }}</h2></div>
+  <div class="karte-inhalt">
+    {% if current_user.totp_aktiv %}
+    <p><span class="status status-an">eingeschaltet</span> Beim Anmelden fragt steuy zusätzlich nach einem Code {{ "per E-Mail an " ~ current_user.email if current_user.zwei_faktor_art == "mail" else "aus deiner Authenticator-App" }}.</p>
+    <p class="hinweis">Noch {{ offene_codes }} unbenutzte Wiederherstellungscodes.</p>
+    <div class="zweispaltig">
+      <form method="post" action="{{ url_for('profil.neue_wiederherstellungscodes') }}" class="passwortaktion">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="feld" type="password" name="passwort" placeholder="Passwort" aria-label="Passwort zur Bestätigung" required>
+        <button class="knopf" type="submit">Neue Wiederherstellungscodes</button>
+      </form>
+      <form method="post" action="{{ url_for('profil.zwei_faktor_deaktivieren') }}" class="passwortaktion" data-bestaetigen="Zwei-Faktor-Anmeldung wirklich ausschalten?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input class="feld" type="password" name="passwort" placeholder="Passwort" aria-label="Passwort zur Bestätigung" required>
+        <button class="knopf knopf-text gefahr" type="submit">Ausschalten</button>
+      </form>
+    </div>
+    {% else %}
+    <p><span class="status status-aus">aus</span> Mit einer Authenticator-App (z. B. Aegis, Google Authenticator, Microsoft Authenticator oder einem Passwortmanager) schützt du dein Konto zusätzlich, falls jemand dein Passwort kennt.</p>
+    <a class="knopf knopf-primaer" href="{{ url_for('profil.zwei_faktor') }}">Jetzt einrichten</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="karte abstand-oben" id="email">
+  <div class="karte-kopf"><h2>E-Mail{{ hilfe("wochenmail") }}</h2></div>
+  <form method="post" action="{{ url_for('profil.wochenmail_umschalten') }}" class="karte-inhalt">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="zahlungsart">
+      <span><strong>Wöchentliche Zusammenfassung</strong><br><span class="hinweis">Montags eine Mail an {{ current_user.email }}, wenn unter „Zu prüfen“ etwas liegt, z. B. überfällige Rechnungen oder neue Belege.</span></span>
+      <input type="checkbox" class="schalter" name="wochenmail" value="y" {% if current_user.wochenmail %}checked{% endif %} onchange="this.form.requestSubmit()">
+    </label>
+    <noscript><div class="formular-fuss"><button class="knopf" type="submit">Speichern</button></div></noscript>
+  </form>
+</section>
+
+<section class="karte abstand-oben" id="darstellung">
+  <div class="karte-kopf"><h2>Hilfe</h2></div>
+  <form method="post" action="{{ url_for('profil.hilfe_umschalten') }}" class="karte-inhalt">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="zahlungsart">
+      <span><strong>Hilfe-Fragezeichen anzeigen</strong><br><span class="hinweis">Kleine <span class="hilfe" aria-hidden="true">?</span> neben Feldern und Begriffen erklären, wofür etwas gut ist und warum die Angabe gebraucht wird. Praktisch am Anfang, später kannst du sie ausblenden.</span></span>
+      <input type="checkbox" class="schalter" name="hilfe_anzeigen" value="y" {% if current_user.hilfe_anzeigen %}checked{% endif %} onchange="this.form.requestSubmit()">
+    </label>
+    <noscript><div class="formular-fuss"><button class="knopf" type="submit">Speichern</button></div></noscript>
+  </form>
+</section>
+
+<section class="karte abstand-oben" id="rundgang-bereich">
+  <div class="karte-kopf"><h2>Rundgang durch steuy</h2></div>
+  <form method="post" action="{{ url_for('rundgang.einstellen') }}" class="karte-inhalt" id="rundgang-einstellen">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="hinweis">Der Rundgang erklärt Schritt für Schritt, was wo ist und warum. Je nach Vorkenntnissen mehr oder weniger ausführlich.</p>
+    <fieldset class="auswahlgruppe">
+      <legend>Wie fit bist du in Buchhaltung?</legend>
+      {% for wert, text in [("anfaenger", "Kompletter Anfänger"), ("erfahren", "Bereits mal gemacht"), ("experte", "Experte")] %}
+      <label class="haken"><input type="radio" name="erfahrung" value="{{ wert }}" {% if (current_user.erfahrung or "anfaenger") == wert %}checked{% endif %}> <span>{{ text }}</span></label>
+      {% endfor %}
+    </fieldset>
+    <fieldset class="auswahlgruppe">
+      <legend>Hast du schon mit steuy gearbeitet?</legend>
+      <label class="haken"><input type="radio" name="kennt_steuy" value="nein" {% if not current_user.kennt_steuy %}checked{% endif %}> <span>Nein</span></label>
+      <label class="haken"><input type="radio" name="kennt_steuy" value="ja" {% if current_user.kennt_steuy %}checked{% endif %}> <span>Ja</span></label>
+    </fieldset>
+    <div class="formular-fuss">
+      <button class="knopf" type="submit" name="aktion" value="speichern">Speichern</button>
+      <button class="knopf knopf-primaer" type="submit" name="aktion" value="starten">{{ "Rundgang neu starten" if current_user.rundgang_fertig else "Rundgang starten" }}</button>
+    </div>
+  </form>
+</section>
+
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Passwort ändern</h2></div>
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        {{ feld(formular.alt, klasse="ganz") }}
+        {{ feld(formular.neu, hinweis="Mindestens 10 Zeichen.") }}
+        {{ feld(formular.wiederholen) }}
+      </div>
+    </div>
+  </section>
+  <div class="formular-fuss"><button class="knopf knopf-primaer" type="submit">Passwort ändern</button></div>
+</form>
+{% endblock %}

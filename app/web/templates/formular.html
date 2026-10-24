@@ -1,0 +1,69 @@
+{# Formularfelder mit Label im Rahmen, wie bei Material-Outlined-Feldern. #}
+{% macro feld(f, hinweis=None, klasse="") -%}
+<div class="feldgruppe {{ klasse }}{% if f.errors %} hat-fehler{% endif %}">
+  {{ f(class_="feld", placeholder=" ", **({"aria-describedby": f.id ~ "-hinweis"} if hinweis or f.errors else {})) }}
+  <label class="feldlabel" for="{{ f.id }}">{{ f.label.text }}{{ feldhilfe(f) }}</label>{% if f.flags.required %}<span class="pflicht" aria-hidden="true">*</span>{% endif %}
+  {% if f.errors %}
+  <div class="feldfehler" id="{{ f.id }}-hinweis">{{ f.errors[0] }}</div>
+  {% elif hinweis %}
+  <div class="feldhinweis" id="{{ f.id }}-hinweis">{{ hinweis }}</div>
+  {% endif %}
+</div>
+{%- endmacro %}
+
+{% macro haken(f) -%}
+<div class="haken{% if f.errors %} hat-fehler{% endif %}">
+  <label>{{ f() }} <span>{{ f.label.text }}{{ feldhilfe(f) }}</span></label>
+  {% if f.errors %}<div class="feldfehler">{{ f.errors[0] }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro firmenfelder(formular) -%}
+<div class="feldraster">
+  {{ feld(formular.name, klasse="ganz") }}
+  {{ feld(formular.inhaber, klasse="ganz") }}
+  {{ feld(formular.strasse, klasse="ganz") }}
+  {{ feld(formular.plz, klasse="schmal") }}
+  {{ feld(formular.ort, klasse="breit") }}
+  {{ feld(formular.email) }}
+  {{ feld(formular.telefon) }}
+  {{ feld(formular.steuernummer, hinweis="Steht auf deinen Rechnungen. Vom Finanzamt nach der Gewerbeanmeldung.") }}
+  {{ feld(formular.ust_idnr, hinweis="Nur falls vorhanden, z. B. für Einkäufe im EU-Ausland.") }}
+</div>
+{%- endmacro %}
+
+{% macro auswahl(f) -%}
+<div class="auswahl" role="radiogroup" aria-label="{{ f.label.text }}">
+  {% for option in f %}
+  <label>{{ option() }} <span>{{ option.label.text }}</span></label>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro listenkopf(titel, endpunkt, filter, filter_namen, suche, archiv, neu_text, platzhalter) -%}
+<div class="seitenkopf">
+  <h1>{{ titel }}</h1>
+  {% if darf("stammdaten") %}
+  <div class="aktionen">
+    <a class="knopf knopf-primaer" href="{{ url_for(endpunkt.split('.')[0] ~ '.neu') }}">+ {{ neu_text }}</a>
+  </div>
+  {% endif %}
+</div>
+<nav class="reiter" aria-label="Filter">
+  {% for schluessel, name in filter_namen.items() %}
+  <a href="{{ url_for(endpunkt, filter=schluessel, q=suche or None, archiv='1' if archiv else None) }}" {% if filter == schluessel %}class="aktiv" aria-current="page"{% endif %}>{{ name }}</a>
+  {% endfor %}
+</nav>
+<div class="listenwerkzeuge">
+  <div class="feldgruppe suchfeld">
+    <input class="feld" type="search" name="q" value="{{ suche }}" placeholder="{{ platzhalter }}" aria-label="Suche"
+           hx-get="{{ url_for(endpunkt) }}" hx-trigger="input changed delay:250ms, search"
+           hx-target="#zeilen" hx-include="#listenfilter">
+  </div>
+  <form id="listenfilter" class="archivschalter">
+    <input type="hidden" name="filter" value="{{ filter }}">
+    {% if archiv %}<input type="hidden" name="archiv" value="1">{% endif %}
+    <a href="{{ url_for(endpunkt, filter=filter, archiv=None if archiv else '1') }}">{{ "Aktive anzeigen" if archiv else "Archiv anzeigen" }}</a>
+  </form>
+</div>
+{%- endmacro %}

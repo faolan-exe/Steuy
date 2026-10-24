@@ -1,0 +1,30 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld, haken %}
+{% from "icons.html" import icon %}
+{% set nav_aktiv = "angebote" if r.belegart == "angebot" else "rechnungen" %}
+{% block titel %}Per E-Mail senden – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}" aria-label="Zurück">‹</a> Per E-Mail senden <small>{{ mahnung.bezeichnung if mahnung else r.titel }} {{ r.anzeige_nummer }}</small></h1>
+</div>
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-inhalt">
+      {% if not formular.an.data and not formular.errors %}<div class="meldung warnung">Beim Kontakt ist keine E-Mail-Adresse hinterlegt. Bitte hier eintragen.</div>{% endif %}
+      <div class="feldraster">
+        {{ feld(formular.an, klasse="breit") }}
+        <div class="feldgruppe schmal">{{ haken(formular.kopie_an_mich) }}</div>
+        {{ feld(formular.betreff, klasse="ganz") }}
+        {{ feld(formular.text, klasse="ganz") }}
+      </div>
+      <p class="hinweis">{{ icon("beleg") }} Anhang: <a href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=mahnung.id) if mahnung else url_for('rechnungen.pdf_anzeigen', rechnung_id=r.id) }}" target="_blank">{{ anhang }}</a> (das unveränderte PDF)</p>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <a class="knopf knopf-text" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">Abbrechen</a>
+    <button type="submit" class="knopf knopf-primaer">Jetzt senden</button>
+  </div>
+</form>
+{% endblock %}

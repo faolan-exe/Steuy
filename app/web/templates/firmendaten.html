@@ -1,0 +1,33 @@
+{% extends "basis.html" %}
+{% from "formular.html" import firmenfelder %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Firmendaten – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("einstellungen.firmendaten") }}
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>Firmendaten</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Diese Angaben stehen auf deinen Rechnungen. Jede Änderung wird im Änderungsprotokoll festgehalten.</p>
+      {{ firmenfelder(formular) }}
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <a class="knopf knopf-text" href="{{ url_for('allgemein.start') }}">Abbrechen</a>
+    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+  </div>
+</form>
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Datensicherung und Export</h2></div>
+  <div class="karte-inhalt">
+    <p class="hinweis">Regelmäßige Sicherungen macht der Server, siehe <code>docs/betrieb.md</code>. Hier kannst du zusätzlich alle Daten und Dateien als ZIP herunterladen, z. B. für einen Umzug. Passwörter sind nicht enthalten.</p>
+    <a class="knopf" href="{{ url_for('auswertung.gesamtexport_zip') }}">Gesamtexport herunterladen</a>
+    <a class="knopf" href="{{ url_for('auswertung.wechsel') }}">Zu anderer Software wechseln</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "basis.html" %}
+{% block titel %}Importieren – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Daten importieren{{ hilfe("import") }}</h1></div>
+<form method="post" action="{{ url_for('importieren.zuordnen') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <section class="karte">
+    <div class="karte-inhalt">
+      <p class="hinweis">Du kommst von einem anderen Programm, z. B. Lexware Office? Exportiere dort deine Kunden, Lieferanten oder Artikel als CSV-Datei und lade sie hier hoch. Im nächsten Schritt ordnest du die Spalten zu und siehst vorher, was passiert.</p>
+      <div class="auswahl" role="radiogroup" aria-label="Was importieren">
+        <label><input type="radio" name="art" value="kontakte" {% if art == "kontakte" %}checked{% endif %}> <span>Kontakte</span></label>
+        <label><input type="radio" name="art" value="artikel" {% if art == "artikel" %}checked{% endif %}> <span>Artikel</span></label>
+      </div>
+      <div class="feldraster abstand-oben">
+        <div class="feldgruppe">
+          <select class="feld" name="typ" id="typ">
+            <option value="kunde" {% if typ == "kunde" %}selected{% endif %}>Kunden</option>
+            <option value="lieferant" {% if typ == "lieferant" %}selected{% endif %}>Lieferanten</option>
+            <option value="beides" {% if typ == "beides" %}selected{% endif %}>Kunden und Lieferanten</option>
+          </select>
+          <label class="feldlabel" for="typ">Kontakte anlegen als</label>
+          <div class="feldhinweis">Nur bei Kontakten.</div>
+        </div>
+        <div class="feldgruppe">
+          <input class="feld" type="file" name="datei" id="datei" accept=".csv,text/csv" required>
+          <label class="feldlabel" for="datei">CSV-Datei (max. 2 MB)</label>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="formular-fuss"><button class="knopf knopf-primaer" type="submit">Weiter zur Zuordnung</button></div>
+</form>
+<p class="hinweis abstand-oben">Rechnungen und Belege aus Lexware (DATEV-Export mit Belegbildern)? <a href="{{ url_for('importieren.archiv_start') }}">Belegarchiv importieren</a> · <a href="{{ url_for('einstellungen.import_export') }}#lexware">Anleitung für Lexware</a></p>
+{% endblock %}

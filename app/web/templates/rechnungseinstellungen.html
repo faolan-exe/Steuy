@@ -1,0 +1,52 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Rechnungen – Einstellungen – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("einstellungen.rechnungen") }}
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>Bankverbindung</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Steht auf deinen Rechnungen und im QR-Code für die Überweisung.</p>
+      <div class="feldraster">
+        {{ feld(formular.kontoinhaber, hinweis="Leer lassen, dann steht der Name des Gewerbes im QR-Code.") }}
+        {{ feld(formular.bank) }}
+        {{ feld(formular.iban) }}
+        {{ feld(formular.bic, hinweis="Optional.") }}
+      </div>
+    </div>
+  </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Rechnungsnummern</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Fortlaufend und ohne Lücken. Beim Umstieg aus einem anderen Programm die nächste freie Nummer eintragen, z. B. 131 für RE0131.</p>
+      <div class="feldraster">
+        {{ feld(formular.praefix, klasse="schmal") }}
+        {{ feld(formular.stellen, klasse="schmal") }}
+        {{ feld(formular.naechste_nummer, klasse="schmal") }}
+      </div>
+    </div>
+  </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>Vorgaben für neue Rechnungen</h2></div>
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        {{ feld(formular.zahlungsziel_tage) }}
+        {{ feld(formular.angebot_gueltig_tage) }}
+        {{ feld(formular.hinweis_steuerbefreiung, klasse="ganz") }}
+        {{ feld(formular.rechnung_einleitung, klasse="ganz", hinweis="z. B. „Unsere Leistungen stellen wir Ihnen wie folgt in Rechnung.“") }}
+        {{ feld(formular.rechnung_nachbemerkung, klasse="ganz", hinweis="z. B. Dank, AGB-Hinweis") }}
+      </div>
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+  </div>
+</form>
+{% endblock %}

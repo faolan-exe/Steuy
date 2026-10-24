@@ -1,0 +1,26 @@
+{% extends "basis.html" %}
+{% block titel %}Rundgang – steuy{% endblock %}
+{% block inhalt_klasse %}mittig{% endblock %}
+{% block inhalt %}
+<section class="karte fehlerkarte">
+  <div class="karte-kopf"><h2>Rundgang durch steuy</h2></div>
+  <div class="karte-inhalt">
+    {% if frage == "beides" %}
+    <p>Du bist Experte und hast schon mit steuy gearbeitet. Möchtest du den Rundgang trotzdem ansehen? Er dauert nur wenige Minuten und zeigt auch die neuesten Funktionen.</p>
+    {% elif frage == "kennt" %}
+    <p>Du hast schon mit steuy gearbeitet. Möchtest du den Rundgang überspringen?</p>
+    {% else %}
+    <p>Du kennst dich mit Buchhaltung gut aus. Möchtest du den Rundgang trotzdem machen? Er zeigt kurz, was in steuy wo ist.</p>
+    {% endif %}
+    <div class="formular-fuss">
+      {% if frage == "kennt" %}
+      <form method="post" action="{{ url_for('rundgang.start') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Nein, Rundgang ansehen</button></form>
+      <form method="post" action="{{ url_for('rundgang.ueberspringen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-primaer" type="submit">Ja, überspringen</button></form>
+      {% else %}
+      <form method="post" action="{{ url_for('rundgang.ueberspringen') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Nein, direkt loslegen</button></form>
+      <form method="post" action="{{ url_for('rundgang.start') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-primaer" type="submit">Ja, Rundgang starten</button></form>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

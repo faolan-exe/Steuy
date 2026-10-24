@@ -1,0 +1,35 @@
+{% extends "basis.html" %}
+{% from "icons.html" import icon %}
+{% block titel %}Zahlung zu {{ r.anzeige_nummer }} – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}#zahlungen" aria-label="Zurück zur Rechnung">‹</a> Zahlung <small>{{ r.titel }} {{ r.anzeige_nummer }}</small></h1>
+  <div class="aktionen">
+    {% if darf("zahlungen") and not z.storno_von_id and not ist_storniert(z) %}
+    <form method="post" action="{{ url_for('rechnungen.zahlung_rueckgaengig', rechnung_id=r.id, zahlung_id=z.id) }}" data-bestaetigen="Diese Zahlung rückgängig machen? Es entsteht eine Gegenbuchung, die Zahlung bleibt im Verlauf sichtbar." data-bestaetigen-knopf="Rückgängig machen">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf" type="submit">Rückgängig machen</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% if z.storno_von_id %}<div class="meldung warnung">Das ist eine Gegenbuchung: Sie hebt die Zahlung vom {{ z.storno.datum | datum }} auf.</div>
+{% elif ist_storniert(z) %}<div class="meldung warnung">Diese Zahlung wurde rückgängig gemacht.</div>{% endif %}
+<section class="karte">
+  <div class="karte-kopf"><h2>Details</h2></div>
+  <dl class="angaben">
+    <dt>Bezahlt am</dt><dd>{{ z.datum | datum }}</dd>
+    <dt>Betrag</dt><dd><strong>{{ z.betrag_cent | euro }}</strong></dd>
+    <dt>Zahlungsart</dt><dd>{{ zahlungsarten[z.zahlungsart] }}</dd>
+    {% if z.angekommen_cent is not none %}<dt>Tatsächlich angekommen</dt><dd>{{ z.angekommen_cent | euro }}</dd>
+    {% set gebuehr = offene_gebuehr(z.betrag_cent, z.angekommen_cent) %}{% if gebuehr > 0 %}<dt>Gebühr</dt><dd>{{ gebuehr | euro }}</dd>{% endif %}{% endif %}
+    {% if z.referenz %}<dt>Referenz</dt><dd>{{ z.referenz }}</dd>{% endif %}
+    {% if z.notiz %}<dt>Notiz</dt><dd>{{ z.notiz }}</dd>{% endif %}
+    <dt>Rechnung</dt><dd><a href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.titel }} {{ r.anzeige_nummer }}</a>{% if r.empfaenger_name %} · {{ r.empfaenger_name }}{% endif %}</dd>
+    <dt>Erfasst</dt><dd>{{ z.erfasst_am.strftime("%d.%m.%Y %H:%M") }}{% if z.erfasser %} von {{ z.erfasser.name }}{% endif %}</dd>
+    <dt>Nachweis</dt><dd>{% if z.nachweis_sha256 %}<a href="{{ url_for('rechnungen.zahlung_nachweis', rechnung_id=r.id, zahlung_id=z.id) }}" target="_blank">{{ icon("beleg") }} {{ z.nachweis_name }}</a>{% else %}<span class="hinweis">keiner</span>{% endif %}</dd>
+  </dl>
+  <p class="hinweis karte-inhalt">Zahlungen sind unveränderlich (GoBD). Ist etwas falsch, mach die Zahlung rückgängig und erfasse sie neu.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "basis.html" %}
+{% from "icons.html" import icon %}
+{% block titel %}Dashboard – steuy{% endblock %}
+{% block inhalt %}
+{% set bald = "kommt in einer späteren Version" %}
+<div class="seitenkopf">
+  <h1>Dashboard <small>{{ gewerbe.name }}</small></h1>
+  <div class="aktionen">
+    {% if darf("belege") %}<a class="knopf" href="{{ url_for('belege.liste', filter='pruefen') }}">{{ icon("beleg") }} Neuen Beleg erfassen</a>{% endif %}
+    {% if darf("entwuerfe") %}
+    <div class="splitknopf">
+      <form method="post" action="{{ url_for('rechnungen.neu') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="knopf knopf-primaer" type="submit">{{ icon("plus") }} Neue Rechnung</button>
+      </form>
+      <details class="splitmenue">
+        <summary class="knopf knopf-primaer" aria-label="Weitere Belege">▾</summary>
+        <div class="menue">
+          <form method="post" action="{{ url_for('rechnungen.neu') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="menue-eintrag" type="submit">Neue Rechnung</button></form>
+          <form method="post" action="{{ url_for('angebote.angebot_neu') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="menue-eintrag" type="submit">Neues Angebot</button></form>
+        </div>
+      </details>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="raster">
+  <div class="spalte">
+    <section class="karte" aria-labelledby="aufgaben">
+      <div class="karte-kopf">
+        <h2 id="aufgaben"><a class="titellink" href="{{ url_for('allgemein.pruefen') }}">Zu prüfen</a>{{ hilfe("zu_pruefen") }}{% if offen.anzahl %}<span class="zaehler-badge">{{ offen.anzahl }}</span>{% endif %}</h2>
+      </div>
+      {% set anzahl_offen = offen.offen | length + offen.ueberfaellig | length %}
+      <div class="gruppe">
+        <div class="gruppe-titel">Einnahmen</div>
+        {% if anzahl_offen %}
+        <div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('allgemein.pruefen') }}">{{ anzahl_offen }} offene Rechnung{{ "en" if anzahl_offen != 1 }}</a></div>
+        {% if offen.ueberfaellig %}<div class="zeile ueberfaellig">davon {{ offen.ueberfaellig | length }} überfällig</div>{% endif %}
+        {% if offen.mahnungen %}<div class="zeile ueberfaellig"><a class="ueberfaellig" href="{{ url_for('allgemein.pruefen') }}">{{ offen.mahnungen | length }} Mahnung{{ "en" if offen.mahnungen | length != 1 }} fällig</a></div>{% endif %}
+        {% else %}
+        <div class="zeile"><span class="ok">{{ icon("haken") }}</span>Keine offenen Rechnungen</div>
+        {% endif %}
+      </div>
+      <div class="gruppe">
+        <div class="gruppe-titel">Belege und Ausgaben</div>
+        {% set beleg_arbeit = offen.belege | length + offen.buchungsentwuerfe | length + offen.offene_ausgaben | length + offen.offene_einnahmen | length %}
+        {% if beleg_arbeit %}
+        {% if offen.belege %}<div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('belege.liste', filter='pruefen') }}">{{ offen.belege | length }} neue{{ "r" if offen.belege | length == 1 }} Beleg{{ "e" if offen.belege | length != 1 }}</a></div>{% endif %}
+        {% if offen.buchungsentwuerfe %}<div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('belege.liste', filter='entwuerfe') }}">{{ offen.buchungsentwuerfe | length }} Buchungsentw{{ "ürfe" if offen.buchungsentwuerfe | length != 1 else "urf" }}</a></div>{% endif %}
+        {% if offen.offene_einnahmen %}<div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('allgemein.pruefen') }}">{{ offen.offene_einnahmen | length }} unbezahlte Einnahme{{ "n" if offen.offene_einnahmen | length != 1 }}</a></div>{% endif %}
+        {% if offen.offene_ausgaben %}<div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('allgemein.pruefen') }}">{{ offen.offene_ausgaben | length }} unbezahlte Ausgabe{{ "n" if offen.offene_ausgaben | length != 1 }}</a></div>{% endif %}
+        {% else %}
+        <div class="zeile"><span class="ok">{{ icon("haken") }}</span>Keine offenen Belege</div>
+        {% endif %}
+      </div>
+      <div class="gruppe">
+        <div class="gruppe-titel">Zahlungsgebühren</div>
+        {% if offen.gebuehren %}
+        <div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('allgemein.pruefen') }}">{{ offen.gebuehren | length }} Gebühr{{ "en" if offen.gebuehren | length != 1 }} noch nicht erfasst</a></div>
+        {% else %}
+        <div class="zeile"><span class="ok">{{ icon("haken") }}</span>Keine offenen Gebühren</div>
+        {% endif %}
+      </div>
+      <div class="gruppe">
+        <div class="gruppe-titel">Angebote</div>
+        {% if offen.angebote %}
+        <div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('angebote.angebote', filter='offen') }}">{{ offen.angebote | length }} offene{{ "s" if offen.angebote | length == 1 }} Angebot{{ "e" if offen.angebote | length != 1 }}</a></div>
+        {% else %}
+        <div class="zeile"><span class="ok">{{ icon("haken") }}</span>Keine offenen Angebote</div>
+        {% endif %}
+      </div>
+      <div class="gruppe">
+        <div class="gruppe-titel">Entwürfe</div>
+        {% if offen.entwuerfe %}
+        <div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('allgemein.pruefen') }}">{{ offen.entwuerfe | length }} Rechnungsentw{{ "ürfe" if offen.entwuerfe | length != 1 else "urf" }}</a></div>
+        {% else %}
+        <div class="zeile"><span class="ok">{{ icon("haken") }}</span>Keine Entwürfe</div>
+        {% endif %}
+      </div>
+    </section>
+
+    <section class="karte" aria-labelledby="info">
+      <div class="karte-kopf">
+        <h2 id="info">Info {{ uebersicht.jahr }}</h2>
+      </div>
+      <div class="karte-inhalt zaehler">
+        {% for anzahl, art in uebersicht.zaehler %}
+        <b>{{ anzahl }}</b><span>{{ art }}</span>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+
+  <div class="spalte">
+    <section class="karte" aria-labelledby="finanzen">
+      <div class="karte-kopf">
+        <h2 id="finanzen">Finanzen</h2>
+      </div>
+      <div class="betragszeile">
+        <strong>OFFENE FORDERUNGEN</strong>
+        <span>{{ (uebersicht.offen_cent + offen.offene_einnahmen | sum(attribute="offen_cent")) | euro }}</span>
+      </div>
+      <div class="betragszeile">
+        <strong>OFFENE AUSGABEN</strong>
+        <span>{{ offen.offene_ausgaben | sum(attribute="offen_cent") | euro }}</span>
+      </div>
+      <div class="karte-fuss">
+        <a class="knopf knopf-text" href="{{ url_for('rechnungen.liste', filter='offen') }}">Offene Rechnungen</a>
+      </div>
+    </section>
+
+    <section class="karte" aria-labelledby="rechnungsstand">
+      <div class="karte-kopf">
+        <h2 id="rechnungsstand">Rechnungen {{ uebersicht.jahr }}</h2>
+      </div>
+      <div class="karte-inhalt kreisbereich">
+        {% set g = stand.gesamt %}
+        {% set pb = (stand.bezahlt * 100 / g) if g else 0 %}
+        {% set po = (stand.offen * 100 / g) if g else 0 %}
+        {% set pu = (stand.ueberfaellig * 100 / g) if g else 0 %}
+        <div class="kreis" role="img" aria-label="{{ g }} Rechnungen: {{ stand.bezahlt }} bezahlt, {{ stand.offen }} offen, {{ stand.ueberfaellig }} überfällig">
+          <svg viewBox="0 0 42 42" width="150" height="150">
+            <circle class="kreis-grund" cx="21" cy="21" r="15.9155" fill="none" stroke-width="5"/>
+            {% if g %}
+            <circle class="kreis-gruen" cx="21" cy="21" r="15.9155" fill="none" stroke-width="5" stroke-dasharray="{{ pb }} {{ 100 - pb }}" stroke-dashoffset="25"/>
+            <circle class="kreis-gelb" cx="21" cy="21" r="15.9155" fill="none" stroke-width="5" stroke-dasharray="{{ po }} {{ 100 - po }}" stroke-dashoffset="{{ 25 - pb }}"/>
+            <circle class="kreis-rot" cx="21" cy="21" r="15.9155" fill="none" stroke-width="5" stroke-dasharray="{{ pu }} {{ 100 - pu }}" stroke-dashoffset="{{ 25 - pb - po }}"/>
+            {% endif %}
+          </svg>
+          <div class="kreis-mitte"><strong>{{ g }}</strong><span>Rechnung{{ "en" if g != 1 }}</span></div>
+        </div>
+        <ul class="kreis-legende">
+          <li><i class="punkt-gruen"></i> Bezahlt <b>{{ stand.bezahlt }}</b></li>
+          <li><i class="punkt-gelb"></i> Noch offen <b>{{ stand.offen }}</b></li>
+          <li><i class="punkt-rot"></i> Überfällig <b>{{ stand.ueberfaellig }}</b></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="karte motivation{{ ' erreicht' if ziel and ziel.erreicht }}" aria-labelledby="ziel">
+      <div class="karte-kopf"><h2 id="ziel">Dein Ziel {{ uebersicht.jahr if ziel }}</h2></div>
+      <div class="karte-inhalt">
+        {% if ziel %}
+        <p class="spruch">{{ ziel.erreicht_text if ziel.erreicht else motivation.text }}</p>
+        <div class="fortschritt" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ ziel.fortschritt }}" aria-label="Fortschritt zum Ziel"><span style="width: {{ ziel.fortschritt }}%"></span></div>
+        <div class="fortschritt-legende"><span>{{ "Geschafft!" if ziel.erreicht else ziel.noch_text }}</span></div>
+        {% else %}
+        <p class="spruch">{{ motivation.text }}</p>
+        <div class="fortschritt" role="meter" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ motivation.fortschritt }}" aria-label="Fortschritt zum nächsten Ziel"><span style="width: {{ motivation.fortschritt }}%"></span></div>
+        <div class="fortschritt-legende"><span>Noch {{ motivation.noch }} bis zur {{ motivation.ziel }}. Rechnung</span></div>
+        {% endif %}
+        {% if darf("einstellungen") %}
+        <details class="zielformular"{% if request.args.get("ziel_aendern") %} open{% endif %}>
+          <summary class="knopf knopf-text">Ziel anpassen</summary>
+          <form method="post" action="{{ url_for('allgemein.ziel_setzen') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="feldgruppe">
+              <select class="feld" name="art" id="ziel-art">
+                {% for schluessel, name in zielarten.items() %}<option value="{{ schluessel }}" {% if ziel and ziel.art == schluessel %}selected{% endif %}>{{ name }}</option>{% endfor %}
+              </select>
+              <label class="feldlabel" for="ziel-art">Woran misst du dein Ziel?</label>
+            </div>
+            <div class="feldgruppe">
+              <input class="feld" name="wert" id="ziel-wert" inputmode="decimal" placeholder=" " value="{{ ziel.eingabe if ziel else '' }}">
+              <label class="feldlabel" for="ziel-wert">Zielwert (Anzahl oder Euro) für {{ uebersicht.jahr }}</label>
+            </div>
+            <div class="formular-fuss">
+              {% if ziel %}<button class="knopf knopf-text" type="submit" name="aktion" value="entfernen">Ziel entfernen</button>{% endif %}
+              <button class="knopf knopf-primaer" type="submit">Speichern</button>
+            </div>
+          </form>
+        </details>
+        {% endif %}
+      </div>
+    </section>
+
+
+  </div>
+
+  {% if darf("auswertungen") %}
+  <div class="spalte breit">
+  <section class="karte" aria-labelledby="uebersicht">
+    <div class="karte-kopf">
+      <h2 id="uebersicht">Übersicht</h2>
+      <form method="get" class="jahreswahl">
+        <select class="feld" name="jahr" aria-label="Jahr" onchange="this.form.submit()">
+          {% for j in jahre %}<option value="{{ j }}" {% if j == uebersicht.jahr %}selected{% endif %}>{{ "Aktuelles Jahr (" ~ j ~ ")" if j == aktuell_jahr else j }}</option>{% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="karte-inhalt">
+      <div class="kennzahlen">
+        <div class="kennzahl">
+          <span class="bezeichnung"><span class="farbpunkt einnahme"></span>Einnahmen</span>
+          <span class="wert">{{ uebersicht.einnahmen_cent | euro }}</span>
+        </div>
+        <div class="kennzahl">
+          <span class="bezeichnung"><span class="farbpunkt ausgabe"></span>Ausgaben</span>
+          <span class="wert">{{ uebersicht.ausgaben_cent | euro }}</span>
+        </div>
+        <div class="kennzahl">
+          <span class="bezeichnung">Gewinn</span>
+          <span class="wert">{{ (uebersicht.einnahmen_cent - uebersicht.ausgaben_cent) | euro }}</span>
+        </div>
+      </div>
+      <svg class="diagramm" viewBox="0 0 720 260" role="img" aria-label="Einnahmen und Ausgaben je Monat, noch keine Daten">
+        {% for i in range(5) %}
+        <line class="achse" x1="40" x2="710" y1="{{ 20 + i * 50 }}" y2="{{ 20 + i * 50 }}"/>
+        {% endfor %}
+        {% for monat in ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"] %}
+        <text x="{{ 50 + loop.index0 * 59 }}" y="245" text-anchor="middle">{{ monat }}</text>
+        {% endfor %}
+        {% if uebersicht.linien %}
+        <polyline points="{{ uebersicht.linien.ausgaben }}" fill="none" stroke="var(--rot)" stroke-width="2.5" stroke-linejoin="round"/>
+        <polyline points="{{ uebersicht.linien.einnahmen }}" fill="none" stroke="var(--gruen)" stroke-width="2.5" stroke-linejoin="round"/>
+        {% else %}
+        <text x="375" y="125" text-anchor="middle" style="font-size: 14px">Noch keine Zahlungseingänge</text>
+        {% endif %}
+      </svg>
+      <p class="hinweis">Gewinn nach Zahlungsdatum (Zuflussprinzip) im gewählten Jahr.</p>
+    </div>
+  </section>
+
+    <section class="karte" aria-labelledby="grenze">
+      <div class="karte-kopf">
+        <h2 id="grenze">Kleinunternehmergrenze{{ hilfe("kleinunternehmergrenze") }}</h2>
+      </div>
+      <div class="karte-inhalt">
+        <div>Zahlungseingänge {{ uebersicht.jahr }}: <strong>{{ uebersicht.umsatz_cent | euro }}</strong></div>
+        {% set ueber = uebersicht.umsatz_cent > grenze.vorjahr_cent %}
+        {% set anteil = [100, (uebersicht.umsatz_cent * 100 / grenze.vorjahr_cent) | round(1)] | min %}
+        <div class="fortschritt{{ ' warnung' if ueber }}" role="meter" aria-valuemin="0" aria-valuemax="{{ grenze.vorjahr_cent }}" aria-valuenow="{{ uebersicht.umsatz_cent }}" aria-label="Umsatz im Verhältnis zur Grenze von {{ grenze.vorjahr_cent | euro }}"><span style="width: {{ anteil }}%"></span></div>
+        <div class="fortschritt-legende">
+          <span>0 €</span><span>{{ grenze.vorjahr_cent | euro }}</span>
+        </div>
+        {% if ueber %}<p class="grenzwarnung">Über {{ grenze.vorjahr_cent | euro }}: Ab dem nächsten Jahr gilt die Kleinunternehmerregelung voraussichtlich nicht mehr. Bitte mit der Steuerberatung klären.</p>{% endif %}
+        <p class="hinweis">Grenze im laufenden Jahr {{ grenze.laufendes_jahr_cent | euro }}. Liegt der Jahresumsatz über {{ grenze.vorjahr_cent | euro }}, endet die Kleinunternehmerregelung ab dem nächsten Jahr.</p>
+      </div>
+    </section>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>{% block titel %}{% endblock %}</title>
+{# Aussehen kommt aus dem Drucklayout (Einstellungen). d = Layout, logo = Bild-Adresse oder leer #}
+{% set ak = d.akzent %}
+{% set ox = 25 if vorschau else 0 %}
+{% set oy = 20 if vorschau else 0 %}
+{% set band_h = [22, logo_h + 8] | max if logo else 22 %}
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 20mm 32mm 25mm;
+    {% if d.zeige_fusszeile %}
+    @bottom-left { content: element(fuss); }
+    {% endif %}
+    @bottom-right {
+      content: "Seite " counter(page) " von " counter(pages);
+      font-size: 7.5pt;
+      color: #666;
+      vertical-align: top;
+      padding-top: 4mm;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: {{ d.schriftfamilie | safe }}; font-size: {{ d.schrift_text }}pt; color: #222; line-height: 1.4; margin: 0; }
+  {% if entwurf %}
+  body::before {
+    content: "ENTWURF";
+    position: fixed; top: 110mm; left: 10mm;
+    font-size: 90pt; font-weight: 700; color: rgba(200, 40, 40, 0.12);
+    transform: rotate(-30deg);
+  }
+  {% endif %}
+  /* padding-top verhindert, dass der Außenabstand von .inhalt durchschlägt und alles verschiebt */
+  .satz { position: relative; padding-top: 0.05mm; }
+
+  /* Kopf: Logo oder Firmenname */
+  /* Logo und Firmenname stehen nebeneinander: das Logo kommt dazu, es ersetzt den Namen nicht */
+  .kopf { position: absolute; top: -12mm; left: 0; right: 0; height: 36mm; display: flex; flex-direction: row; align-items: center; gap: 5mm; }
+  .kopf img { display: block; height: {{ logo_h }}mm; max-width: 70mm; object-fit: contain; flex: none; }
+  .wortmarke { font-size: 15pt; font-weight: 700; line-height: 1.15; }
+  .kopf small { display: block; font-size: 8pt; color: #666; font-weight: 400; margin-top: 1mm; }
+
+  /* DIN 5008 Form B: Anschriftfeld 45 mm von oben, 20 mm von links, 85 × 45 mm */
+  .anschrift { position: absolute; top: 25mm; left: -5mm; width: 85mm; height: 45mm; }
+  .ruecksende { font-size: 7pt; color: #666; border-bottom: 0.3pt solid #999; margin-bottom: 3mm; padding-bottom: 0.5mm; white-space: nowrap; }
+  .info { position: absolute; top: 25mm; right: 0; width: 70mm; font-size: 9pt; }
+  .info table { width: 100%; border-collapse: collapse; }
+  .info td { padding: 0.3mm 0; }
+  .info td:last-child { text-align: right; }
+  .inhalt { margin-top: 82mm; }
+  h1 { font-size: {{ d.schrift_titel }}pt; margin: 0 0 4mm; }
+  .text { white-space: pre-line; margin: 0 0 5mm; }
+  table.posten { width: 100%; border-collapse: collapse; margin: 2mm 0 0; }
+  .posten th { text-align: left; font-size: 8pt; color: #555; font-weight: 600; border-bottom: 0.6pt solid #222; padding: 1.5mm 1mm; }
+  .posten td { padding: 2mm 1mm; border-bottom: 0.3pt solid #ccc; vertical-align: top; }
+  .posten .zahl { text-align: right; white-space: nowrap; }
+  .posten .beschreibung { color: #555; font-size: 8.5pt; white-space: pre-line; }
+  .posten tr.freitext td { border-bottom: 0; font-weight: 600; padding-top: 3mm; }
+  .summe { display: flex; justify-content: flex-end; margin-top: 3mm; }
+  .summe table { border-collapse: collapse; min-width: 75mm; }
+  .summe td { padding: 1.5mm 1mm; }
+  .summe .gesamt td { font-weight: 700; font-size: 11pt; border-top: 0.6pt solid #222; border-bottom: 1.5pt double #222; {% if d.gesamt_grau %}background: #ececec;{% endif %} }
+  .summe td:last-child { text-align: right; }
+  .hinweis { margin-top: 6mm; }
+  .zahlung { display: flex; gap: 6mm; align-items: flex-start; margin-top: 6mm; page-break-inside: avoid; }
+  .qr { width: 30mm; text-align: center; font-size: 7pt; color: #555; }
+  .qr svg { width: 30mm; height: 30mm; display: block; }
+  .fuss { position: running(fuss); display: flex; gap: 8mm; font-size: 7.5pt; color: #666; border-top: 0.3pt solid #999; padding-top: 2mm; width: 165mm; }
+  .fuss div { flex: 1; }
+
+  /* Platz von Logo und Firmenname: Einstellung, sonst Standard des Layouts */
+  {% if d.logo_platz == "rechts" %}
+  .kopf { justify-content: flex-start; flex-direction: row-reverse; text-align: right; }
+  {% elif d.logo_platz == "mitte" %}
+  .kopf { justify-content: center; text-align: center; }
+  {% else %}
+  .kopf { justify-content: flex-start; }
+  {% endif %}
+
+  {% if d.layout == 1 %}
+  /* 1 Klassisch: schlichte Linien */
+  {% elif d.layout == 2 %}
+  /* 2 Modern: Logo links, Akzentfarbe für Titel und Tabellenlinie */
+  .wortmarke, h1 { color: {{ ak }}; }
+  .posten th { border-bottom: 1.5pt solid {{ ak }}; color: {{ ak }}; }
+  .summe .gesamt td { border-top-color: {{ ak }}; border-bottom-color: {{ ak }}; }
+  .fuss { border-top: 1.2pt solid {{ ak }}; }
+  {% elif d.layout == 3 %}
+  /* 3 Elegant: alles mittig, feine Linien */
+  h1 { text-align: center; border-top: 0.4pt solid {{ ak }}; border-bottom: 0.4pt solid {{ ak }}; padding: 2mm 0; font-weight: 400; letter-spacing: 0.04em; }
+  .wortmarke { font-weight: 400; letter-spacing: 0.08em; text-transform: uppercase; color: {{ ak }}; }
+  .posten th { border-top: 0.4pt solid {{ ak }}; border-bottom: 0.4pt solid {{ ak }}; text-transform: uppercase; letter-spacing: 0.05em; font-size: 7.5pt; }
+  .posten td { border-bottom: 0.2pt solid #ddd; }
+  .fuss { justify-content: center; text-align: center; border-top: 0.4pt solid {{ ak }}; }
+  {% elif d.layout == 4 %}
+  /* 4 Farbband: Band oben, gefüllter Tabellenkopf */
+  .band { position: absolute; top: {{ oy - 20 }}mm; left: {{ ox - 25 }}mm; width: 210mm; height: {{ band_h }}mm; background: {{ ak }}; }
+  .kopf { top: {{ -20 + (band_h - (logo_h if logo else 8)) / 2 }}mm; left: 0; right: 0; height: auto; }
+  .kopf img { background: #fff; padding: 1.5mm 2.5mm; border-radius: 1mm; height: {{ logo_h + 3 }}mm; box-sizing: border-box; }
+  .wortmarke, .wortmarke small { color: {{ d.akzent_text }}; }
+  h1 { color: {{ ak }}; }
+  .posten th { background: {{ ak }}; color: {{ d.akzent_text }}; border-bottom: 0; }
+  .summe .gesamt td { border-top-color: {{ ak }}; border-bottom-color: {{ ak }}; }
+  {% elif d.layout == 5 %}
+  /* 5 Seitenleiste: farbiger Streifen am linken Rand */
+  .leiste { position: {{ 'absolute' if vorschau else 'fixed' }}; top: {{ oy - 20 }}mm; left: {{ ox - 25 }}mm; width: 7mm; height: 297mm; background: {{ ak }}; }
+  .wortmarke, h1 { color: {{ ak }}; }
+  .posten th { background: {{ d.akzent_hell }}; color: #222; border-bottom: 1pt solid {{ ak }}; }
+  .summe .gesamt td { border-top-color: {{ ak }}; border-bottom-color: {{ ak }}; }
+  .fuss { border-top: 1pt solid {{ ak }}; }
+  {% endif %}
+
+  {% if vorschau %}
+  /* Bildschirmansicht der Vorschau: ein Blatt mit den Seitenrändern als Abstand */
+  html { background: #d9d9d9; }
+  .blatt { position: relative; width: 210mm; min-height: 297mm; margin: 6mm auto; padding: 20mm 20mm 32mm 25mm; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.25); overflow: hidden; }
+  .fuss { position: absolute; left: 25mm; bottom: 12mm; top: auto; }
+  {% endif %}
+</style>
+</head>
+<body>
+<div class="blatt">
+{% if d.layout == 4 %}<div class="band"></div>{% endif %}
+{% if d.layout == 5 %}<div class="leiste"></div>{% endif %}
+  {% if d.zeige_fusszeile %}
+  <div class="fuss">
+    <div>{{ a.name }}<br>{{ a.inhaber }}<br>{{ a.strasse }}<br>{{ a.plz }} {{ a.ort }}</div>
+    <div>{% if a.telefon %}Tel. {{ a.telefon }}<br>{% endif %}{{ a.email }}{% if d.zeige_steuer %}{% if a.steuernummer %}<br>Steuernummer {{ a.steuernummer }}{% endif %}{% if a.ust_idnr %}<br>USt-IdNr. {{ a.ust_idnr }}{% endif %}{% endif %}</div>
+    {% if d.zeige_bank %}<div>{% if iban %}{{ a.bank or "" }}<br>IBAN {{ iban }}{% if a.bic %}<br>BIC {{ a.bic }}{% endif %}{% endif %}</div>{% endif %}
+  </div>
+  {% endif %}
+<div class="satz">
+
+  <div class="kopf">
+    {% if logo %}<img src="{{ logo }}" alt="Logo">{% endif %}
+    {% if not logo or d.zeige_firmenname %}<div class="wortmarke">{{ a.name }}<small>{{ a.strasse }} · {{ a.plz }} {{ a.ort }}</small></div>{% endif %}
+  </div>
+
+  <div class="anschrift">
+    {% if d.zeige_absenderzeile %}<div class="ruecksende">{{ a.name }} · {{ a.strasse }} · {{ a.plz }} {{ a.ort }}</div>{% endif %}
+    {{ r.empfaenger_name or "" }}<br>
+    {% if r.empfaenger_zusatz %}{{ r.empfaenger_zusatz }}<br>{% endif %}
+    {{ r.empfaenger_strasse or "" }}<br>
+    {{ r.empfaenger_plz or "" }} {{ r.empfaenger_ort or "" }}
+    {% if r.empfaenger_land and r.empfaenger_land != "Deutschland" %}<br>{{ r.empfaenger_land | upper }}{% endif %}
+  </div>
+
+{% block info %}{% endblock %}
+
+{% block inhalt %}{% endblock %}
+</div>
+</div>
+</body>
+</html>

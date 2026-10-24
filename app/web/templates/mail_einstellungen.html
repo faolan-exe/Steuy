@@ -1,0 +1,39 @@
+{% extends "basis.html" %}
+{% from "formular.html" import feld %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}E-Mail – Einstellungen – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("einstellungen.email") }}
+<form method="post" novalidate>
+  {{ formular.csrf_token }}
+  <section class="karte">
+    <div class="karte-kopf"><h2>Postausgang (SMTP){{ hilfe("smtp") }}</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Damit steuy Rechnungen, Angebote und Mahnungen direkt verschicken kann. Die Daten findest du bei deinem E-Mail-Anbieter unter „SMTP“ oder „Postausgangsserver“. Antworten deiner Kunden gehen an {{ g_.email }}.</p>
+      {% if eingerichtet %}<p><span class="status status-an">eingerichtet</span></p>{% else %}<p><span class="status status-aus">noch nicht eingerichtet</span></p>{% endif %}
+      <div class="feldraster">
+        {{ feld(formular.smtp_server, klasse="breit", hinweis="z. B. smtp.ionos.de oder smtp.gmail.com") }}
+        {{ feld(formular.smtp_port, klasse="schmal") }}
+        {{ feld(formular.smtp_verschluesselung) }}
+        {{ feld(formular.mail_absender) }}
+        {{ feld(formular.smtp_benutzer, hinweis="Meist die E-Mail-Adresse selbst.") }}
+        {{ feld(formular.smtp_passwort, hinweis="Leer lassen, um das gespeicherte Passwort zu behalten." if g_.smtp_passwort else "Wird verschlüsselt gespeichert.") }}
+      </div>
+      {% if g_.smtp_passwort %}<label class="haken"><input type="checkbox" name="passwort_loeschen" value="y"> <span>Gespeichertes Passwort löschen</span></label>{% endif %}
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+  </div>
+</form>
+{% if eingerichtet %}
+<form method="post" action="{{ url_for('einstellungen.email_test') }}" class="formular-fuss">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="knopf">Test-Mail an {{ current_user.email }} senden</button>
+</form>
+{% endif %}
+{% endblock %}
