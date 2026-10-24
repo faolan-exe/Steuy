@@ -128,3 +128,11 @@ Beides läuft auch automatisch bei jedem Pull Request.
 - [`docs/architektur.md`](docs/architektur.md): Aufbau und Datenmodell
 - [`docs/domain/`](docs/domain/): Fachregeln (GoBD, EÜR, Zahlungen, Rollen, WooCommerce)
 - [`docs/adr/`](docs/adr/): getroffene Entscheidungen
+
+---
+
+<div align="center">
+
+Idee, Konzeptionierung und Umsetzung von [skyplayser](https://github.com/skyplayser).
+
+</div>
