@@ -67,7 +67,6 @@ def create_app(config: type[Config] = Config) -> Flask:
 
     registriere_fehlerseiten(app)
 
-
     @app.cli.command("erinnerungen")
     def erinnerungen():
         """Wöchentliche Zusammenfassung verschicken (für Cron oder den Zeitplan-Dienst)."""
