@@ -5,6 +5,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block titel %}steuy{% endblock %}</title>
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/steuy-signet.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <script src="{{ url_for('static', filename='js/htmx.min.js') }}" defer></script>
   <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
@@ -12,7 +13,7 @@
 </head>
 <body>
   <header class="leiste">
-    <a class="marke" href="{{ url_for('allgemein.start') }}"><span class="punkt"></span><span>steuy</span></a>
+    <a class="marke" href="{{ url_for('allgemein.start') }}"><img src="{{ url_for('static', filename='img/steuy-signet.svg') }}" alt="" width="26" height="26"><span>steuy</span></a>
     {% block navigation %}
     <nav class="hauptnavi" aria-label="Hauptnavigation">
       {% set bald = "kommt in einer späteren Version" %}

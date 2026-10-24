@@ -20,7 +20,7 @@ class Drucklayout(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     layout: Mapped[int] = mapped_column(Integer, server_default="1", default=1)
-    akzent: Mapped[str] = mapped_column(String(7), server_default="#2e7d4f", default="#2e7d4f")
+    akzent: Mapped[str] = mapped_column(String(7), server_default="#0f7c80", default="#0f7c80")
     schrift: Mapped[str] = mapped_column(String(20), server_default="sans", default="sans")
     schrift_text: Mapped[int] = mapped_column(Integer, server_default="10", default=10)
     schrift_titel: Mapped[int] = mapped_column(Integer, server_default="15", default=15)

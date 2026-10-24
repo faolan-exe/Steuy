@@ -1,27 +1,40 @@
 <div align="center">
 
-```text
-     _                    
- ___| |_ ___ _   _ _   _ 
-/ __| __/ _ \ | | | | | |
-\__ \ ||  __/ |_| | |_| |
-|___/\__\___|\__,_|\__, |
-                   |___/ 
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/bilder/steuy-logo-dunkel.svg">
+  <img src="docs/bilder/steuy-logo.svg" alt="steuy" width="260">
+</picture>
 
 **Einfache Buchhaltung für Kleinunternehmer. Kostenlos, selbst gehostet, deine Daten bleiben bei dir.**
 
-![Version](https://img.shields.io/badge/Version-0.5.0-2ea44f)
+![Version](https://img.shields.io/badge/Version-0.5.0-0f7c80)
 ![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-blue)
 ![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-bereit-2496ED?logo=docker&logoColor=white)
 
-[Installieren](#-installieren) · [Funktionen](#-funktionen) · [Entwickeln](#%EF%B8%8F-entwicklung-einrichten) · [Doku](#-doku) · [Sicherheit](SECURITY.md)
+[Live-Demo](https://steuy.philsit.de) · [Installieren](#-installieren) · [Funktionen](#-funktionen) · [Entwickeln](#%EF%B8%8F-entwicklung-einrichten) · [Doku](#-doku) · [Sicherheit](SECURITY.md)
 
 </div>
 
 ---
+
+## 🎮 Live-Demo
+
+**[steuy.philsit.de](https://steuy.philsit.de)** ausprobieren: ohne Anmeldung, mit einer erfundenen Musterfirma (Fotograf mit Rechnungen, Mahnungen, Belegen und Equipment-Vermietung). Ein Rundgang führt durch alle Funktionen. Alle Änderungen werden **alle 15 Minuten zurückgesetzt**, bitte keine echten Daten eingeben.
+
+## 🖼️ So sieht es aus
+
+| | |
+|---|---|
+| ![Dashboard](docs/bilder/dashboard.png) | ![Rechnung erstellen](docs/bilder/rechnung-erstellen.png) |
+| **Dashboard** mit offenen Posten, Jahresziel und Rechnungsstatus | **Rechnung erstellen** mit Kunden, Artikeln und QR-Code-Überweisung |
+| ![Rechnung als PDF im modernen Design](docs/bilder/rechnung-pdf-modern.png) | ![Rechnung mit Mahnungen](docs/bilder/rechnung-mahnung.png) |
+| **Rechnung als PDF** im Layout „Modern“ mit Logo | **Rechnung mit Mahnungen** und Zahlungsverlauf |
+| ![Zu prüfen](docs/bilder/zu-pruefen.png) | ![Einnahmen-Überschuss-Rechnung](docs/bilder/auswertung-euer.png) |
+| **Zu prüfen**: was noch zu tun ist | **EÜR** mit den Werten für die Anlage EÜR |
+| ![Angebote](docs/bilder/angebote.png) | ![Drucklayout](docs/bilder/drucklayout.png) |
+| **Angebote** und ihr Weg zur Rechnung | **Drucklayout** mit fünf Designs, Logo, Farben und Schrift |
 
 ## 🌱 Für Anfänger gemacht
 

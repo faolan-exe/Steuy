@@ -1,17 +1,17 @@
 /* steuy – Grundlayout und Bausteine. Farben nur über die Variablen. */
 
 :root {
-  --leiste: #383838;
-  --leiste-hover: #4a4a4a;
-  --leiste-text: #d9d9d9;
-  --hintergrund: #f2f2f2;
+  --leiste: #22333b;
+  --leiste-hover: #2f444d;
+  --leiste-text: #d5dfe2;
+  --hintergrund: #f2f5f6;
   --karte: #ffffff;
-  --text: #212121;
-  --text-leise: #6f6f6f;
-  --linie: #e3e3e3;
-  --gruen: #2e7d4f;
-  --gruen-dunkel: #246640;
-  --gruen-hell: #e8f3ec;
+  --text: #1d2529;
+  --text-leise: #66737a;
+  --linie: #dfe5e8;
+  --gruen: #0f7c80;
+  --gruen-dunkel: #0b6266;
+  --gruen-hell: #e3f2f2;
   --rot: #c62828;
   --rot-hell: #fdecec;
   --orange: #e8730c;
@@ -50,6 +50,7 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
   color: var(--leiste-text);
 }
 
+
 .marke {
   display: flex;
   align-items: center;
@@ -61,11 +62,10 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
   text-decoration: none;
 }
 
-.marke .punkt {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 50%;
-  background: var(--gruen);
+.marke img {
+  width: 1.6rem;
+  height: 1.6rem;
+  display: block;
 }
 
 .hauptnavi {
@@ -86,7 +86,7 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 }
 
 .hauptnavi a:hover { background: var(--leiste-hover); color: #fff; }
-.hauptnavi a.aktiv { background: #262626; color: #fff; }
+.hauptnavi a.aktiv { background: #182429; color: #fff; }
 .hauptnavi .bald { opacity: 0.4; cursor: default; }
 
 .leiste-rechts {
@@ -485,7 +485,7 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 
 /* ---------- Nutzermenü ---------- */
 
-a.leiste-knopf.aktiv { background: #262626; color: #fff; }
+a.leiste-knopf.aktiv { background: #182429; color: #fff; }
 
 .nutzermenue { position: relative; }
 .nutzermenue summary { list-style: none; }

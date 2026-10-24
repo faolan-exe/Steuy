@@ -34,7 +34,7 @@ LOGO_POSITIONEN = {
 # Standardplatz des Logos je Layout, wenn „Wie im Layout“ gewählt ist
 LOGO_STANDARD = {1: "rechts", 2: "links", 3: "mitte", 4: "links", 5: "links"}
 
-FARBVORSCHLAEGE = ("#2e7d4f", "#1f5fa8", "#b23a48", "#c9772b", "#5b4b8a", "#333333")
+FARBVORSCHLAEGE = ("#0f7c80", "#1f5fa8", "#b23a48", "#c9772b", "#5b4b8a", "#333333")
 FARBE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 LOGO_PROZENT = (30, 250)
@@ -49,7 +49,7 @@ class LayoutUngueltig(ValueError):
 @dataclass
 class Layout:
     layout: int = 1
-    akzent: str = "#2e7d4f"
+    akzent: str = "#0f7c80"
     schrift: str = "sans"
     schrift_text: int = 10
     schrift_titel: int = 15
@@ -110,7 +110,7 @@ def pruefe(werte: dict) -> Layout:
     layout = _zahl(werte.get("layout", standard.layout), (1, len(LAYOUTS)), "Layout")
     akzent = str(werte.get("akzent", standard.akzent)).strip().lower()
     if not FARBE.match(akzent):
-        raise LayoutUngueltig("Akzentfarbe: Bitte eine Farbe wie #2e7d4f wählen.")
+        raise LayoutUngueltig("Akzentfarbe: Bitte eine Farbe wie #0f7c80 wählen.")
     schrift = werte.get("schrift", standard.schrift)
     if schrift not in SCHRIFTEN:
         raise LayoutUngueltig("Schriftart: Bitte aus der Liste wählen.")
