@@ -10,7 +10,9 @@ Buchhaltung für Kleinunternehmer, kostenlos und auf dem eigenen Rechner.
 ![Version](https://img.shields.io/badge/Version-0.5.0-0f7c80)
 ![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555)
 
-[Live-Demo](https://steuy.philsit.de) · [Screenshots](#screenshots) · [Installieren](#installieren) · [Anleitung für Einsteiger](docs/thinclient.md) · [Dokumentation](#dokumentation)
+<a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/Live--Demo_ausprobieren-%E2%86%92-0f7c80?style=for-the-badge" alt="Live-Demo ausprobieren" height="44"></a>
+
+[Screenshots](#screenshots) · [Installieren](#installieren) · [Anleitung für Einsteiger](docs/thinclient.md) · [Dokumentation](#dokumentation)
 
 </div>
 
@@ -20,7 +22,26 @@ steuy richtet sich vor allem an Einsteiger. Ein Rundgang erklärt beim ersten St
 
 ## Live-Demo
 
-Unter [steuy.philsit.de](https://steuy.philsit.de) kannst du steuy ohne Anmeldung ausprobieren. Die Demo zeigt eine erfundene Musterfirma, einen Fotografen mit Rechnungen, Mahnungen, Belegen und Equipment-Vermietung. Alle Änderungen werden alle 15 Minuten zurückgesetzt, bitte gib dort keine echten Daten ein.
+<p align="center">
+  <a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/steuy.philsit.de-Jetzt_ohne_Anmeldung_ausprobieren-0f7c80?style=for-the-badge" alt="Live-Demo ohne Anmeldung ausprobieren" height="52"></a>
+</p>
+
+Die Demo zeigt eine erfundene Musterfirma, einen Fotografen mit Rechnungen, Mahnungen, Belegen und Equipment-Vermietung. Ein Rundgang startet von selbst. Alle Änderungen werden alle 15 Minuten zurückgesetzt, bitte gib dort keine echten Daten ein.
+
+## 🌱 Für Einsteiger gemacht
+
+Du hast noch nie eine Buchhaltung geführt? Genau dafür ist steuy gebaut. Diese Funktionen helfen dir dabei:
+
+- **Rundgang beim ersten Start.** steuy fragt nach deinen Vorkenntnissen (kompletter Anfänger, bereits mal gemacht, Experte) und zeigt dir passend dazu Schritt für Schritt, was wo ist und wofür du es brauchst. Du kannst ihn jederzeit im Profil neu starten.
+- **Erklärungen direkt am Feld.** Ein kleines Fragezeichen neben Feldern und Fachbegriffen wie EÜR, Zuflussprinzip, Kleinunternehmergrenze oder Festschreiben erklärt sie in einfachen Worten. Wer sie nicht braucht, schaltet sie ab.
+- **„Zu prüfen“ als Aufgabenliste.** Eine Seite sammelt alles, was noch zu tun ist: offene und überfällige Rechnungen, fällige Mahnungen, neue Belege, Entwürfe und unbezahlte Ausgaben.
+- **Prüfungen, bevor etwas schiefgeht.** Vor dem Festschreiben einer Rechnung prüft steuy die Pflichtangaben. Unplausible Eingaben wie ein Belegdatum weit in der Zukunft oder eine falsch aufgebaute Steuernummer werden angemerkt.
+- **Kleinunternehmerregelung im Blick.** Der Hinweis nach § 19 UStG steht automatisch auf jeder Rechnung, und das Dashboard zeigt, wie nah du an der Umsatzgrenze bist.
+- **Belege per Foto.** Die Texterkennung liest Betrag und Datum aus und schlägt sie vor, du bestätigst nur noch.
+- **Mahnungen ohne Nachdenken.** steuy sagt dir, wann eine Erinnerung fällig ist, und verschickt sie auf Wunsch automatisch.
+- **Wöchentliche Zusammenfassung** per E-Mail, damit nichts liegen bleibt.
+- **Updates und Sicherung per Klick**, ohne Kommandozeile.
+- **Installation ohne Vorkenntnisse** mit der [Schritt-für-Schritt-Anleitung](docs/thinclient.md) für einen kleinen Thin Client.
 
 ## Funktionen
 
