@@ -80,12 +80,29 @@ steuy ist **keine Steuerberatung**. Die Nutzung erfolgt **auf eigene Gefahr**.
 | ![Angebote](docs/bilder/angebote.png) | ![Drucklayout](docs/bilder/drucklayout.png) |
 | **Angebote** und ihr Weg zur Rechnung | **Drucklayout** mit fünf Designs, Logo, Farben und Schrift |
 
+## 💻 Mindestanforderungen
+
+steuy läuft auf jedem kleinen Linux-Rechner, der dauerhaft eingeschaltet bleibt: Mini-PC, gebrauchter Thin Client, Proxmox-Container oder Server.
+
+| | Minimum | Empfohlen |
+|---|---|---|
+| **Prozessor** | 1 Kern, 64 Bit (x86_64) | 2 bis 4 Kerne |
+| **Arbeitsspeicher** | 1 GB | 2 GB oder mehr |
+| **Speicherplatz** | 10 GB | 20 GB oder mehr (SSD), dazu Platz für Sicherungen |
+| **Betriebssystem** | Debian 12 oder Ubuntu 24.04 | Debian 13 oder Ubuntu 24.04/26.04 |
+| **Netzwerk** | LAN, feste IP-Adresse im Heimnetz | dazu ein zweites Gerät für Sicherungen |
+
+Im Betrieb brauchen App und Datenbank zusammen etwa 400 bis 700 MB Arbeitsspeicher. Am meisten Rechenleistung kosten das Erzeugen von PDFs und die Texterkennung für Belegfotos (abschaltbar).
+
+**Beispiele:** Ein gebrauchter **Dell Wyse 5070** (4 Kerne, 4 bis 8 GB RAM, SSD) ist ideal und sparsam. Ein **Wyse 3040** geht auch, ist aber knapp: Nur 2 GB RAM und 8 oder 16 GB fest verbauter Speicher, Sicherungen müssen auf ein externes Laufwerk. Schritt-für-Schritt-Anleitung für einen Thin Client: [docs/thinclient.md](docs/thinclient.md).
+
 ## 🚀 Installieren
 
 Du brauchst einen eigenen kleinen Server oder Rechner, auf dem steuy dauerhaft läuft. Drei Wege, vom einfachsten zum aufwendigsten:
 
 | Weg | Für wen | Anleitung |
 |---|---|---|
+| **Thin Client oder Mini-PC** | Du hast keinen Server und fängst bei null an. Mit Schritt-für-Schritt-Anleitung ohne Vorkenntnisse. | [docs/thinclient.md](docs/thinclient.md) |
 | **Proxmox-Container (LXC)** | Du hast schon einen Proxmox-Server, z. B. im Heimnetz. Container anlegen, ein Befehl, fertig. | [docs/lxc.md](docs/lxc.md) |
 | **Docker** | Du hast einen Linux-Server oder -Rechner mit Docker. | unten, Details in [docs/betrieb.md](docs/betrieb.md) |
 | **Ohne Docker** | Du möchtest Python, PostgreSQL und Co. selbst verwalten. | [docs/betrieb.md](docs/betrieb.md), Abschnitt „Ohne Docker“ |
@@ -137,6 +154,7 @@ Beides läuft auch automatisch bei jedem Pull Request.
 ## 📚 Doku
 
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): Regeln für die Mitarbeit (harte Regeln, Stack, Git)
+- [`docs/thinclient.md`](docs/thinclient.md): Installation auf einem Thin Client ohne Vorkenntnisse
 - [`docs/ziel.md`](docs/ziel.md): Umfang und offene Fragen
 - [`docs/architektur.md`](docs/architektur.md): Aufbau und Datenmodell
 - [`docs/domain/`](docs/domain/): Fachregeln (GoBD, EÜR, Zahlungen, Rollen, WooCommerce)
