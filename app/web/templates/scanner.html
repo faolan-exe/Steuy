@@ -1,0 +1,97 @@
+{% extends "basis.html" %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% block titel %}Scanner – Einstellungen – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Einstellungen</h1>
+</div>
+{{ reiter("einstellungen.scanner") }}
+<section class="karte">
+  <div class="karte-kopf"><h2>Scan-Eingang</h2></div>
+  <div class="karte-inhalt">
+    <p class="hinweis">Dein Scanner speichert Belege auf diesem Rechner, steuy übernimmt sie automatisch (etwa alle 30 Sekunden). Du scannst den Beleg, und er erscheint ohne Hochladen unter <a href="{{ url_for('belege.liste') }}">Belege</a> und in „Zu prüfen“. Texterkennung und Vorschläge für Betrag und Datum gibt es wie beim normalen Hochladen.</p>
+    <p>
+      {% if aktiv %}<span class="status status-an">eingeschaltet</span>{% else %}<span class="status status-aus">ausgeschaltet</span>{% endif %}
+    </p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="haken"><input type="checkbox" name="aktiv" value="y" {% if aktiv %}checked{% endif %}> <span>Scan-Eingang einschalten</span></label>
+      <label class="haken"><input type="checkbox" name="freigabe" value="y" {% if g_.scan_freigabe %}checked{% endif %}> <span>Netzwerkfreigabe für den Scanner einrichten (empfohlen)</span></label>
+      <label class="haken"><input type="checkbox" name="kompatibel" value="y" {% if g_.scan_kompatibel %}checked{% endif %}> <span>Auch ältere Scanner zulassen (SMB1, nur wenn der Scanner sich sonst nicht verbindet)</span></label>
+      <div class="formular-fuss"><button type="submit" class="knopf knopf-primaer">Speichern</button></div>
+    </form>
+  </div>
+</section>
+
+{% if aktiv and s.freigabe_an %}
+<section class="karte">
+  <div class="karte-kopf"><h2>Diese Angaben trägst du im Scanner ein</h2></div>
+  <div class="karte-inhalt">
+    <table class="tabelle">
+      <tbody>
+        <tr><th scope="row">Rechner (Host)</th><td><code>{{ rechner }}</code> <span class="hinweis">Adresse, unter der du steuy gerade aufgerufen hast. Bei einem Namen besser die IP-Adresse des Rechners nehmen.</span></td></tr>
+        <tr><th scope="row">Freigabename</th><td><code>scan</code> (Netzwerkpfad <code>\\{{ rechner }}\scan</code>)</td></tr>
+        <tr><th scope="row">Benutzername</th><td><code>scanner</code></td></tr>
+        <tr><th scope="row">Passwort</th><td><code>{{ s.passwort }}</code></td></tr>
+        <tr><th scope="row">Freigabe</th><td>{% if s.freigabe_laeuft %}<span class="status status-an">läuft</span>{% else %}<span class="status status-aus">startet gerade oder nicht erreichbar</span> <span class="hinweis">Nach dem Speichern dauert es einige Sekunden.</span>{% endif %}</td></tr>
+      </tbody>
+    </table>
+    <form method="post" action="{{ url_for('einstellungen.scanner_passwort') }}" class="formular-fuss" data-bestaetigen="Neues Passwort erzeugen? Das alte gilt danach nicht mehr, der Scanner braucht das neue." data-bestaetigen-knopf="Erneuern">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="knopf">Neues Passwort erzeugen</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+{% if aktiv %}
+<section class="karte">
+  <div class="karte-kopf"><h2>Stand</h2></div>
+  <div class="karte-inhalt">
+    <table class="tabelle">
+      <tbody>
+        <tr><th scope="row">Ordner im Programm</th><td><code>{{ s.ordner }}</code>{% if not s.vorhanden %} <span class="status status-aus">fehlt</span>{% elif not s.beschreibbar %} <span class="status status-aus">nicht beschreibbar</span>{% endif %}</td></tr>
+        <tr><th scope="row">Letzte Prüfung</th><td>{% if s.letzter_lauf %}{{ s.letzter_lauf | datum_zeit }}{% else %}noch nie{% endif %}</td></tr>
+        <tr><th scope="row">Wartende Dateien</th><td>{{ s.wartend }}</td></tr>
+      </tbody>
+    </table>
+    <form method="post" action="{{ url_for('einstellungen.scanner_pruefen') }}" class="formular-fuss">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="knopf">Jetzt prüfen</button>
+    </form>
+  </div>
+</section>
+
+<section class="karte">
+  <div class="karte-kopf"><h2>Zuletzt übernommen</h2></div>
+  <div class="karte-inhalt">
+    {% if s.letzte %}
+    <ul class="liste-schlicht">
+      {% for p in s.letzte %}
+      <li>
+        {{ p.zeitpunkt | datum_zeit }}:
+        {% if p.aktion == "scan_import" %}<strong>{{ p.details.datei }}</strong> als Beleg übernommen{% if p.objekt_id %} (<a href="{{ url_for('belege.liste') }}">zu den Belegen</a>){% endif %}
+        {% elif p.aktion == "scan_doppelt" %}<strong>{{ p.details.datei }}</strong> war schon vorhanden
+        {% else %}<strong>{{ p.details.datei }}</strong> nicht lesbar: {{ p.details.grund }}{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}<p class="hinweis">Noch nichts übernommen.</p>{% endif %}
+  </div>
+</section>
+{% endif %}
+
+<section class="karte">
+  <div class="karte-kopf"><h2>Scanner einrichten</h2></div>
+  <div class="karte-inhalt">
+    <p>Die ausführliche Anleitung für den Brother ADS-1800W steht in <code>docs/scanner.md</code>. Kurz:</p>
+    <ol>
+      <li>Hier den Scan-Eingang <strong>einschalten</strong> und speichern. Die Angaben für den Scanner erscheinen darunter.</li>
+      <li>In der Weboberfläche des Scanners (seine IP-Adresse im Browser öffnen) unter <em>Scannen → Scannen auf FTP/SFTP/Netzwerk/SharePoint</em> ein Netzwerk-Profil anlegen und die Angaben eintragen, Dateityp <strong>PDF</strong>.</li>
+      <li>Das Profil am Scanner auf eine Taste legen. Beleg einlegen, Taste drücken, fertig.</li>
+    </ol>
+    <p class="hinweis">Mehrseitige Belege als <strong>eine PDF-Datei</strong> scannen, sonst entsteht pro Seite ein eigener Beleg. Verarbeitete Dateien liegen 30 Tage im Unterordner <code>verarbeitet/</code>, doppelte in <code>doppelt/</code>, unlesbare in <code>fehler/</code>. Der Beleg selbst ist in steuy gespeichert.</p>
+  </div>
+</section>
+{% endblock %}

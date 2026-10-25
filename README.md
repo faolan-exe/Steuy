@@ -7,7 +7,7 @@
 
 Buchhaltung für Kleinunternehmer, kostenlos und auf dem eigenen Rechner.
 
-![Version](https://img.shields.io/badge/Version-0.5.0-0f7c80)
+![Version](https://img.shields.io/badge/Version-0.6.0-0f7c80)
 ![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555)
 
 <a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/Live--Demo_ausprobieren-%E2%86%92-0f7c80?style=for-the-badge" alt="Live-Demo ausprobieren" height="44"></a>
@@ -37,7 +37,7 @@ Du hast noch nie eine Buchhaltung geführt? Genau dafür ist steuy gebaut. Diese
 - **„Zu prüfen“ als Aufgabenliste.** Eine Seite sammelt alles, was noch zu tun ist: offene und überfällige Rechnungen, fällige Mahnungen, neue Belege, Entwürfe und unbezahlte Ausgaben.
 - **Prüfungen, bevor etwas schiefgeht.** Vor dem Festschreiben einer Rechnung prüft steuy die Pflichtangaben. Unplausible Eingaben wie ein Belegdatum weit in der Zukunft oder eine falsch aufgebaute Steuernummer werden angemerkt.
 - **Kleinunternehmerregelung im Blick.** Der Hinweis nach § 19 UStG steht automatisch auf jeder Rechnung, und das Dashboard zeigt, wie nah du an der Umsatzgrenze bist.
-- **Belege per Foto.** Die Texterkennung liest Betrag und Datum aus und schlägt sie vor, du bestätigst nur noch.
+- **Belege per Foto oder Scanner.** Die Texterkennung liest Betrag und Datum aus und schlägt sie vor, du bestätigst nur noch. Mit dem Scan-Eingang landen Scans vom Scanner direkt in steuy.
 - **Mahnungen ohne Nachdenken.** steuy sagt dir, wann eine Erinnerung fällig ist, und verschickt sie auf Wunsch automatisch.
 - **Wöchentliche Zusammenfassung** per E-Mail, damit nichts liegen bleibt.
 - **Updates und Sicherung per Klick**, ohne Kommandozeile.
@@ -50,6 +50,7 @@ Du hast noch nie eine Buchhaltung geführt? Genau dafür ist steuy gebaut. Diese
 - **Drucklayout** mit fünf Vorlagen, eigenem Logo, Farben und Schrift, mit Vorschau beim Bearbeiten.
 - **Zahlungen und Mahnwesen:** Zahlungseingänge und Teilzahlungen erfassen, offene Posten sehen, Mahnungen von Hand oder automatisch verschicken.
 - **Belege und Ausgaben:** Belege hochladen oder fotografieren, die Texterkennung schlägt Betrag und Datum vor. Jede Datei wird mit Prüfsumme gespeichert und nie überschrieben.
+- **Scan-Eingang:** Dein Scanner (z. B. Brother ADS-1800W) speichert über eine eingebaute Netzwerkfreigabe direkt in steuy, die Scans werden automatisch zu Belegen. In den Einstellungen mit einem Haken ein- und ausschaltbar, siehe [docs/scanner.md](docs/scanner.md).
 - **EÜR und Dashboard:** Auswertung nach Zahlungsdatum (Zuflussprinzip), Jahresübersicht, Jahresziel und die Werte für die Anlage EÜR. Dazu Anlagegüter mit Abschreibung.
 - **Umzug von Lexware:** Import aus dem DATEV-Archiv und aus CSV-Zahlungslisten.
 - **WooCommerce:** Bestellungen aus dem eigenen Shop übernehmen.
@@ -154,6 +155,7 @@ Beides läuft auch in der CI.
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): Regeln für die Mitarbeit
 - [docs/thinclient.md](docs/thinclient.md): Installation für Einsteiger auf einem Thin Client
+- [docs/scanner.md](docs/scanner.md): Scanner anbinden (Brother ADS-1800W)
 - [docs/betrieb.md](docs/betrieb.md): Betrieb, Sicherung und Wiederherstellung
 - [docs/ziel.md](docs/ziel.md): Umfang und offene Fragen
 - [docs/architektur.md](docs/architektur.md): Aufbau und Datenmodell

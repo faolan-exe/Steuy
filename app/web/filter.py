@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 from flask import Flask
 
@@ -11,6 +11,10 @@ def datum(wert: date | None) -> str:
     return wert.strftime("%d.%m.%Y") if wert else ""
 
 
+def datum_zeit(wert: datetime | None) -> str:
+    return wert.strftime("%d.%m.%Y %H:%M") if wert else ""
+
+
 def prozent(basispunkte: int) -> str:
     """1250 → „12,5“."""
     ganz, rest = divmod(basispunkte, 100)
@@ -20,6 +24,7 @@ def prozent(basispunkte: int) -> str:
 def registriere_filter(app: Flask) -> None:
     app.add_template_filter(cent_zu_euro, "euro")
     app.add_template_filter(datum, "datum")
+    app.add_template_filter(datum_zeit, "datum_zeit")
     app.add_template_filter(menge_als_text, "menge")
     app.add_template_filter(prozent, "prozent")
     app.add_template_filter(lambda art: ZAHLUNGSARTEN.get(art, art), "zahlungsart")

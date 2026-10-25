@@ -17,6 +17,8 @@ services:
       UPDATE_REPO: ${UPDATE_REPO:-faolan-exe/Steuy}
       UPDATE_TOKEN: ${UPDATE_TOKEN:-}
       UPDATE_VERZEICHNIS: /daten/update
+      SCAN_VERZEICHNIS: /daten/scan-eingang
+      FREIGABE_VERZEICHNIS: /daten/freigabe
     ports:
       # Nur lokal erreichbar. Von außen per Reverse Proxy mit HTTPS (docs/betrieb.md).
       - "127.0.0.1:${PORT:-8000}:8000"
@@ -24,6 +26,9 @@ services:
       - ablage:/daten/ablage
       # Anfrage und Stand des Updates (nur im LXC-Setup beschreibbar, siehe docs/lxc.md)
       - ./update:/daten/update
+      # Scan-Eingang: Hierhin speichert der Scanner, und die Steuerung der Freigabe (docs/scanner.md)
+      - scan:/daten/scan-eingang
+      - freigabe:/daten/freigabe
     depends_on:
       db:
         condition: service_healthy
@@ -43,10 +48,34 @@ services:
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY in der .env setzen}
       DATABASE_URL: postgresql+psycopg://steuy:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD in der .env setzen}@db:5432/steuy
       BASIS_URL: ${BASIS_URL:-}
-    command: ["sh", "-c", "while true; do flask shop-abruf || true; flask mahnlauf || true; flask erinnerungen || true; sleep 3600; done"]
+      SCAN_VERZEICHNIS: /daten/scan-eingang
+      FREIGABE_VERZEICHNIS: /daten/freigabe
+      TEXTERKENNUNG: ${TEXTERKENNUNG:-1}
+    volumes:
+      - ablage:/daten/ablage
+      - scan:/daten/scan-eingang
+      - freigabe:/daten/freigabe
+    # Scan-Eingang im Hintergrund (alle 30 s), stündlich Shop-Abruf, Mahnlauf und Erinnerungen
+    command: ["sh", "-c", "(while true; do flask scan-dienst || true; sleep 10; done) & while true; do flask shop-abruf || true; flask mahnlauf || true; flask erinnerungen || true; sleep 3600; done"]
     depends_on:
       app:
         condition: service_healthy
+
+  scanfreigabe:
+    # Netzwerkfreigabe für den Scanner (Samba). Bleibt aus, bis sie in steuy unter
+    # Einstellungen → Scanner eingeschaltet wird. Port ändern mit SCAN_PORT in der .env.
+    build: docker/samba
+    image: steuy-samba:lokal
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 30s
+      start_period: 5s
+    ports:
+      - "${SCAN_PORT:-445}:445"
+    volumes:
+      - scan:/scan
+      - freigabe:/freigabe
 
   db:
     image: postgres:17
@@ -66,3 +95,5 @@ services:
 volumes:
   ablage:
   pgdaten:
+  scan:
+  freigabe:

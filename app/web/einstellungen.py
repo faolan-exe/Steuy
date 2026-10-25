@@ -35,6 +35,7 @@ from app.domain.rollen import (
 from app.extensions import db
 from app.models import Mahnstufe, Nutzer
 from app.services import drucklayout as layoutdienst
+from app.services import scaneingang
 from app.services.drucklayout_vorschau import vorschau_html
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.firmendaten import aendere_firmendaten
@@ -347,6 +348,57 @@ def email_test():
     else:
         flash(f"Test-Mail an {current_user.email} verschickt. Bitte im Postfach prüfen.")
     return redirect(url_for("einstellungen.email"))
+
+
+@bp.route("/scanner", methods=["GET", "POST"])
+@braucht_recht(Recht.EINSTELLUNGEN)
+def scanner():
+    if request.method == "POST":
+        an = request.form.get("aktiv") == "y"
+        try:
+            scaneingang.setze_aktiv(
+                an,
+                current_user.id,
+                freigabe=request.form.get("freigabe") == "y",
+                kompatibel=request.form.get("kompatibel") == "y",
+            )
+        except OSError:
+            db.session.rollback()
+            flash("Der Ordner für den Scan-Eingang konnte nicht angelegt werden.")
+        else:
+            flash("Scan-Eingang eingeschaltet." if an else "Scan-Eingang ausgeschaltet.")
+        return redirect(url_for("einstellungen.scanner"))
+    return render_template(
+        "scanner.html",
+        s=scaneingang.status(),
+        g_=aktuelles_gewerbe(),
+        aktiv=scaneingang.ist_aktiv(),
+        rechner=request.host.rsplit(":", 1)[0] if ":" in request.host else request.host,
+    )
+
+
+@bp.post("/scanner/passwort")
+@braucht_recht(Recht.EINSTELLUNGEN)
+def scanner_passwort():
+    if not scaneingang.ist_aktiv():
+        flash("Bitte zuerst den Scan-Eingang einschalten.")
+    else:
+        scaneingang.erneuere_passwort(current_user.id)
+        flash("Neues Passwort erzeugt. Bitte im Scanner eintragen.")
+    return redirect(url_for("einstellungen.scanner"))
+
+
+@bp.post("/scanner/pruefen")
+@braucht_recht(Recht.EINSTELLUNGEN)
+def scanner_pruefen():
+    if not scaneingang.ist_aktiv():
+        flash("Bitte zuerst den Scan-Eingang einschalten.")
+    else:
+        ergebnis = scaneingang.pruefe_ordner(ruhezeit=3)
+        flash(ergebnis.text())
+        for name, grund in ergebnis.fehler:
+            flash(f"{name}: {grund}")
+    return redirect(url_for("einstellungen.scanner"))
 
 
 @bp.post("/mahnwesen/automatik")

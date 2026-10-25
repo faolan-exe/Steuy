@@ -67,6 +67,20 @@ def create_app(config: type[Config] = Config) -> Flask:
 
     registriere_fehlerseiten(app)
 
+    @app.cli.command("scan-abruf")
+    def scan_abruf():
+        """Einmal nach neuen Scans im Scan-Eingang sehen (siehe docs/scanner.md)."""
+        from app.services.scaneingang import pruefe_ordner
+
+        print(pruefe_ordner().text())
+
+    @app.cli.command("scan-dienst")
+    def scan_dienst():
+        """Dauerlauf: alle 30 Sekunden den Scan-Eingang prüfen (Zeitplan-Container)."""
+        from app.services.scaneingang import dienst
+
+        dienst()
+
     @app.cli.command("erinnerungen")
     def erinnerungen():
         """Wöchentliche Zusammenfassung verschicken (für Cron oder den Zeitplan-Dienst)."""

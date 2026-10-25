@@ -30,7 +30,7 @@ COPY migrations ./migrations
 COPY scripts/docker-start.sh ./scripts/docker-start.sh
 
 RUN useradd --create-home --uid 1000 steuy \
-    && mkdir -p /daten/ablage \
+    && mkdir -p /daten/ablage /daten/scan-eingang /daten/freigabe \
     && chown -R steuy:steuy /daten
 USER steuy
 

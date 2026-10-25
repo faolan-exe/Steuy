@@ -24,6 +24,11 @@ class Config:
     MAX_CONTENT_LENGTH = 100 * 1024 * 1024  # mehrere Belege à max. 20 MB auf einmal
     # Texterkennung für Fotos und Scans (braucht Tesseract), mit TEXTERKENNUNG=0 abschalten
     TEXTERKENNUNG = os.environ.get("TEXTERKENNUNG", "1") != "0"
+    # Ordner, in den der Scanner speichert (Scan-Eingang). Im Docker-Betrieb /daten/scan-eingang.
+    SCAN_VERZEICHNIS = os.environ.get("SCAN_VERZEICHNIS", "instance/scan-eingang")
+    # Steuerdatei für die Samba-Freigabe und deren Adresse im Docker-Netz (Anzeige "läuft")
+    FREIGABE_VERZEICHNIS = os.environ.get("FREIGABE_VERZEICHNIS", "instance/freigabe")
+    SCAN_FREIGABE_HOST = os.environ.get("SCAN_FREIGABE_HOST", "scanfreigabe")
     # Öffentliche Adresse, z. B. https://buchhaltung.example.de, für Links in E-Mails
     BASIS_URL = os.environ.get("BASIS_URL", "")
 

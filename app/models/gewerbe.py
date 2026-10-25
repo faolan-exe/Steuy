@@ -10,6 +10,7 @@ from sqlalchemy import (
     Text,
     false,
     func,
+    true,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -82,6 +83,13 @@ class Gewerbe(db.Model):
     smtp_benutzer: Mapped[str | None] = mapped_column(String(200))
     smtp_passwort: Mapped[str | None] = mapped_column(Text)
     mail_absender: Mapped[str | None] = mapped_column(String(254))
+    # Scan-Eingang: Belege aus einem Ordner übernehmen, in den der Scanner speichert
+    scan_aktiv: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
+    scan_letzter_lauf: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Netzwerkfreigabe (Samba-Container) für den Scanner, Passwort verschlüsselt
+    scan_freigabe: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
+    scan_kompatibel: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
+    scan_passwort: Mapped[str | None] = mapped_column(Text)
     # WooCommerce (docs/domain/woocommerce.md). Schlüssel verschlüsselt.
     shop_url: Mapped[str | None] = mapped_column(String(300))
     shop_schluessel: Mapped[str | None] = mapped_column(Text)
