@@ -13,7 +13,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-336791?logo=postgresql&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-bereit-2496ED?logo=docker&logoColor=white)
 
-[Live-Demo](https://steuy.philsit.de) · [Screenshots](#%EF%B8%8F-so-sieht-es-aus) · [Installieren](#-installieren) · [Funktionen](#-funktionen) · [Entwickeln](#%EF%B8%8F-entwicklung-einrichten) · [Doku](#-doku) · [Sicherheit](SECURITY.md)
+[Live-Demo](https://steuy.philsit.de) · [Screenshots](#%EF%B8%8F-so-sieht-es-aus) · [Anforderungen](#-mindestanforderungen) · [Installieren](#-installieren) · [**Anleitung für Anfänger**](docs/thinclient.md) · [Funktionen](#-funktionen) · [Entwickeln](#%EF%B8%8F-entwicklung-einrichten) · [Doku](#-doku) · [Sicherheit](SECURITY.md)
 
 </div>
 
@@ -29,6 +29,7 @@ steuy ist **besonders für Einsteiger geeignet**: ein komplettes Programm, das d
 
 - 🏠 **Alle Daten bleiben bei dir.** steuy läuft auf deinem eigenen Server. Deine Buchhaltung wird nirgendwohin hochgeladen, es gibt keine Cloud und kein Konto bei uns.
 - 💸 **Kostenlos** und quelloffen.
+- 📘 **Schritt für Schritt installieren:** Die [Anleitung für Anfänger](docs/thinclient.md) führt ohne Vorkenntnisse vom leeren Gerät zum laufenden steuy.
 - 🧩 **Alles in einem:** von der ersten Rechnung bis zu den Werten für deine Steuererklärung.
 
 ## ✨ Funktionen
@@ -97,6 +98,8 @@ Im Betrieb brauchen App und Datenbank zusammen etwa 400 bis 700 MB Arbeitsspeich
 **Beispiele:** Ein gebrauchter **Dell Wyse 5070** (4 Kerne, 4 bis 8 GB RAM, SSD) ist ideal und sparsam. Ein **Wyse 3040** geht auch, ist aber knapp: Nur 2 GB RAM und 8 oder 16 GB fest verbauter Speicher, Sicherungen müssen auf ein externes Laufwerk. Schritt-für-Schritt-Anleitung für einen Thin Client: [docs/thinclient.md](docs/thinclient.md).
 
 ## 🚀 Installieren
+
+> 📘 **Neu bei Linux und Servern?** Folge der [Schritt-für-Schritt-Anleitung für Anfänger](docs/thinclient.md): vom leeren Thin Client oder Mini-PC bis zum laufenden steuy, ohne Vorkenntnisse.
 
 Du brauchst einen eigenen kleinen Server oder Rechner, auf dem steuy dauerhaft läuft. Drei Wege, vom einfachsten zum aufwendigsten:
 
