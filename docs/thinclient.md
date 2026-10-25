@@ -8,7 +8,7 @@ Diese Anleitung bringt steuy auf einen kleinen, gebrauchten Rechner, zum Beispie
 
 | Was | Hinweis |
 |---|---|
-| **Thin Client oder Mini-PC** | Empfohlen: Wyse 5070 mit mindestens 4 GB RAM und einer SSD ab 32 GB. Ein Wyse 3040 geht auch, ist aber knapp (siehe [Mindestanforderungen](../README.md#-mindestanforderungen)). |
+| **Thin Client oder Mini-PC** | Empfohlen: Wyse 5070 mit mindestens 4 GB RAM und einer SSD ab 32 GB. Ein Wyse 3040 geht auch, ist aber knapp (siehe [Mindestanforderungen](../README.md#mindestanforderungen)). |
 | **USB-Stick** | mindestens 4 GB. Wird dabei komplett gelöscht. |
 | **Bildschirm, Tastatur** | nur für die Installation, danach nicht mehr. Der Wyse hat DisplayPort, ggf. einen Adapter auf HDMI nehmen. |
 | **Netzwerkkabel** | Der Thin Client hängt per Kabel an deinem Router oder Switch. |
