@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>steuy – selbst gehostete Buchhaltung für Kleinunternehmer</title>
+<meta name="description" content="Kostenlose, selbst gehostete Buchhaltungssoftware für Kleingewerbe nach § 19 UStG: Rechnungen, Angebote, Mahnungen, Belege und EÜR. Quelloffen, ohne Cloud.">
+<meta name="keywords" content="Buchhaltungssoftware Kleinunternehmer, Rechnungsprogramm kostenlos, Buchhaltung selbst hosten, Kleingewerbe Buchhaltung, EÜR Software, Rechnungswesen, self-hosted Buchhaltung, quelloffen">
+<link rel="canonical" href="https://faolan-exe.github.io/Steuy/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#0f7c80">
+<link rel="icon" type="image/svg+xml" href="img/steuy-signet.svg">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="de_DE">
+<meta property="og:site_name" content="steuy">
+<meta property="og:title" content="steuy – selbst gehostete Buchhaltung für Kleinunternehmer">
+<meta property="og:description" content="Kostenlose Buchhaltungssoftware für Kleingewerbe: Rechnungen, Angebote, Mahnungen, Belege und EÜR. Auf dem eigenen Rechner, ohne Cloud, quelloffen.">
+<meta property="og:url" content="https://faolan-exe.github.io/Steuy/">
+<meta property="og:image" content="https://faolan-exe.github.io/Steuy/img/og-bild.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="steuy Dashboard mit offenen Rechnungen und Jahresziel">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="steuy – selbst gehostete Buchhaltung für Kleinunternehmer">
+<meta name="twitter:description" content="Kostenlose Buchhaltungssoftware für Kleingewerbe: Rechnungen, Angebote, Mahnungen, Belege und EÜR. Auf dem eigenen Rechner, ohne Cloud.">
+<meta name="twitter:image" content="https://faolan-exe.github.io/Steuy/img/og-bild.png">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "SoftwareApplication", "name": "steuy", "alternateName": ["steuy Buchhaltung", "steuy Rechnungsprogramm"], "description": "Kostenlose, selbst gehostete Buchhaltungssoftware für Kleinunternehmer und Kleingewerbe nach § 19 UStG mit Rechnungen, Angeboten, Mahnwesen, Belegverwaltung und Einnahmen-Überschuss-Rechnung (EÜR).", "applicationCategory": "FinanceApplication", "applicationSubCategory": "Buchhaltungssoftware, Rechnungsprogramm", "operatingSystem": "Linux, Docker", "inLanguage": "de", "url": "https://faolan-exe.github.io/Steuy/", "downloadUrl": "https://github.com/faolan-exe/Steuy", "softwareVersion": "0.6.0", "codeRepository": "https://github.com/faolan-exe/Steuy", "license": "https://polyformproject.org/licenses/shield/1.0.0", "isAccessibleForFree": true, "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"}, "screenshot": "https://faolan-exe.github.io/Steuy/img/dashboard.png", "image": "https://faolan-exe.github.io/Steuy/img/og-bild.png", "featureList": ["Rechnungen, Angebote und Lieferscheine schreiben", "Mahnwesen mit Zahlungserinnerung und Mahnstufen", "Belege hochladen oder vom Scanner einlesen", "Einnahmen-Überschuss-Rechnung (EÜR) mit Werten für die Anlage EÜR", "Selbst gehostet, Daten bleiben auf dem eigenen Rechner", "Umzug von Lexware (DATEV-Archiv und CSV)"], "author": {"@type": "Person", "name": "Philipp Spruck", "url": "https://github.com/skyplayser"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "inLanguage": "de", "mainEntity": [{"@type": "Question", "name": "Was ist steuy?", "acceptedAnswer": {"@type": "Answer", "text": "steuy ist eine kostenlose, selbst gehostete Buchhaltungssoftware für Kleinunternehmer und Kleingewerbe nach § 19 UStG. Du schreibst Angebote, Rechnungen und Lieferscheine, verwaltest Belege und Zahlungen, mahnst offene Rechnungen und bekommst am Jahresende die Werte für die Anlage EÜR. Die Software läuft auf deinem eigenen Rechner, deine Daten verlassen ihn nicht."}}, {"@type": "Question", "name": "Für wen ist steuy gedacht?", "acceptedAnswer": {"@type": "Answer", "text": "Für Kleinunternehmer, Kleingewerbetreibende, Freiberufler und Selbstständige, die die Kleinunternehmerregelung (§ 19 UStG) nutzen und ihren Gewinn per Einnahmen-Überschuss-Rechnung (EÜR) ermitteln, zum Beispiel Fotografen, Handwerker, Berater, Designer, Entwickler und kleine Online-Shops."}}, {"@type": "Question", "name": "Was kostet steuy?", "acceptedAnswer": {"@type": "Answer", "text": "Nichts. steuy ist kostenlos und ohne Abo. Du brauchst nur einen kleinen Rechner, auf dem es dauerhaft läuft, zum Beispiel einen gebrauchten Thin Client oder Mini-PC."}}, {"@type": "Question", "name": "Ist steuy Open Source?", "acceptedAnswer": {"@type": "Answer", "text": "steuy ist quelloffen (Source-available): Du kannst den Quellcode lesen, ändern und im eigenen Gewerbe nutzen. Die Lizenz ist die PolyForm Shield License 1.0.0. Sie verbietet nur, steuy oder eine Abwandlung als konkurrierendes Produkt oder Dienst anzubieten. Eine Open-Source-Lizenz im Sinne der OSI ist das deshalb nicht."}}, {"@type": "Question", "name": "Was heißt selbst gehostet?", "acceptedAnswer": {"@type": "Answer", "text": "steuy läuft auf einem Rechner, den du selbst betreibst, zum Beispiel zu Hause im Heimnetz. Es gibt keine Cloud, kein Kundenkonto bei uns und keine Weitergabe deiner Buchhaltungsdaten. Du bist selbst für Betrieb und Sicherung verantwortlich, dafür gehören die Daten dir."}}, {"@type": "Question", "name": "Brauche ich Linux-Kenntnisse?", "acceptedAnswer": {"@type": "Answer", "text": "Nein. Eine Schritt-für-Schritt-Anleitung führt vom leeren Thin Client oder Mini-PC bis zum laufenden steuy. Wer schon einen Proxmox- oder Docker-Server hat, installiert mit einem Befehl."}}, {"@type": "Question", "name": "Kann ich von Lexware zu steuy umziehen?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. steuy importiert das DATEV-Archiv und die CSV-Zahlungslisten aus Lexware, prüft die Daten und legt sie als Entwürfe an."}}, {"@type": "Question", "name": "Ist steuy GoBD-konform?", "acceptedAnswer": {"@type": "Answer", "text": "steuy setzt die technischen Anforderungen der GoBD an Unveränderbarkeit und Nachvollziehbarkeit um: Festgeschriebene Buchungen und Rechnungen lassen sich nicht ändern oder löschen, Belege werden mit Prüfsumme abgelegt, jede Änderung wird protokolliert. Eine Zertifizierung gibt es nicht, die Verantwortung für die ordnungsgemäße Buchführung bleibt bei dir."}}, {"@type": "Question", "name": "Kann ich mit einem Scanner direkt Belege erfassen?", "acceptedAnswer": {"@type": "Answer", "text": "Ja. Der Scan-Eingang nimmt Scans deines Scanners (zum Beispiel Brother ADS-1800W) über eine eingebaute Netzwerkfreigabe entgegen und legt sie mit Texterkennung als Belege an. Einschalten geht in den Einstellungen mit einem Haken."}}, {"@type": "Question", "name": "Kann ich steuy ausprobieren?", "acceptedAnswer": {"@type": "Answer", "text": "Ja, in der Live-Demo unter steuy.philsit.de. Sie läuft ohne Anmeldung mit einer erfundenen Musterfirma und wird alle 15 Minuten zurückgesetzt."}}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebSite", "name": "steuy", "url": "https://faolan-exe.github.io/Steuy/", "inLanguage": "de"}</script>
+<style>
+:root{--petrol:#0f7c80;--dunkel:#0b6266;--hell:#e3f2f2;--nacht:#22333b;--text:#1d2529;--leise:#66737a;--linie:#dfe5e8;--bg:#f2f5f6}
+@media (prefers-color-scheme:dark){:root{--text:#e6edef;--leise:#9fb0b6;--linie:#2f444d;--bg:#141d21;--hell:#1b3a3c;--nacht:#0f171a}}
+*{box-sizing:border-box}
+body{margin:0;font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--text);background:var(--bg)}
+a{color:var(--petrol)} @media (prefers-color-scheme:dark){a{color:#5fc4c8}}
+.breit{max-width:1080px;margin:0 auto;padding:0 20px}
+header.kopf{background:var(--nacht);color:#fff}
+header.kopf .breit{display:flex;align-items:center;gap:20px;min-height:60px;flex-wrap:wrap}
+header.kopf a{color:#d5dfe2;text-decoration:none}
+.marke{display:flex;align-items:center;gap:10px;font-weight:700;color:#fff!important;margin-right:auto}
+.marke img{width:30px;height:30px}
+.hero{background:linear-gradient(160deg,var(--nacht),var(--dunkel));color:#fff;padding:64px 0 72px}
+.hero h1{font-size:clamp(1.9rem,4.5vw,3rem);line-height:1.15;margin:0 0 16px}
+.hero p{font-size:1.2rem;max-width:46rem;color:#d5e8e9;margin:0 0 28px}
+.knoepfe{display:flex;gap:14px;flex-wrap:wrap}
+.knopf{display:inline-block;padding:14px 26px;border-radius:6px;font-weight:700;text-decoration:none;font-size:1.05rem}
+.knopf.haupt{background:#fff;color:var(--dunkel)}
+.knopf.zweit{border:2px solid #fff;color:#fff}
+section{padding:56px 0}
+section:nth-of-type(even){background:var(--hell)}
+h2{font-size:1.8rem;line-height:1.25;margin:0 0 20px}
+h3{margin:0 0 6px;font-size:1.15rem}
+.raster{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px}
+.karte{background:#fff;color:#1d2529;border:1px solid var(--linie);border-radius:8px;padding:20px}
+@media (prefers-color-scheme:dark){.karte{background:#1b2a2f;color:#e6edef}}
+.karte p{margin:0;color:var(--leise)}
+.bilder{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+.bilder figure{margin:0}
+.bilder img{width:100%;height:auto;border:1px solid var(--linie);border-radius:8px;background:#fff}
+figcaption{font-size:.9rem;color:var(--leise);margin-top:6px}
+details{background:#fff;color:#1d2529;border:1px solid var(--linie);border-radius:8px;padding:14px 18px;margin-bottom:10px}
+@media (prefers-color-scheme:dark){details{background:#1b2a2f;color:#e6edef}}
+summary{cursor:pointer;font-weight:700}
+details p{margin:10px 0 0}
+ul.haken{padding-left:1.2rem} ul.haken li{margin-bottom:6px}
+code{background:var(--hell);padding:2px 6px;border-radius:4px;font-size:.92em}
+footer{background:var(--nacht);color:#b8c6ca;padding:32px 0;font-size:.95rem}
+footer a{color:#d5dfe2}
+.hinweis{font-size:.95rem;color:var(--leise)}
+</style>
+</head>
+<body>
+<header class="kopf"><div class="breit">
+<a class="marke" href="https://faolan-exe.github.io/Steuy/"><img src="img/steuy-signet.svg" alt="" width="30" height="30"> steuy</a>
+<a href="#funktionen">Funktionen</a><a href="#installieren">Installieren</a><a href="#faq">Fragen</a>
+<a href="https://steuy.philsit.de">Live-Demo</a><a href="https://github.com/faolan-exe/Steuy">GitHub</a>
+</div></header>
+
+<main>
+<div class="hero"><div class="breit">
+<h1>Selbst gehostete Buchhaltungssoftware für Kleinunternehmer</h1>
+<p>steuy ist ein kostenloses Rechnungsprogramm und Buchhaltungssystem für Kleingewerbe nach § 19 UStG. Rechnungen, Angebote, Mahnungen, Belege und Einnahmen-Überschuss-Rechnung (EÜR) in einer Software, die auf deinem eigenen Rechner läuft. Quelloffen, ohne Cloud und ohne Abo.</p>
+<div class="knoepfe">
+<a class="knopf haupt" href="https://steuy.philsit.de">Live-Demo ausprobieren</a>
+<a class="knopf zweit" href="https://github.com/faolan-exe/Steuy/blob/main/docs/thinclient.md">Anleitung für Einsteiger</a>
+<a class="knopf zweit" href="https://github.com/faolan-exe/Steuy">Quellcode auf GitHub</a>
+</div></div></div>
+
+<section id="vorteile"><div class="breit">
+<h2>Buchhaltung für das Kleingewerbe, die dir gehört</h2>
+<div class="raster">
+<div class="karte"><h3>Selbst gehostet statt Cloud</h3><p>steuy läuft auf deinem Thin Client, Mini-PC oder Server. Deine Buchhaltungsdaten bleiben bei dir, es gibt keine Weitergabe und kein Kundenkonto.</p></div>
+<div class="karte"><h3>Kostenlos und quelloffen</h3><p>Keine Lizenzgebühr, kein Abo. Den Quellcode kannst du lesen, prüfen und für dein Gewerbe anpassen.</p></div>
+<div class="karte"><h3>Für Einsteiger gemacht</h3><p>Ein Rundgang erklärt jede Funktion, Hilfetexte an den Feldern erklären Begriffe wie EÜR und Zuflussprinzip in einfachen Worten.</p></div>
+<div class="karte"><h3>Kleinunternehmerregelung eingebaut</h3><p>Der Hinweis nach § 19 UStG steht automatisch auf jeder Rechnung, das Dashboard zeigt die Umsatzgrenzen im Blick.</p></div>
+</div></div></section>
+
+<section id="funktionen"><div class="breit">
+<h2>Funktionen: Rechnungswesen für Selbstständige</h2>
+<div class="raster">
+<div class="karte"><h3>Rechnungen und Angebote</h3><p>Rechnungen, Angebote, Lieferscheine und Korrekturen mit PDF/A, E-Mail-Versand und QR-Code für die Überweisung. Eigenes Drucklayout mit Logo.</p></div>
+<div class="karte"><h3>Zahlungen und Mahnwesen</h3><p>Zahlungseingänge und Teilzahlungen erfassen, offene Posten im Blick, Zahlungserinnerung und Mahnstufen von Hand oder automatisch.</p></div>
+<div class="karte"><h3>Belege und Scanner</h3><p>Belege hochladen oder direkt vom Scanner einlesen. Die Texterkennung schlägt Betrag, Datum und Lieferant vor.</p></div>
+<div class="karte"><h3>EÜR und Dashboard</h3><p>Einnahmen-Überschuss-Rechnung nach Zuflussprinzip, Jahresübersicht, Jahresziel und die Werte für die Anlage EÜR.</p></div>
+<div class="karte"><h3>Umzug von Lexware</h3><p>Import aus dem DATEV-Archiv und aus CSV-Zahlungslisten, geprüft und als Entwürfe angelegt.</p></div>
+<div class="karte"><h3>Sicher und nachvollziehbar</h3><p>Festgeschriebene Buchungen sind unveränderlich (GoBD), Rollen und Rechte, Zwei-Faktor-Anmeldung, Protokoll aller Änderungen.</p></div>
+</div></div></section>
+
+<section id="bilder"><div class="breit">
+<h2>So sieht steuy aus</h2>
+<div class="bilder">
+<figure><img src="img/dashboard.png" alt="steuy Dashboard mit offenen Rechnungen, Jahresziel und Rechnungsstatus" width="1920" height="1200" loading="lazy"><figcaption>Dashboard mit offenen Posten und Jahresziel</figcaption></figure>
+<figure><img src="img/rechnung-erstellen.png" alt="Rechnung erstellen in steuy mit Kunde, Positionen und QR-Code-Überweisung" width="1920" height="2661" loading="lazy"><figcaption>Rechnung erstellen</figcaption></figure>
+<figure><img src="img/rechnung-pdf-modern.png" alt="Rechnung als PDF im Layout Modern mit Logo und QR-Code" width="935" height="1323" loading="lazy"><figcaption>Rechnung als PDF im Layout „Modern“</figcaption></figure>
+<figure><img src="img/zu-pruefen.png" alt="Zu prüfen: Aufgabenliste mit offenen Rechnungen und neuen Belegen" width="1920" height="1200" loading="lazy"><figcaption>„Zu prüfen“: was noch zu erledigen ist</figcaption></figure>
+</div></div></section>
+
+<section id="installieren"><div class="breit">
+<h2>Buchhaltung selbst hosten: so installierst du steuy</h2>
+<p>steuy läuft auf jedem kleinen Linux-Rechner (64 Bit, ab 1 GB RAM), der dauerhaft eingeschaltet bleibt, zum Beispiel einem gebrauchten Dell Wyse 5070.</p>
+<ul class="haken">
+<li><strong>Thin Client oder Mini-PC, ohne Vorkenntnisse:</strong> <a href="https://github.com/faolan-exe/Steuy/blob/main/docs/thinclient.md">Schritt-für-Schritt-Anleitung</a></li>
+<li><strong>Proxmox-Container:</strong> <a href="https://github.com/faolan-exe/Steuy/blob/main/docs/lxc.md">ein Befehl, fertig</a></li>
+<li><strong>Docker:</strong> <code>git clone https://github.com/faolan-exe/Steuy.git</code>, dann <code>docker compose up -d --build</code> (Details in der <a href="https://github.com/faolan-exe/Steuy#installieren">Anleitung</a>)</li>
+</ul>
+<p class="hinweis">Mindestanforderungen und Hardware-Beispiele: <a href="https://github.com/faolan-exe/Steuy#mindestanforderungen">README</a>.</p>
+</div></section>
+
+<section id="faq"><div class="breit">
+<h2>Häufige Fragen zu steuy</h2>
+<details><summary>Was ist steuy?</summary><p>steuy ist eine kostenlose, selbst gehostete Buchhaltungssoftware für Kleinunternehmer und Kleingewerbe nach § 19 UStG. Du schreibst Angebote, Rechnungen und Lieferscheine, verwaltest Belege und Zahlungen, mahnst offene Rechnungen und bekommst am Jahresende die Werte für die Anlage EÜR. Die Software läuft auf deinem eigenen Rechner, deine Daten verlassen ihn nicht.</p></details>
+<details><summary>Für wen ist steuy gedacht?</summary><p>Für Kleinunternehmer, Kleingewerbetreibende, Freiberufler und Selbstständige, die die Kleinunternehmerregelung (§ 19 UStG) nutzen und ihren Gewinn per Einnahmen-Überschuss-Rechnung (EÜR) ermitteln, zum Beispiel Fotografen, Handwerker, Berater, Designer, Entwickler und kleine Online-Shops.</p></details>
+<details><summary>Was kostet steuy?</summary><p>Nichts. steuy ist kostenlos und ohne Abo. Du brauchst nur einen kleinen Rechner, auf dem es dauerhaft läuft, zum Beispiel einen gebrauchten Thin Client oder Mini-PC.</p></details>
+<details><summary>Ist steuy Open Source?</summary><p>steuy ist quelloffen (Source-available): Du kannst den Quellcode lesen, ändern und im eigenen Gewerbe nutzen. Die Lizenz ist die PolyForm Shield License 1.0.0. Sie verbietet nur, steuy oder eine Abwandlung als konkurrierendes Produkt oder Dienst anzubieten. Eine Open-Source-Lizenz im Sinne der OSI ist das deshalb nicht.</p></details>
+<details><summary>Was heißt selbst gehostet?</summary><p>steuy läuft auf einem Rechner, den du selbst betreibst, zum Beispiel zu Hause im Heimnetz. Es gibt keine Cloud, kein Kundenkonto bei uns und keine Weitergabe deiner Buchhaltungsdaten. Du bist selbst für Betrieb und Sicherung verantwortlich, dafür gehören die Daten dir.</p></details>
+<details><summary>Brauche ich Linux-Kenntnisse?</summary><p>Nein. Eine Schritt-für-Schritt-Anleitung führt vom leeren Thin Client oder Mini-PC bis zum laufenden steuy. Wer schon einen Proxmox- oder Docker-Server hat, installiert mit einem Befehl.</p></details>
+<details><summary>Kann ich von Lexware zu steuy umziehen?</summary><p>Ja. steuy importiert das DATEV-Archiv und die CSV-Zahlungslisten aus Lexware, prüft die Daten und legt sie als Entwürfe an.</p></details>
+<details><summary>Ist steuy GoBD-konform?</summary><p>steuy setzt die technischen Anforderungen der GoBD an Unveränderbarkeit und Nachvollziehbarkeit um: Festgeschriebene Buchungen und Rechnungen lassen sich nicht ändern oder löschen, Belege werden mit Prüfsumme abgelegt, jede Änderung wird protokolliert. Eine Zertifizierung gibt es nicht, die Verantwortung für die ordnungsgemäße Buchführung bleibt bei dir.</p></details>
+<details><summary>Kann ich mit einem Scanner direkt Belege erfassen?</summary><p>Ja. Der Scan-Eingang nimmt Scans deines Scanners (zum Beispiel Brother ADS-1800W) über eine eingebaute Netzwerkfreigabe entgegen und legt sie mit Texterkennung als Belege an. Einschalten geht in den Einstellungen mit einem Haken.</p></details>
+<details><summary>Kann ich steuy ausprobieren?</summary><p>Ja, in der Live-Demo unter steuy.philsit.de. Sie läuft ohne Anmeldung mit einer erfundenen Musterfirma und wird alle 15 Minuten zurückgesetzt.</p></details>
+<p><a href="https://github.com/faolan-exe/Steuy/blob/main/docs/faq.md">Alle Fragen und Antworten auf GitHub</a></p>
+</div></section>
+
+<section id="english"><div class="breit" lang="en">
+<h2>steuy in English</h2>
+<p>steuy is a free, self-hosted accounting and invoicing application for small businesses and sole proprietors in Germany who use the small-business scheme (<em>Kleinunternehmerregelung</em>, § 19 UStG) and report profit by simple cash-basis accounting (<em>EÜR</em>). Write quotes, invoices and delivery notes, track payments and dunning, manage receipts (including direct scan-to-folder from a network scanner) and get the figures for the annual tax form. It runs on your own hardware, for example a small thin client, your data never leaves your server. The source code is available under the PolyForm Shield License 1.0.0 (source-available, not OSI open source). The user interface is in German. <a href="https://github.com/faolan-exe/Steuy">View on GitHub</a>.</p>
+</div></section>
+</main>
+
+<footer><div class="breit">
+steuy · Idee und Konzeption: <a href="https://github.com/skyplayser">skyplayser</a> · Lizenz: <a href="https://github.com/faolan-exe/Steuy/blob/main/LICENSE">PolyForm Shield 1.0.0</a> ·
+<a href="impressum.html">Impressum</a> · <a href="datenschutz.html">Datenschutz</a><br>
+steuy ist keine Steuerberatung. Die Nutzung erfolgt auf eigene Gefahr.
+</div></footer>
+</body>
+</html>

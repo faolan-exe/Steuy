@@ -1,4 +1,4 @@
-# steuy auf einem Thin Client installieren (ohne Vorkenntnisse)
+# Buchhaltung selbst hosten: steuy auf einem Thin Client installieren (ohne Vorkenntnisse)
 
 Diese Anleitung bringt steuy auf einen kleinen, gebrauchten Rechner, zum Beispiel einen **Dell Wyse 5070**. Du brauchst keine Linux-Kenntnisse: Jeder Schritt sagt, was du klickst oder tippst. Rechne mit etwa einer Stunde.
 

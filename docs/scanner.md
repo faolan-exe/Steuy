@@ -1,4 +1,4 @@
-# Scanner anbinden: Belege direkt vom Scanner übernehmen
+# Scanner anbinden: Belege per Scan-to-Folder direkt in die Buchhaltung übernehmen
 
 Mit dem **Scan-Eingang** speichert dein Scanner Belege direkt auf dem Rechner, auf dem steuy läuft. steuy übernimmt sie dort etwa alle 30 Sekunden als Belege, mit Texterkennung und Vorschlägen für Betrag und Datum, genau wie beim Hochladen im Browser. Du legst den Beleg ein, drückst die Taste am Scanner, und er erscheint in steuy unter **Belege** und in **Zu prüfen**.
 

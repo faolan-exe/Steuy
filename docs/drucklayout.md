@@ -1,4 +1,4 @@
-# Drucklayout
+# Drucklayout: Rechnungen mit eigenem Logo und Design gestalten
 
 *Einstellungen → Drucklayout* bestimmt, wie Rechnungen, Angebote, Lieferscheine, Rechnungskorrekturen und Mahnungen aussehen. Alle Belege teilen sich dasselbe Layout, damit sie einen gleichen, persönlichen Auftritt haben.
 

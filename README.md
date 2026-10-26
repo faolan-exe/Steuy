@@ -5,20 +5,24 @@
   <img src="docs/bilder/steuy-logo.svg" alt="steuy" width="240">
 </picture>
 
-Buchhaltung für Kleinunternehmer, kostenlos und auf dem eigenen Rechner.
+<h1>steuy: selbst gehostete Buchhaltungssoftware für Kleinunternehmer</h1>
+
+Kostenloses Rechnungsprogramm und Rechnungswesen für das Kleingewerbe, quelloffen und auf dem eigenen Rechner.
 
 ![Version](https://img.shields.io/badge/Version-0.6.0-0f7c80)
 ![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555)
 
 <a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/Live--Demo_ausprobieren-%E2%86%92-0f7c80?style=for-the-badge" alt="Live-Demo ausprobieren" height="44"></a>
 
-[Screenshots](#screenshots) · [Installieren](#installieren) · [Anleitung für Einsteiger](docs/thinclient.md) · [Dokumentation](#dokumentation)
+[Website](https://faolan-exe.github.io/Steuy/) · [Screenshots](#screenshots) · [Installieren](#installieren) · [Anleitung für Einsteiger](docs/thinclient.md) · [Häufige Fragen](docs/faq.md) · [Dokumentation](#dokumentation)
 
 </div>
 
-steuy ist eine Buchhaltung für Kleinunternehmer nach § 19 UStG, die ihren Gewinn per Einnahmen-Überschuss-Rechnung (EÜR) ermitteln. Du schreibst Angebote und Rechnungen, legst Belege ab, behältst Zahlungen und Mahnungen im Blick und bekommst am Jahresende die Werte für die Anlage EÜR.
+steuy ist eine **Buchhaltungssoftware für Kleinunternehmer und Kleingewerbe** nach § 19 UStG, die ihren Gewinn per **Einnahmen-Überschuss-Rechnung (EÜR)** ermitteln. Du schreibst Angebote und Rechnungen, legst Belege ab, behältst Zahlungen und Mahnungen im Blick und bekommst am Jahresende die Werte für die Anlage EÜR. Das Rechnungswesen für Selbstständige, Freiberufler und kleine Online-Shops, ohne Abo und ohne Cloud.
 
-steuy richtet sich vor allem an Einsteiger. Ein Rundgang erklärt beim ersten Start alle Bereiche, und Hilfetexte an den Feldern sagen, was wo hingehört. Die Software läuft auf deinem eigenen Rechner, zum Beispiel einem kleinen Thin Client im Heimnetz. Deine Daten verlassen ihn nicht: Es gibt keine Cloud und kein Konto bei uns.
+steuy ist **selbst gehostet**: Die Software läuft auf deinem eigenen Rechner, zum Beispiel einem kleinen Thin Client im Heimnetz. Deine Buchhaltungsdaten verlassen ihn nicht, es gibt kein Konto bei uns. Der Quellcode ist offen einsehbar (quelloffen, [PolyForm Shield](LICENSE)), die Nutzung im eigenen Gewerbe ist kostenlos.
+
+steuy richtet sich vor allem an Einsteiger. Ein Rundgang erklärt beim ersten Start alle Bereiche, und Hilfetexte an den Feldern sagen, was wo hingehört. Wer von Lexware kommt, importiert seine Daten aus dem DATEV-Archiv und den Zahlungslisten.
 
 ## Live-Demo
 
@@ -154,6 +158,7 @@ Beides läuft auch in der CI.
 ## Dokumentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): Regeln für die Mitarbeit
+- [docs/faq.md](docs/faq.md): Häufige Fragen und Antworten
 - [docs/thinclient.md](docs/thinclient.md): Installation für Einsteiger auf einem Thin Client
 - [docs/scanner.md](docs/scanner.md): Scanner anbinden (Brother ADS-1800W)
 - [docs/betrieb.md](docs/betrieb.md): Betrieb, Sicherung und Wiederherstellung
@@ -161,6 +166,9 @@ Beides läuft auch in der CI.
 - [docs/architektur.md](docs/architektur.md): Aufbau und Datenmodell
 - [docs/domain/](docs/domain/): Fachregeln (GoBD, EÜR, Zahlungen, Rollen, WooCommerce)
 - [docs/adr/](docs/adr/): getroffene Entscheidungen
+## In English
+
+steuy is a free, self-hosted accounting and invoicing application for small businesses and sole proprietors in Germany who use the small-business scheme (*Kleinunternehmerregelung*, § 19 UStG) and report their profit by cash-basis accounting (*EÜR*). It covers quotes, invoices and delivery notes, payment tracking and dunning, receipt management (including scan-to-folder from a network scanner) and the figures for the annual tax form. It runs on your own hardware, for example a small thin client, and your data never leaves your server. The source code is available under the PolyForm Shield License 1.0.0 (source-available, not OSI open source). The user interface and documentation are in German. See the [live demo](https://steuy.philsit.de).
 
 ---
 

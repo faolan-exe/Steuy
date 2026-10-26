@@ -1,4 +1,4 @@
-# Von Lexware Office nach steuy umziehen
+# Von Lexware nach steuy umziehen: Buchhaltungsdaten importieren
 
 Diese Anleitung sagt, welche Dateien du in Lexware exportierst und was steuy daraus macht. Alles läuft in deiner eigenen Installation. Die Exporte enthalten Geschäftsdaten: Lade sie nur dort hoch, nie in ein öffentliches Forum oder Issue.
 

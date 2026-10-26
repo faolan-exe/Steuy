@@ -1,4 +1,4 @@
-# steuy in einem LXC-Container installieren (Proxmox)
+# Buchhaltungssoftware selbst hosten: steuy in einem Proxmox-LXC-Container installieren
 
 In drei Schritten: Container anlegen, **einen Befehl** eingeben, die angezeigte Adresse im Browser öffnen. Das Skript richtet alles andere ein (Docker, steuy, Webserver, Zugangsdaten).
 

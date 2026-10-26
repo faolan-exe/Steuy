@@ -3,7 +3,15 @@ name = "steuy"
 license = "LicenseRef-PolyForm-Shield-1.0.0"
 license-files = ["LICENSE"]
 version = "0.6.0"
-description = "Einfache Buchhaltung (EÜR) für Kleinunternehmer nach § 19 UStG"
+description = "Selbst gehostete Buchhaltungssoftware und Rechnungsprogramm für Kleinunternehmer und Kleingewerbe (§ 19 UStG, EÜR)"
+keywords = ["buchhaltung", "kleinunternehmer", "kleingewerbe", "rechnungsprogramm", "rechnungswesen", "eür", "self-hosted", "accounting", "invoicing", "flask"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Framework :: Flask",
+    "Natural Language :: German",
+    "Topic :: Office/Business :: Financial :: Accounting",
+]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -27,6 +35,13 @@ dependencies = [
     "cryptography>=50.0.2",
     "gunicorn>=23.0",
 ]
+
+[project.urls]
+Homepage = "https://faolan-exe.github.io/Steuy/"
+Demo = "https://steuy.philsit.de"
+Source = "https://github.com/faolan-exe/Steuy"
+Documentation = "https://github.com/faolan-exe/Steuy/blob/main/docs/faq.md"
+Issues = "https://github.com/faolan-exe/Steuy/issues"
 
 [dependency-groups]
 dev = [

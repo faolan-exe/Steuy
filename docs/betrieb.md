@@ -1,4 +1,4 @@
-# Betrieb: Installation, Sicherung und Wiederherstellung
+# Betrieb von steuy: Installation mit Docker, Sicherung und Wiederherstellung
 
 Datenbank und Ablage (`ABLAGE_VERZEICHNIS`, Rechnungs-PDFs und Belege) gehören zusammen. Sie werden immer gemeinsam gesichert und gemeinsam wiederhergestellt, sonst passen Buchungen und Dateien nicht zusammen.
 
