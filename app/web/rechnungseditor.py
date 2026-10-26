@@ -14,8 +14,9 @@ from app.domain.rechnung import (
     menge_zu_tausendstel,
     rabatt_zu_basispunkten,
 )
-from app.models import LEISTUNG_ARTEN, Rechnung
-from app.services.rechnungen import Kopfdaten, Positionsdaten
+from app.extensions import db
+from app.models import LEISTUNG_ARTEN, Artikel
+from app.services.rechnungen import Kopfdaten, Positionsdaten, position_aus_artikel
 
 _POSITION = re.compile(r"^pos-(\d+)-typ$")
 
@@ -116,7 +117,31 @@ def lies_formular(formular: MultiDict) -> Eingabe:
     return eingabe
 
 
-def roh_aus_rechnung(rechnung: Rechnung) -> list[dict]:
+def wende_positionsaktion(
+    aktion: str, positionen: list[Positionsdaten], formular: MultiDict
+) -> list[Positionsdaten]:
+    """Knöpfe unter den Positionen: Artikel, freie Position, Freitext hinzufügen oder entfernen."""
+    if aktion == "artikel":
+        # Eine leere Position (z. B. die erste im neuen Entwurf) wird durch den Artikel ersetzt.
+        positionen = [
+            p for p in positionen if p.typ == "text" or p.bezeichnung or p.einzelpreis_cent
+        ]
+        artikel_id = formular.get("neuer_artikel", "")
+        artikel = db.session.get(Artikel, int(artikel_id)) if artikel_id.isdigit() else None
+        if artikel:
+            positionen.append(position_aus_artikel(artikel))
+    elif aktion == "position":
+        positionen.append(Positionsdaten(typ="artikel", bezeichnung=""))
+    elif aktion == "freitext":
+        positionen.append(Positionsdaten(typ="text", bezeichnung=""))
+    elif aktion.startswith("entfernen-"):
+        index = aktion.removeprefix("entfernen-")
+        if index.isdigit() and int(index) < len(positionen):
+            positionen.pop(int(index))
+    return positionen
+
+
+def roh_aus_rechnung(rechnung) -> list[dict]:
     """Positionen als Formularwerte für die Anzeige."""
     zeilen = []
     for p in rechnung.positionen:

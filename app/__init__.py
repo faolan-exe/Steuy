@@ -38,6 +38,7 @@ def create_app(config: type[Config] = Config) -> Flask:
         rechnungen,
         rundgang,
         shop,
+        wiederkehrend,
     )
     from app.web.filter import registriere_filter
     from app.web.zugang import registriere_zugang
@@ -57,6 +58,7 @@ def create_app(config: type[Config] = Config) -> Flask:
     app.register_blueprint(importieren.bp)
     app.register_blueprint(anlagen.bp)
     app.register_blueprint(rundgang.bp)
+    app.register_blueprint(wiederkehrend.bp)
     registriere_filter(app)
 
     from app.web.hilfe import registriere as registriere_hilfe
@@ -67,6 +69,16 @@ def create_app(config: type[Config] = Config) -> Flask:
     from app.web.fehler import registriere as registriere_fehlerseiten
 
     registriere_fehlerseiten(app)
+
+    @app.cli.command("wiederkehrend-lauf")
+    def wiederkehrend_lauf():
+        """Fällige wiederkehrende Rechnungen erzeugen (Zeitplan-Dienst, stündlich)."""
+        from app.services.wiederkehrend import fuehre_aus
+
+        lauf = fuehre_aus()
+        print(lauf.text())
+        for name, hinweis in lauf.probleme:
+            print(f"Hinweis zu {name}: {hinweis}")
 
     @app.cli.command("export-pruefen")
     @click.argument("archiv", type=click.Path(exists=True, dir_okay=False))

@@ -266,6 +266,9 @@ class KontaktFormular(FlaskForm):
         description="kontakt",
     )
     telefon = StringField("Telefon", [Optional(), Length(max=50)], description="kontakt")
+    leitweg_id = StringField(
+        "Leitweg-ID (nur bei Behörden)", [Optional(), Length(max=46)], description="kontakt"
+    )
     steuernummer = StringField("Steuernummer", [Optional(), Length(max=30)], description="kontakt")
     ust_idnr = StringField(
         "USt-IdNr.", [Optional(), pruefe_ust_idnr], filters=OHNE_LEERZEICHEN, description="kontakt"
@@ -359,6 +362,7 @@ class RechnungseinstellungenFormular(FlaskForm):
     )
     rechnung_einleitung = TextAreaField("Einleitungstext", [Optional()])
     rechnung_nachbemerkung = TextAreaField("Nachbemerkung", [Optional()])
+    e_rechnung = BooleanField("E-Rechnung zu jeder Rechnung erzeugen (ZUGFeRD)")
 
 
 class ZahlungFormular(FlaskForm):

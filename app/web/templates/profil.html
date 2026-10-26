@@ -30,6 +30,38 @@
   </div>
 </section>
 
+<section class="karte abstand-oben" id="passkeys">
+  <div class="karte-kopf"><h2>Passkeys</h2></div>
+  <div class="karte-inhalt">
+    <p class="hinweis">Mit einem Passkey meldest du dich per Fingerabdruck, Gesicht oder Geräte-PIN an, ohne Passwort und ohne Code. Der Schlüssel bleibt in deinem Gerät oder Passwortmanager.</p>
+    {% if passkeys %}
+    <table class="tabelle">
+      <thead><tr><th>Name</th><th>Eingerichtet</th><th>Zuletzt benutzt</th><th></th></tr></thead>
+      <tbody>
+      {% for p in passkeys %}
+      <tr>
+        <td>{{ p.name }}{% if p.gesichert %} <span class="hinweis">(synchronisiert)</span>{% endif %}</td>
+        <td>{{ p.erstellt_am | datum }}</td>
+        <td>{{ p.zuletzt_benutzt_am | datum if p.zuletzt_benutzt_am else "noch nie" }}</td>
+        <td><form method="post" action="{{ url_for('profil.passkey_loeschen', passkey_id=p.id) }}" data-bestaetigen="Diesen Passkey wirklich entfernen?" data-bestaetigen-knopf="Entfernen"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text gefahr" type="submit">Entfernen</button></form></td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% if passkey_ok %}
+    <div class="passwortaktion">
+      <input class="feld" id="passkey-name" type="text" maxlength="80" placeholder="Name, z. B. Handy oder Laptop" aria-label="Name des Passkeys">
+      <button class="knopf knopf-primaer" type="button" data-passkey="registrieren" data-optionen="{{ url_for('profil.passkey_optionen') }}" data-ziel="{{ url_for('profil.passkey_registrieren') }}" hidden>Passkey hinzufügen</button>
+    </div>
+    <p id="passkey-meldung" hidden></p>
+    {% else %}
+    <p class="hinweis"><strong>Hier nicht möglich:</strong> {{ passkey_grund }}</p>
+    {% endif %}
+  </div>
+</section>
+<script src="{{ url_for('static', filename='js/passkey.js') }}" defer></script>
+
 <section class="karte abstand-oben" id="email">
   <div class="karte-kopf"><h2>E-Mail{{ hilfe("wochenmail") }}</h2></div>
   <form method="post" action="{{ url_for('profil.wochenmail_umschalten') }}" class="karte-inhalt">

@@ -35,11 +35,15 @@
       <form method="post" action="{{ url_for('rechnungen.lieferschein_erstellen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Lieferschein erstellen</button></form>
       {% endif %}
     {% endif %}
+    {% if r.ist_rechnung and not r.ist_entwurf and r.status != "storniert" and darf("entwuerfe") %}
+      <form method="post" action="{{ url_for('wiederkehrend.aus_rechnung', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit" title="Legt eine Vorlage an, aus der die Rechnung in festen Abständen neu entsteht">Wiederkehrend machen</button></form>
+    {% endif %}
     {% if r.ist_rechnung and naechste_mahnstufe and not r.gesperrt_fuer_mahnungen and darf("rechnungen_versenden") %}
       {{ mahn_knopf(naechste_mahnstufe, mahnstufe_ab, "knopf") }}
     {% endif %}
     {% if r.pdf_sha256 and darf("rechnungen_versenden") %}<a class="knopf" href="{{ url_for('rechnungen.senden', rechnung_id=r.id) }}">Per E-Mail senden</a>{% endif %}
     <a class="knopf knopf-primaer" href="{{ url_for('rechnungen.pdf_anzeigen', rechnung_id=r.id, herunterladen=1) }}">PDF herunterladen</a>
+    {% if r.xml_sha256 %}<a class="knopf" href="{{ url_for('rechnungen.xml_herunterladen', rechnung_id=r.id) }}" title="E-Rechnung als XML (EN 16931). Steckt auch im PDF.">E-Rechnung (XML)</a>{% endif %}
   </div>
 </div>
 <div class="raster-zwei">

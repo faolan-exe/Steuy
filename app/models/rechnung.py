@@ -88,6 +88,10 @@ class Rechnung(db.Model):
     # Angebot → daraus erstellte Rechnung, Rechnungskorrektur → stornierte Rechnung,
     # Lieferschein → Rechnung, zu der er gehört
     bezug_id: Mapped[int | None] = mapped_column(ForeignKey("rechnung.id", ondelete="RESTRICT"))
+    # Aus welcher wiederkehrenden Rechnung diese Rechnung entstanden ist
+    wiederkehrend_id: Mapped[int | None] = mapped_column(
+        ForeignKey("wiederkehrende_rechnung.id", ondelete="RESTRICT")
+    )
     gueltig_bis: Mapped[date | None] = mapped_column(Date)
     status: Mapped[str] = mapped_column(String(20), server_default="entwurf", default="entwurf")
     kontakt_id: Mapped[int | None] = mapped_column(ForeignKey("kontakt.id", ondelete="RESTRICT"))
@@ -115,6 +119,8 @@ class Rechnung(db.Model):
 
     absender: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
     pdf_sha256: Mapped[str | None] = mapped_column(String(64))
+    # Die E-Rechnung (CII-XML) dazu, falls erzeugt. Liegt auch im PDF eingebettet.
+    xml_sha256: Mapped[str | None] = mapped_column(String(64))
     # Darf sich nach dem Finalisieren noch ändern (siehe Trigger), wie der Status.
     mahnsperre: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     mahnsperre_grund: Mapped[str | None] = mapped_column(String(200))

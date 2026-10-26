@@ -35,7 +35,6 @@ from app.services.rechnungen import (
     AktionNichtMoeglich,
     NichtBearbeitbar,
     NichtFinalisierbar,
-    Positionsdaten,
     belegkette,
     entscheide_angebot,
     finalisiere,
@@ -45,7 +44,6 @@ from app.services.rechnungen import (
     loesche_entwurf,
     neuer_entwurf,
     pdf,
-    position_aus_artikel,
     rechnung_aus_angebot,
     rechnungen_zum_angebot,
     speichere_entwurf,
@@ -56,7 +54,7 @@ from app.services.rechte import darf
 from app.services.versand import dateiname, sende_beleg, vorschlag
 from app.services.zahlungen import erfasse_zahlung, ist_storniert, storniere_zahlung
 from app.web.formulare import SendenFormular, ZahlungFormular
-from app.web.rechnungseditor import lies_formular, roh_aus_rechnung
+from app.web.rechnungseditor import lies_formular, roh_aus_rechnung, wende_positionsaktion
 from app.web.rechte import braucht_recht
 
 bp = Blueprint("rechnungen", __name__, url_prefix="/rechnungen")
@@ -282,24 +280,7 @@ def bearbeiten(rechnung_id: int):
         ), 422
 
     aktion = request.form.get("aktion", "speichern")
-    positionen = eingabe.positionen
-    if aktion == "artikel":
-        # Eine leere Position (z. B. die erste im neuen Entwurf) wird durch den Artikel ersetzt.
-        positionen = [
-            p for p in positionen if p.typ == "text" or p.bezeichnung or p.einzelpreis_cent
-        ]
-        artikel_id = request.form.get("neuer_artikel", "")
-        artikel = db.session.get(Artikel, int(artikel_id)) if artikel_id.isdigit() else None
-        if artikel:
-            positionen.append(position_aus_artikel(artikel))
-    elif aktion == "position":
-        positionen.append(Positionsdaten(typ="artikel", bezeichnung=""))
-    elif aktion == "freitext":
-        positionen.append(Positionsdaten(typ="text", bezeichnung=""))
-    elif aktion.startswith("entfernen-"):
-        index = aktion.removeprefix("entfernen-")
-        if index.isdigit() and int(index) < len(positionen):
-            positionen.pop(int(index))
+    positionen = wende_positionsaktion(aktion, eingabe.positionen, request.form)
 
     speichere_entwurf(rechnung, eingabe.kopf, positionen)
 
@@ -355,6 +336,25 @@ def pdf_anzeigen(rechnung_id: int):
         inhalt,
         mimetype="application/pdf",
         headers={"Content-Disposition": f'{art}; filename="{name}"'},
+    )
+
+
+@bp.get("/<int:rechnung_id>/xml")
+@braucht_recht(Recht.ANSEHEN)
+def xml_herunterladen(rechnung_id: int):
+    """Die E-Rechnung (CII-XML) einer finalisierten Rechnung, so wie sie festgeschrieben wurde."""
+    rechnung = _rechnung(rechnung_id)
+    if not rechnung.xml_sha256:
+        abort(404)
+    name = f"{rechnung.nummer}.xml".replace("/", "_")
+    return Response(
+        ablage.lies(rechnung.xml_sha256),
+        mimetype="application/xml",
+        headers={
+            "Content-Disposition": f'attachment; filename="{name}"',
+            "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": "default-src 'none'",
+        },
     )
 
 

@@ -1,25 +1,25 @@
 # Roadmap: was steuy kann und was als Nächstes kommt
 
-steuy ist in der **Beta**. Es wird aktiv weiterentwickelt, Datenmodell und Abläufe können sich ändern. Beim Update per Klick macht steuy vorher eine Sicherung. Trotzdem gilt: Lege Sicherungen auf ein zweites Gerät und prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. Die Reihenfolge unten ist ein Plan, keine Zusage.
+steuy ist in der **Alpha-Phase**. Es kann noch Fehler geben und wird aktiv weiterentwickelt, Datenmodell und Abläufe können sich ändern. Beim Update per Klick macht steuy vorher eine Sicherung. Trotzdem gilt: Lege Sicherungen auf ein zweites Gerät und prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. Die Reihenfolge unten ist ein Plan, keine Zusage.
 
-## Schon da (Version 0.6)
+## Schon da
 
 - Angebote, Rechnungen, Lieferscheine, Rechnungskorrekturen und Storno, PDF/A, E-Mail-Versand, QR-Code für die Überweisung, eigenes Drucklayout
+- E-Rechnung erzeugen (ZUGFeRD-PDF und XRechnung-XML)
+- Anmeldung per Passkey (WebAuthn), auch ohne Passwort und Code
+- Wiederkehrende Rechnungen für Abos und Dauerkunden (monatlich bis jährlich, mit Platzhaltern, auf Wunsch automatisch festgeschrieben und verschickt)
 - Zahlungen und Teilzahlungen, Mahnwesen von Hand oder automatisch
 - Belege mit Texterkennung, Scan-Eingang vom Scanner mit eingebauter Netzwerkfreigabe
 - EÜR nach Zuflussprinzip, Dashboard, Anlagegüter mit Abschreibung
 - Umzug von Lexware (DATEV-Archiv und Zahlungslisten), WooCommerce-Import
 - Rollen und Rechte, Zwei-Faktor-Anmeldung, unveränderliche Buchungen (GoBD)
 - Updates per Klick, Sicherungsskript, Exporte (Jahresexport mit Prüfsummen, Wechsel-Export, Gesamtexport)
+- Dokumentations-Website mit Suche
 
 ## Als Nächstes (in dieser Reihenfolge)
 
-1. **Wiederkehrende Rechnungen** für Abos und Dauerkunden
-2. **Anmeldung per Passkey** (WebAuthn) zusätzlich zu Passwort und Zwei-Faktor
-3. **E-Rechnung erzeugen** (ZUGFeRD und XRechnung) für eigene Rechnungen
-4. **Dokumentations-Website mit Suche** auf GitHub Pages
-5. **Fertiges Docker-Image** (amd64 und arm64), damit die Installation nicht mehr 30 Minuten baut
-6. **Bankabgleich:** Kontoumsätze importieren (CAMT.053, CSV) und Zahlungen automatisch zuordnen
+1. **Fertiges Docker-Image** (amd64 und arm64), damit die Installation nicht mehr 30 Minuten baut
+2. **Bankabgleich:** Kontoumsätze importieren (CAMT.053, CSV) und Zahlungen automatisch zuordnen
 
 ## Danach (Ideen, noch nicht geplant)
 

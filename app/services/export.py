@@ -255,6 +255,8 @@ def steuerberater_zip(jahr: int, nutzer_id: int) -> tempfile.SpooledTemporaryFil
         ]
         for r in sorted(rechnungen, key=lambda x: (x.rechnungsdatum, x.nummer)):
             zip_.writestr(f"rechnungen/{_dateiname(r.nummer)}.pdf", ablage.lies(r.pdf_sha256))
+            if r.xml_sha256:
+                zip_.writestr(f"rechnungen/{_dateiname(r.nummer)}.xml", ablage.lies(r.xml_sha256))
             uebersicht.append(
                 [
                     r.nummer,
@@ -320,6 +322,11 @@ def gesamt_zip(nutzer_id: int) -> tempfile.SpooledTemporaryFile:
         from app.models import Mahnung
 
         hashes |= set(db.session.execute(select(Mahnung.pdf_sha256)).scalars())
+        hashes |= set(
+            db.session.execute(
+                select(Rechnung.xml_sha256).where(Rechnung.xml_sha256.is_not(None))
+            ).scalars()
+        )
         hashes |= set(
             db.session.execute(
                 select(Zahlung.nachweis_sha256).where(Zahlung.nachweis_sha256.is_not(None))

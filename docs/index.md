@@ -29,4 +29,4 @@ Hier findest du, wie du steuy installierst, einrichtest und benutzt. Oben rechts
 - [Fachregeln](domain/gobd.md): GoBD, EÜR, Mahnwesen und mehr
 - [Aufbau und Ziele](architektur.md)
 
-steuy ist in der **Beta**. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. steuy ist keine Steuerberatung.
+steuy ist in der **Alpha-Phase**: Es kann noch Fehler geben, Rückmeldungen helfen sehr. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. steuy ist keine Steuerberatung.

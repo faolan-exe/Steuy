@@ -83,6 +83,8 @@ class Gewerbe(db.Model):
     smtp_benutzer: Mapped[str | None] = mapped_column(String(200))
     smtp_passwort: Mapped[str | None] = mapped_column(Text)
     mail_absender: Mapped[str | None] = mapped_column(String(254))
+    # E-Rechnung: Rechnungen als ZUGFeRD-PDF (mit eingebettetem XML) festschreiben
+    e_rechnung: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     # Scan-Eingang: Belege aus einem Ordner übernehmen, in den der Scanner speichert
     scan_aktiv: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     scan_letzter_lauf: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

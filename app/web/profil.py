@@ -1,11 +1,21 @@
 import io
 
 import segno
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    Response,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user
 
 from app.domain.rollen import Recht
 from app.extensions import db
+from app.services import passkey
 from app.services.mail import eingerichtet as mail_eingerichtet
 from app.services.protokoll import protokolliere
 from app.services.zwei_faktor import (
@@ -47,9 +57,51 @@ def profil():
         else:
             flash("Passwort geändert.")
             return redirect(url_for("profil.profil"))
+    passkey_ok, passkey_grund = passkey.moeglich()
     return render_template(
-        "profil.html", formular=formular, offene_codes=offene_codes(current_user)
+        "profil.html",
+        formular=formular,
+        offene_codes=offene_codes(current_user),
+        passkeys=passkey.liste(current_user),
+        passkey_ok=passkey_ok,
+        passkey_grund=passkey_grund,
     )
+
+
+@bp.post("/passkeys/optionen")
+@braucht_recht(Recht.ANSEHEN)
+def passkey_optionen():
+    try:
+        optionen = passkey.registrierung_optionen(current_user)
+    except passkey.PasskeyFehler as fehler:
+        return jsonify(fehler=str(fehler)), 400
+    return Response(optionen, mimetype="application/json")
+
+
+@bp.post("/passkeys")
+@braucht_recht(Recht.ANSEHEN)
+def passkey_registrieren():
+    daten = request.get_json(silent=True) or {}
+    try:
+        neu = passkey.registrierung_abschliessen(
+            current_user, daten.get("credential"), str(daten.get("name") or "")
+        )
+    except passkey.PasskeyFehler as fehler:
+        return jsonify(fehler=str(fehler)), 400
+    flash(f"Passkey „{neu.name}“ eingerichtet. Du kannst dich jetzt damit anmelden.")
+    return jsonify(ok=True)
+
+
+@bp.post("/passkeys/<int:passkey_id>/loeschen")
+@braucht_recht(Recht.ANSEHEN)
+def passkey_loeschen(passkey_id: int):
+    try:
+        passkey.loesche(current_user, passkey_id)
+    except passkey.PasskeyFehler as fehler:
+        flash(str(fehler))
+    else:
+        flash("Passkey entfernt.")
+    return redirect(url_for("profil.profil") + "#passkeys")
 
 
 @bp.route("/zwei-faktor", methods=["GET", "POST"])

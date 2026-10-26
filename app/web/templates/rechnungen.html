@@ -4,6 +4,7 @@
 {% block inhalt %}
 <div class="seitenkopf">
   <h1>{{ "Angebote" if angebote else "Rechnungen" }}{% if angebote %}{{ hilfe("angebot") }}{% endif %}</h1>
+  {% if not angebote %}<a class="knopf knopf-text" href="{{ url_for('wiederkehrend.liste') }}">Wiederkehrende Rechnungen</a>{% endif %}
   {% if darf("entwuerfe") %}
   <form method="post" action="{{ url_for('angebote.angebot_neu') if angebote else url_for('rechnungen.neu') }}" class="aktionen">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

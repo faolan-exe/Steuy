@@ -1,6 +1,6 @@
 """Wer darf welche Seite sehen: erst Einrichtung, dann nur noch angemeldet."""
 
-from flask import Flask, flash, redirect, request, url_for
+from flask import Flask, flash, redirect, request, session, url_for
 from flask_login import current_user
 
 from app.domain.rollen import Recht
@@ -11,7 +11,13 @@ from app.services.rechte import darf
 
 OFFEN = {"static", "allgemein.gesund"}
 NUR_OHNE_EINRICHTUNG = {"einrichtung.einrichten"}
-OHNE_ANMELDUNG = {"auth.anmelden", "auth.zweiter_faktor", "auth.code_neu_senden"}
+OHNE_ANMELDUNG = {
+    "auth.anmelden",
+    "auth.zweiter_faktor",
+    "auth.code_neu_senden",
+    "auth.passkey_optionen",
+    "auth.passkey_anmelden",
+}
 # Erreichbar, solange eine verpflichtende 2FA noch nicht eingerichtet ist
 WAEHREND_2FA_PFLICHT = {
     "profil.zwei_faktor",
@@ -50,6 +56,7 @@ def registriere_zugang(app: Flask) -> None:
         if (
             gewerbe.zwei_faktor_pflicht
             and not current_user.totp_aktiv
+            and not session.get("passkey_anmeldung")  # Passkey mit Nutzerprüfung zählt als 2FA
             and endpunkt not in WAEHREND_2FA_PFLICHT
         ):
             flash("Bitte richte zuerst die Zwei-Faktor-Anmeldung ein.")

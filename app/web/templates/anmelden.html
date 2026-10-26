@@ -17,6 +17,11 @@
       {{ feld(formular.passwort) }}
       <button type="submit" class="knopf knopf-primaer knopf-voll">Anmelden</button>
     </form>
+    <div class="passkey-anmeldung">
+      <button type="button" class="knopf knopf-voll" data-passkey="anmelden" data-optionen="{{ url_for('auth.passkey_optionen') }}" data-ziel="{{ url_for('auth.passkey_anmelden') }}" hidden>Mit Passkey anmelden</button>
+      <p id="passkey-meldung" hidden></p>
+    </div>
+    <script src="{{ url_for('static', filename='js/passkey.js') }}" defer></script>
   </div>
 </section>
 {% endblock %}

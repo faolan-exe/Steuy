@@ -45,6 +45,13 @@
       </div>
     </div>
   </section>
+  <section class="karte abstand-oben">
+    <div class="karte-kopf"><h2>E-Rechnung</h2></div>
+    <div class="karte-inhalt">
+      <p class="hinweis">Mit dem Haken wird jede neue Rechnung als <strong>ZUGFeRD-PDF</strong> festgeschrieben: ein normales PDF, in dem die Rechnungsdaten maschinenlesbar nach EN 16931 stecken. Dein Kunde kann sie ohne Abtippen in seine Buchhaltung übernehmen. Dazu gibt es das XML als eigenen Download. Für die E-Rechnung braucht es Steuernummer, E-Mail, Telefon und Bankverbindung (Firmendaten und oben). Fehlt etwas, sagt dir die Vorschau, was. Bei Kunden mit Leitweg-ID (Behörden) entsteht eine XRechnung. Prüfe wichtige E-Rechnungen vor dem Versand mit einem Validator (z. B. dem KoSIT-Prüftool).</p>
+      {{ feld(formular.e_rechnung) }}
+    </div>
+  </section>
   <div class="formular-fuss">
     <button type="submit" class="knopf knopf-primaer">Speichern</button>
   </div>

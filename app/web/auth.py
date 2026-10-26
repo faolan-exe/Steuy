@@ -1,10 +1,21 @@
 import time
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import (
+    Blueprint,
+    Response,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from flask_login import current_user, login_user, logout_user
 
 from app.extensions import db
 from app.models import Nutzer
+from app.services import passkey
 from app.services.anmeldung import (
     ZuVieleVersuche,
     protokolliere_abmeldung,
@@ -112,6 +123,30 @@ def zweiter_faktor():
             return redirect(ziel)
         fehler = "Der Code stimmt nicht."
     return render_template("zweiter_faktor.html", formular=formular, fehler=fehler, nutzer=nutzer)
+
+
+@bp.post("/anmelden/passkey/optionen")
+def passkey_optionen():
+    if current_user.is_authenticated:
+        return jsonify(fehler="Du bist schon angemeldet."), 400
+    try:
+        optionen = passkey.anmeldung_optionen()
+    except passkey.PasskeyFehler as fehler:
+        return jsonify(fehler=str(fehler)), 400
+    return Response(optionen, mimetype="application/json")
+
+
+@bp.post("/anmelden/passkey")
+def passkey_anmelden():
+    daten = request.get_json(silent=True) or {}
+    try:
+        nutzer = passkey.anmeldung_pruefen(daten.get("credential"))
+    except passkey.PasskeyFehler as fehler:
+        return jsonify(fehler=str(fehler)), 400
+    session.clear()
+    login_user(nutzer)
+    session["passkey_anmeldung"] = True
+    return jsonify(ok=True, ziel=sicheres_ziel(daten.get("ziel")))
 
 
 @bp.post("/abmelden")

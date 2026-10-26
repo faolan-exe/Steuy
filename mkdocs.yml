@@ -62,6 +62,9 @@ nav:
       - Betrieb mit Docker: betrieb.md
   - Benutzen:
       - Häufige Fragen: faq.md
+      - Wiederkehrende Rechnungen: wiederkehrend.md
+      - E-Rechnung erzeugen: e-rechnung.md
+      - Anmelden mit Passkey: passkeys.md
       - Rundgang: rundgang.md
       - Drucklayout: drucklayout.md
       - Scanner anbinden: scanner.md

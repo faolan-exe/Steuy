@@ -9,8 +9,8 @@
 
 Kostenloses Rechnungsprogramm und Rechnungswesen für das Kleingewerbe, quelloffen und auf dem eigenen Rechner.
 
-![Version](https://img.shields.io/badge/Version-0.6.0-0f7c80)
-![Status: Beta](https://img.shields.io/badge/Status-Beta-orange)
+![Version](https://img.shields.io/badge/Version-0.7.0-0f7c80)
+![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red)
 ![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555)
 
 <a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/Live--Demo_ausprobieren-%E2%86%92-0f7c80?style=for-the-badge" alt="Live-Demo ausprobieren" height="44"></a>
@@ -26,7 +26,13 @@ steuy ist **selbst gehostet**: Die Software läuft auf deinem eigenen Rechner, z
 steuy richtet sich vor allem an Einsteiger. Ein Rundgang erklärt beim ersten Start alle Bereiche, und Hilfetexte an den Feldern sagen, was wo hingehört. Wer von Lexware kommt, importiert seine Daten aus dem DATEV-Archiv und den Zahlungslisten.
 
 > [!WARNING]
-> **Beta:** steuy wird aktiv weiterentwickelt. Datenmodell und Abläufe können sich von Version zu Version ändern. Das Update per Klick sichert vorher automatisch, ein zweites Exemplar auf einem anderen Gerät gehört trotzdem dazu. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. Was kommt, steht in der [Roadmap](docs/roadmap.md).
+> **Alpha:** steuy ist noch in der Alpha-Phase und wird aktiv weiterentwickelt. Es kann noch Fehler geben. Datenmodell und Abläufe können sich von Version zu Version ändern. Das Update per Klick sichert vorher automatisch, ein zweites Exemplar auf einem anderen Gerät gehört trotzdem dazu. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. Was kommt, steht in der [Roadmap](docs/roadmap.md).
+
+## Warum es steuy gibt
+
+steuy ist von Philipp ([skyplayser](https://github.com/skyplayser)) und Tobi ([faolan-exe](https://github.com/faolan-exe)) entstanden. Wir wollten nicht länger jedes Jahr rund 350 Euro für Buchhaltungssoftware ausgeben. Philipp ist technischer Betriebswirt, Tobi hat gerade sein Gewerbe eröffnet und bietet IT-Dienstleistungen und Online-Shops an. Wir haben uns zusammengesetzt, gesammelt, was uns an anderer Software gefällt, was fehlt und was zu viel ist, und daraus steuy gebaut: ohne die Funktionen, die wir mitbezahlen mussten und nie brauchten, dafür mit einer WooCommerce-Anbindung und der direkten Scanner-Anbindung. Die steuerlichen Regeln haben wir nach bestem Wissen geprüft. Das ist keine Steuerberatung.
+
+steuy ist noch in der **Alpha-Phase**. Wir freuen uns über jeden, der es ausprobiert und uns Rückmeldung gibt, damit wir es gemeinsam zu einer wirklich guten, kostenlosen Software machen. Fehler und Wünsche bitte als [Issue](https://github.com/faolan-exe/Steuy/issues).
 
 ## Live-Demo
 
@@ -56,13 +62,15 @@ Du hast noch nie eine Buchhaltung geführt? Genau dafür ist steuy gebaut. Diese
 - **Angebote, Rechnungen und Lieferscheine** mit fortlaufenden Nummern, Artikeln und Kunden aus der Kontaktliste. Aus einem Angebot wird mit einem Klick eine Rechnung, die Belege bleiben miteinander verknüpft. Korrekturen laufen über Rechnungskorrektur oder Storno.
 - **PDF/A** zum Archivieren, auf Wunsch mit QR-Code für die Überweisung, und Versand per E-Mail.
 - **Drucklayout** mit fünf Vorlagen, eigenem Logo, Farben und Schrift, mit Vorschau beim Bearbeiten.
+- **E-Rechnung:** Jede Rechnung auf Wunsch als ZUGFeRD-PDF (EN 16931), bei Behörden als XRechnung, mit XML-Download, siehe [docs/e-rechnung.md](docs/e-rechnung.md).
+- **Wiederkehrende Rechnungen:** Vorlage für Abos und Dauerkunden, monatlich bis jährlich, mit Platzhaltern wie `{monat}`. Auf Wunsch automatisch festgeschrieben und per E-Mail verschickt, siehe [docs/wiederkehrend.md](docs/wiederkehrend.md).
 - **Zahlungen und Mahnwesen:** Zahlungseingänge und Teilzahlungen erfassen, offene Posten sehen, Mahnungen von Hand oder automatisch verschicken.
 - **Belege und Ausgaben:** Belege hochladen oder fotografieren, die Texterkennung schlägt Betrag und Datum vor. Jede Datei wird mit Prüfsumme gespeichert und nie überschrieben.
 - **Scan-Eingang:** Dein Scanner (z. B. Brother ADS-1800W) speichert über eine eingebaute Netzwerkfreigabe direkt in steuy, die Scans werden automatisch zu Belegen. In den Einstellungen mit einem Haken ein- und ausschaltbar, siehe [docs/scanner.md](docs/scanner.md).
 - **EÜR und Dashboard:** Auswertung nach Zahlungsdatum (Zuflussprinzip), Jahresübersicht, Jahresziel und die Werte für die Anlage EÜR. Dazu Anlagegüter mit Abschreibung.
 - **Umzug von Lexware:** Import aus dem DATEV-Archiv und aus CSV-Zahlungslisten.
 - **WooCommerce:** Bestellungen aus dem eigenen Shop übernehmen.
-- **Sicherheit und Nachvollziehbarkeit:** Rollen und Rechte, Zwei-Faktor-Anmeldung, festgeschriebene Buchungen lassen sich nicht mehr ändern (GoBD).
+- **Sicherheit und Nachvollziehbarkeit:** Rollen und Rechte, Anmeldung per [Passkey](docs/passkeys.md) oder Passwort mit Zwei-Faktor, festgeschriebene Buchungen lassen sich nicht mehr ändern (GoBD).
 - **Updates aus der App heraus**, mit automatischer Sicherung vorher.
 
 Eine Installation gehört genau einem Gewerbe. Alle Beträge werden auf den Cent genau gerechnet.

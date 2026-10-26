@@ -56,7 +56,7 @@ services:
       - scan:/daten/scan-eingang
       - freigabe:/daten/freigabe
     # Scan-Eingang im Hintergrund (alle 30 s), stündlich Shop-Abruf, Mahnlauf und Erinnerungen
-    command: ["sh", "-c", "(while true; do flask scan-dienst || true; sleep 10; done) & while true; do flask shop-abruf || true; flask mahnlauf || true; flask erinnerungen || true; sleep 3600; done"]
+    command: ["sh", "-c", "(while true; do flask scan-dienst || true; sleep 10; done) & while true; do flask shop-abruf || true; flask mahnlauf || true; flask wiederkehrend-lauf || true; flask erinnerungen || true; sleep 3600; done"]
     depends_on:
       app:
         condition: service_healthy

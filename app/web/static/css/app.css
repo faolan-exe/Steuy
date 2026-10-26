@@ -1110,3 +1110,7 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
 @media (max-width: 48rem) { .rundgang { left: 0.5rem; right: 0.5rem; bottom: 0.5rem; width: auto; max-height: 55vh; } }
 .auswahlgruppe { border: 0; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.4rem; }
 .auswahlgruppe legend { font-weight: 600; margin-bottom: 0.3rem; padding: 0; }
+
+/* Anmeldung mit Passkey */
+.passkey-anmeldung { margin-top: 0.75rem; }
+.passkey-anmeldung .fehlermeldung, .passkey-anmeldung .hinweis { margin-top: 0.5rem; }

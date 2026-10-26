@@ -6,6 +6,10 @@ Antworten auf die Fragen, die Kleinunternehmer und Selbstständige am häufigste
 
 steuy ist eine kostenlose, selbst gehostete Buchhaltungssoftware für Kleinunternehmer und Kleingewerbe nach § 19 UStG. Du schreibst Angebote, Rechnungen und Lieferscheine, verwaltest Belege und Zahlungen, mahnst offene Rechnungen und bekommst am Jahresende die Werte für die Anlage EÜR. Die Software läuft auf deinem eigenen Rechner oder Server, deine Daten verlassen ihn nicht.
 
+## Wer steckt hinter steuy?
+
+Philipp (skyplayser, technischer Betriebswirt) und Tobi (faolan-exe, der gerade sein Gewerbe für IT-Dienstleistungen und Online-Shops eröffnet hat). Wir wollten nicht länger rund 350 Euro im Jahr für Buchhaltungssoftware zahlen und haben gebaut, was wir brauchen, ohne die Funktionen, die wir mitkaufen mussten und nie nutzten. steuy ist noch in der Alpha-Phase: Rückmeldungen als Issue auf GitHub helfen uns sehr.
+
 ## Für wen ist steuy gedacht?
 
 Für Kleinunternehmer, Kleingewerbetreibende, Freiberufler und Selbstständige, die die **Kleinunternehmerregelung (§ 19 UStG)** nutzen und ihren Gewinn per **Einnahmen-Überschuss-Rechnung (EÜR)** ermitteln. Beispiele: Fotografen, Handwerker, Berater, Designer, Entwickler, kleine Online-Shops.
@@ -59,9 +63,9 @@ Ja. Der **Scan-Eingang** nimmt Scans von deinem Scanner (z. B. Brother ADS-1800W
 
 Ja. steuy importiert das DATEV-Archiv und die CSV-Zahlungslisten aus Lexware, prüft die Daten und legt sie als Entwürfe an. Ablauf und Grenzen: [Umzug von Lexware](lexware-import.md).
 
-## Werden E-Rechnungen unterstützt?
+## Werden E-Rechnungen unterstützt (ZUGFeRD, XRechnung)?
 
-Eingehende E-Rechnungen (XRechnung, ZUGFeRD) kann steuy einlesen und im Originalformat aufbewahren. Eigene Rechnungen als E-Rechnung zu erzeugen ist noch nicht möglich.
+Ja, in beide Richtungen. Eingehende E-Rechnungen (XRechnung, ZUGFeRD) liest steuy ein und bewahrt sie im Originalformat auf. Eigene Rechnungen kann steuy als **ZUGFeRD-PDF** (EN 16931) festschreiben, bei Kunden mit Leitweg-ID als XRechnung. Mehr dazu unter [E-Rechnung erzeugen](e-rechnung.md). Prüfe wichtige E-Rechnungen vor dem Versand mit einem Validator.
 
 ## Ist steuy GoBD-konform?
 

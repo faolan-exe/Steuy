@@ -15,7 +15,7 @@ from sqlalchemy import (
     func,
     true,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.domain.rollen import Rolle
 from app.extensions import db
@@ -60,6 +60,10 @@ class Nutzer(UserMixin, db.Model):
     mail_code_gesendet_am: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     erstellt_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
+    )
+
+    passkeys = relationship(
+        "Passkey", back_populates="nutzer", order_by="Passkey.id", cascade="all, delete-orphan"
     )
 
     @property

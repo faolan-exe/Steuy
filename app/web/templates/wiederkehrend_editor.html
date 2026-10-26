@@ -1,0 +1,196 @@
+{% extends "basis.html" %}
+{% from "icons.html" import icon %}
+{% set nav_aktiv = "rechnungen" %}
+{% block titel %}Wiederkehrende Rechnung bearbeiten – steuy{% endblock %}
+{% block inhalt_klasse %}mittel{% endblock %}
+{% macro fehler_von(name) %}{% if fehler.get(name) %}<div class="feldfehler">{{ fehler[name] }}</div>{% endif %}{% endmacro %}
+{% macro eingabe(name, label, wert, typ="text", klasse="", attrs="") -%}
+<div class="feldgruppe {{ klasse }}{% if fehler.get(name) %} hat-fehler{% endif %}">
+  <input class="feld" type="{{ typ }}" id="{{ name }}" name="{{ name }}" value="{{ wert if wert is not none else '' }}" placeholder=" " {{ attrs }}>
+  <label class="feldlabel" for="{{ name }}">{{ label }}{{ namenhilfe(name) }}</label>
+  {{ fehler_von(name) }}
+</div>
+{%- endmacro %}
+{% macro textfeld(name, label, wert, klasse="") -%}
+<div class="feldgruppe {{ klasse }}">
+  <textarea class="feld" id="{{ name }}" name="{{ name }}" placeholder=" " rows="2">{{ wert or "" }}</textarea>
+  <label class="feldlabel" for="{{ name }}">{{ label }}{{ namenhilfe(name) }}</label>
+</div>
+{%- endmacro %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('wiederkehrend.liste') }}" aria-label="Zurück zur Liste">‹</a> Wiederkehrende Rechnung <small>{{ "pausiert" if not r.aktiv else "aktiv" }}</small></h1>
+</div>
+{% if fehler %}<div class="fehlermeldung" role="alert">{% if fehler.get("einstellung") %}{{ fehler["einstellung"] }}{% else %}Bitte die markierten Felder prüfen. Es wurde nichts gespeichert.{% endif %}</div>{% endif %}
+
+<form method="post" id="editor" class="rechnungseditor" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="rechnungsdatum" value="{{ heute.isoformat() }}">
+  <input type="hidden" name="leistung_art" value="leistungszeitraum">
+
+  <section class="karte">
+    <div class="karte-kopf"><h2>Wann und wie</h2></div>
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        {{ eingabe("name", "Name der Vorlage (nur für dich)", r.name, klasse="ganz") }}
+        <div class="feldgruppe">
+          <select class="feld" id="intervall" name="intervall">
+            {% for wert, name in intervalle.items() %}<option value="{{ wert }}" {% if r.intervall == wert %}selected{% endif %}>{{ name }}</option>{% endfor %}
+          </select>
+          <label class="feldlabel" for="intervall">Wie oft</label>
+        </div>
+        {{ eingabe("naechste_am", "Nächste Rechnung am", r.naechste_am.isoformat(), typ="date") }}
+        {{ eingabe("ende_am", "Ende (optional)", r.ende_am.isoformat() if r.ende_am else "", typ="date") }}
+      </div>
+      <p class="hinweis">Der Zeitraum, den die Rechnung abdeckt, beginnt am Termin und endet am Tag vor dem nächsten. Er steht automatisch als Leistungszeitraum auf der Rechnung. Fällt der Termin auf den 29. bis 31., nehmen kürzere Monate ihren letzten Tag.</p>
+      <fieldset class="optionen" style="border:1px solid var(--linie);border-radius:6px;margin:1rem 0;padding:.6rem 1rem">
+        <legend>Was passiert am Termin?</legend>
+        {% for wert, text in versand_arten.items() %}
+        <div><label class="haken"><input type="radio" name="versand" value="{{ wert }}" {% if r.versand == wert %}checked{% endif %}> <span>{{ text }}</span></label></div>
+        {% endfor %}
+        {% if fehler.get("versand") %}<div class="feldfehler">{{ fehler["versand"] }}</div>{% endif %}
+        <p class="hinweis">{% if not mail_da %}Für den Versand per E-Mail muss zuerst der E-Mail-Versand eingerichtet sein (Einstellungen → E-Mail). {% endif %}Festgeschriebene Rechnungen lassen sich nicht mehr ändern. Prüfe die Vorlage deshalb sorgfältig, bevor du eine der beiden automatischen Arten wählst.</p>
+      </fieldset>
+      <label class="haken" style="display:block;margin-top:.5rem"><input type="checkbox" name="aktiv" value="y" {% if r.aktiv %}checked{% endif %}> <span>Aktiv (ohne Haken ist die Vorlage pausiert)</span></label>
+    </div>
+  </section>
+
+  <section class="karte abstand-oben">
+    <div class="karte-inhalt editor-kopf">
+
+      <div class="feldraster">
+        <div class="feldgruppe ganz">
+          <select class="feld" id="kontakt_id" name="kontakt_id">
+            <option value="">– Kunde wählen –</option>
+            {% for k in kunden %}
+            <option value="{{ k.id }}" {% if r.kontakt_id == k.id %}selected{% endif %} data-name="{{ k.name }}" data-zusatz="{{ k.adresszusatz or '' }}" data-strasse="{{ k.strasse or '' }}" data-plz="{{ k.plz or '' }}" data-ort="{{ k.ort or '' }}" data-land="{{ k.land or 'Deutschland' }}">{{ k.name }} ({{ k.kundennummer }})</option>
+            {% endfor %}
+          </select>
+          <label class="feldlabel" for="kontakt_id">Kunde</label>
+          <div class="feldhinweis">Die Anschrift wird sofort aus dem Kontakt übernommen und lässt sich danach noch ändern.</div>
+        </div>
+        {{ eingabe("empfaenger_name", "Name", r.empfaenger_name, klasse="ganz") }}
+        {{ eingabe("empfaenger_zusatz", "Adresszusatz", r.empfaenger_zusatz, klasse="ganz") }}
+        {{ eingabe("empfaenger_strasse", "Straße", r.empfaenger_strasse, klasse="ganz") }}
+        {{ eingabe("empfaenger_plz", "PLZ", r.empfaenger_plz, klasse="schmal") }}
+        {{ eingabe("empfaenger_ort", "Ort", r.empfaenger_ort, klasse="breit") }}
+        {{ eingabe("empfaenger_land", "Land", r.empfaenger_land or "Deutschland", klasse="ganz") }}
+      </div>
+    </div>
+  </section>
+
+  <section class="karte abstand-oben">
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        <p class="hinweis ganz">In Titel, Einleitung, Bezeichnungen und Nachbemerkung kannst du Platzhalter nutzen, die beim Erzeugen ersetzt werden: <code>{monat}</code> (z. B. November 2026), <code>{quartal}</code>, <code>{jahr}</code>, <code>{zeitraum}</code>, <code>{von}</code> und <code>{bis}</code>.</p>
+        {{ eingabe("titel", "Belegtitel", r.titel, klasse="ganz") }}
+        {{ textfeld("einleitung", "Einleitungstext", r.einleitung, klasse="ganz") }}
+      </div>
+    </div>
+  </section>
+
+  <section class="karte abstand-oben" id="positionen">
+    <div class="karte-inhalt">
+      {% for p in positionen %}
+      {% set i = loop.index0 %}
+      {% set pre = "pos-" ~ i ~ "-" %}
+      <input type="hidden" name="{{ pre }}typ" value="{{ p.typ }}">
+      <input type="hidden" name="{{ pre }}artikel_id" value="{{ p.artikel_id or '' }}">
+      {% if p.typ == "text" %}
+      <div class="position freitext">
+        <span class="positionsnr">T</span>
+        <div class="feldgruppe">
+          <input class="feld" name="{{ pre }}bezeichnung" id="{{ pre }}bezeichnung" value="{{ p.bezeichnung }}" placeholder=" ">
+          <label class="feldlabel" for="{{ pre }}bezeichnung">Freitext / Zwischenüberschrift</label>
+        </div>
+        <button class="symbolknopf" type="submit" name="aktion" value="entfernen-{{ i }}" title="Position entfernen" aria-label="Position entfernen">✕</button>
+      </div>
+      {% else %}
+      <div class="position">
+        <span class="positionsnr">{{ loop.index }}</span>
+        <div class="positionsfelder">
+          <div class="feldgruppe bez">
+            <input class="feld" name="{{ pre }}bezeichnung" id="{{ pre }}bezeichnung" value="{{ p.bezeichnung }}" placeholder=" ">
+            <label class="feldlabel" for="{{ pre }}bezeichnung">Bezeichnung</label>
+          </div>
+          {{ eingabe(pre ~ "menge", "Menge", p.menge or "1", klasse="zahl") }}
+          {{ eingabe(pre ~ "einheit", "Einheit", p.einheit, klasse="einheit") }}
+          {{ eingabe(pre ~ "preis", "Preis €", p.preis or "0,00", klasse="zahl") }}
+          {{ eingabe(pre ~ "rabatt", "Rabatt %", p.rabatt, klasse="zahl schmal-zahl") }}
+          <div class="positionsbetrag">{{ (p.betrag_cent or 0) | euro }}</div>
+          <div class="feldgruppe besch">
+            <textarea class="feld" name="{{ pre }}beschreibung" id="{{ pre }}beschreibung" placeholder=" " rows="1">{{ p.beschreibung or "" }}</textarea>
+            <label class="feldlabel" for="{{ pre }}beschreibung">Beschreibung (optional)</label>
+          </div>
+        </div>
+        <button class="symbolknopf" type="submit" name="aktion" value="entfernen-{{ i }}" title="Position entfernen" aria-label="Position entfernen">✕</button>
+      </div>
+      {% endif %}
+      {% endfor %}
+
+      <div class="positionsaktionen">
+        {% if artikelliste %}
+        <div class="artikelwahl">
+          <select class="feld" name="neuer_artikel" aria-label="Artikel auswählen">
+            {% for a in artikelliste %}<option value="{{ a.id }}">{{ a.bezeichnung }} – {{ a.preis_cent | euro }}</option>{% endfor %}
+          </select>
+          <button class="knopf" type="submit" name="aktion" value="artikel">{{ icon("plus") }} Artikel</button>
+        </div>
+        {% endif %}
+        <button class="knopf knopf-text" type="submit" name="aktion" value="position">+ Freie Position</button>
+        <button class="knopf knopf-text" type="submit" name="aktion" value="freitext">≡ Freitext</button>
+      </div>
+    </div>
+    <div class="summenleiste">
+      <span>Gesamtbetrag</span>
+      <strong>{{ r.summe_cent | euro }}</strong>
+    </div>
+  </section>
+
+  <section class="karte abstand-oben">
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        {{ textfeld("hinweis_steuerbefreiung", "Hinweistext für Umsatzsteuerbefreiung", r.hinweis_steuerbefreiung, klasse="ganz") }}
+        {{ eingabe("zahlungsziel_tage", "Zahlungsziel in Tagen", r.zahlungsziel_tage, typ="number", attrs='min="0" max="365"') }}
+        {{ textfeld("nachbemerkung", "Nachbemerkung", r.nachbemerkung, klasse="ganz") }}
+      </div>
+    </div>
+  </section>
+
+  <section class="karte abstand-oben">
+    <div class="karte-inhalt zahlungsarten">
+      <label class="zahlungsart">
+        <span class="zahlungsart-icon">{{ icon("bank") }}</span>
+        <span><strong>Überweisung mit QR-Code</strong>{{ namenhilfe('qr_ueberweisung') }}<br><span class="hinweis">{% if gewerbe.iban %}IBAN {{ gewerbe.iban[:4] }} … {{ gewerbe.iban[-4:] }}{% else %}Bankverbindung in den Einstellungen hinterlegen{% endif %}</span></span>
+        <input type="checkbox" class="schalter" name="qr_ueberweisung" value="y" {% if r.qr_ueberweisung %}checked{% endif %}>
+      </label>
+    </div>
+  </section>
+
+  <div class="formular-fuss zwischen">
+    <button class="knopf knopf-text gefahr" type="submit" form="loeschen">Vorlage löschen</button>
+    <div class="aktionen">
+      <button class="knopf knopf-primaer" type="submit" name="aktion" value="speichern">Speichern</button>
+    </div>
+  </div>
+</form>
+<form id="loeschen" method="post" action="{{ url_for('wiederkehrend.loeschen', vorlage_id=r.id) }}" data-bestaetigen="Diese Vorlage wirklich löschen?">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+</form>
+
+{% if rechnungen %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Bisher erzeugte Rechnungen</h2></div>
+  <div class="karte-inhalt">
+    <table class="tabelle">
+      <thead><tr><th>Nummer</th><th>Datum</th><th>Zeitraum</th><th>Status</th><th class="zahl">Betrag</th></tr></thead>
+      <tbody>
+      {% for x in rechnungen %}
+      <tr><td><a href="{{ url_for('rechnungen.detail', rechnung_id=x.id) }}">{{ x.anzeige_nummer }}</a></td><td>{{ x.rechnungsdatum | datum }}</td><td>{{ x.leistung_von | datum }} bis {{ x.leistung_bis | datum }}</td><td>{{ x.status | capitalize }}</td><td class="zahl">{{ x.summe_cent | euro }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

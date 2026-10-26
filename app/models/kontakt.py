@@ -46,6 +46,8 @@ class Kontakt(db.Model):
     email: Mapped[str | None] = mapped_column(String(254))
     telefon: Mapped[str | None] = mapped_column(String(50))
     steuernummer: Mapped[str | None] = mapped_column(String(30))
+    # Leitweg-ID oder Käuferreferenz: Mit ihr wird die E-Rechnung zur XRechnung (Behörden)
+    leitweg_id: Mapped[str | None] = mapped_column(String(46))
     ust_idnr: Mapped[str | None] = mapped_column(String(20))
     notiz: Mapped[str | None] = mapped_column(Text)
     archiviert: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
@@ -69,6 +71,7 @@ class Kontakt(db.Model):
         "telefon",
         "steuernummer",
         "ust_idnr",
+        "leitweg_id",
         "notiz",
     )
 

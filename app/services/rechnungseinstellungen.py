@@ -15,6 +15,7 @@ GEWERBE_FELDER = (
     "hinweis_steuerbefreiung",
     "rechnung_einleitung",
     "rechnung_nachbemerkung",
+    "e_rechnung",
 )
 KREIS_FELDER = ("praefix", "stellen", "naechste_nummer")
 

@@ -2,7 +2,7 @@
 name = "steuy"
 license = "LicenseRef-PolyForm-Shield-1.0.0"
 license-files = ["LICENSE"]
-version = "0.6.0"
+version = "0.7.0"
 description = "Selbst gehostete Buchhaltungssoftware und Rechnungsprogramm für Kleinunternehmer und Kleingewerbe (§ 19 UStG, EÜR)"
 keywords = ["buchhaltung", "kleinunternehmer", "kleingewerbe", "rechnungsprogramm", "rechnungswesen", "eür", "self-hosted", "accounting", "invoicing", "flask"]
 classifiers = [
@@ -34,6 +34,8 @@ dependencies = [
     "pyotp>=2.10.0",
     "cryptography>=50.0.2",
     "gunicorn>=23.0",
+    "webauthn>=3.0.1",
+    "drafthorse>=2025.2.0",
 ]
 
 [project.urls]

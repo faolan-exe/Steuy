@@ -12,6 +12,7 @@ from app.models.kleinunternehmergrenze import Kleinunternehmergrenze
 from app.models.kontakt import Kontakt
 from app.models.mahnung import Mahnstufe, Mahnung
 from app.models.nutzer import Nutzer, Wiederherstellungscode
+from app.models.passkey import Passkey
 from app.models.protokoll import Protokoll
 from app.models.rechnung import (
     BELEGARTEN,
@@ -23,6 +24,7 @@ from app.models.rechnung import (
 from app.models.rollenrecht import Rollenrecht
 from app.models.shop import ShopBestellung
 from app.models.versand import Versand
+from app.models.wiederkehrend import WiederkehrendePosition, WiederkehrendeRechnung
 from app.models.zahlung import Zahlung
 
 __all__ = [
@@ -49,12 +51,15 @@ __all__ = [
     "Mahnung",
     "Nutzer",
     "Nummernkreis",
+    "Passkey",
     "Protokoll",
     "Rechnung",
     "Rechnungsposition",
     "Rollenrecht",
     "ShopBestellung",
     "Versand",
+    "WiederkehrendePosition",
+    "WiederkehrendeRechnung",
     "Wiederherstellungscode",
     "Zahlung",
 ]

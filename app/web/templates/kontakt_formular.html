@@ -41,6 +41,7 @@
       <div class="feldraster">
         {{ feld(formular.steuernummer) }}
         {{ feld(formular.ust_idnr) }}
+        {{ feld(formular.leitweg_id, hinweis="Nur für Rechnungen an Behörden. Damit entsteht eine XRechnung.") }}
         {{ feld(formular.notiz, klasse="ganz") }}
       </div>
       {{ haken(formular.mahnsperre) }}

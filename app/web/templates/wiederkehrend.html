@@ -1,0 +1,45 @@
+{% extends "basis.html" %}
+{% from "teile.html" import kunde %}
+{% set nav_aktiv = "rechnungen" %}
+{% block titel %}Wiederkehrende Rechnungen – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('rechnungen.liste') }}" aria-label="Zurück zu den Rechnungen">‹</a> Wiederkehrende Rechnungen</h1>
+  {% if darf("entwuerfe") %}
+  <div class="aktionen">
+    <form method="post" action="{{ url_for('wiederkehrend.lauf') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit" title="Prüft sofort, ob eine Rechnung fällig ist (läuft sonst stündlich von allein)">Jetzt prüfen</button></form>
+    <form method="post" action="{{ url_for('wiederkehrend.neu') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-primaer" type="submit">+ Neue Vorlage</button></form>
+  </div>
+  {% endif %}
+</div>
+<p class="hinweis">Für Abos, Wartungsverträge, Miete und alles, was du regelmäßig abrechnest. steuy legt zum Termin die Rechnung an, auf Wunsch festgeschrieben und per E-Mail verschickt. Eine bestehende Rechnung wird mit „Wiederkehrend machen“ zur Vorlage.</p>
+{% if vorlagen %}
+<section class="karte">
+  <table class="tabelle">
+    <thead><tr><th>Vorlage</th><th>Kunde</th><th>Rhythmus</th><th>Nächste Rechnung</th><th class="zahl">Betrag</th><th>Bisher</th><th>Status</th></tr></thead>
+    <tbody>
+    {% for v in vorlagen %}
+    <tr>
+      <td><a href="{{ url_for('wiederkehrend.bearbeiten', vorlage_id=v.id) }}">{{ v.name }}</a>{% if v.letzte_meldung %}<br><span class="hinweis warn">{{ v.letzte_meldung }}</span>{% endif %}</td>
+      <td>{{ v.empfaenger_name or "–" }}</td>
+      <td>{{ intervalle[v.intervall] }}</td>
+      <td>{% if v.beendet %}beendet{% elif not v.aktiv %}pausiert{% else %}{{ v.naechste_am | datum }}{% if v.naechste_am < heute %} <span class="status status-aus">überfällig</span>{% endif %}{% endif %}</td>
+      <td class="zahl">{{ v.summe_cent | euro }}</td>
+      <td>{{ v.erzeugt_anzahl }}</td>
+      <td>
+        {% if v.beendet %}<span class="status status-aus">beendet</span>
+        {% elif v.aktiv %}<span class="status status-an">aktiv</span>{% else %}<span class="status status-aus">pausiert</span>{% endif %}
+        {% if darf("entwuerfe") and not v.beendet %}
+        <form method="post" action="{{ url_for('wiederkehrend.fortsetzen' if not v.aktiv else 'wiederkehrend.pausieren', vorlage_id=v.id) }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit">{{ "Fortsetzen" if not v.aktiv else "Pausieren" }}</button></form>
+        <form method="post" action="{{ url_for('wiederkehrend.jetzt', vorlage_id=v.id) }}" style="display:inline" title="Legt die nächste Rechnung jetzt als Entwurf an"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit">Jetzt anlegen</button></form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+<section class="karte"><div class="karte-inhalt"><p>Noch keine wiederkehrende Rechnung. Lege eine Vorlage an oder öffne eine Rechnung und wähle „Wiederkehrend machen“.</p></div></section>
+{% endif %}
+{% endblock %}

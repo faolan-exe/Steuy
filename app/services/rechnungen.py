@@ -229,6 +229,10 @@ def finalisierungsfehler(rechnung: Rechnung, gewerbe: Gewerbe) -> list[str]:
         fehler.append(
             "Der Gesamtbetrag darf nicht negativ sein. Dafür gibt es Rechnungskorrekturen."
         )
+    if gewerbe.e_rechnung and rechnung.belegart in ("rechnung", "korrektur"):
+        from app.services import erechnung_erzeugen
+
+        fehler += erechnung_erzeugen.fehler(rechnung, absender_daten(gewerbe))
     if rechnung.qr_ueberweisung and rechnung.ist_rechnung:
         try:
             pruefe_iban(gewerbe.iban or "")
@@ -269,7 +273,14 @@ def finalisiere(rechnung: Rechnung, nutzer_id: int) -> Rechnung:
     else:
         rechnung.qr_ueberweisung = False
     rechnung.absender = absender_daten(gewerbe)
-    rechnung.pdf_sha256 = ablage.speichere(rendere_rechnung(rechnung, entwurf=False))
+    dokument = rendere_rechnung(rechnung, entwurf=False)
+    if gewerbe.e_rechnung and rechnung.belegart in ("rechnung", "korrektur"):
+        from app.services import erechnung_erzeugen
+
+        xml = erechnung_erzeugen.erzeuge_xml(rechnung, rechnung.absender)
+        rechnung.xml_sha256 = ablage.speichere(xml)
+        dokument = erechnung_erzeugen.einbetten(dokument, xml, rechnung.absender, rechnung)
+    rechnung.pdf_sha256 = ablage.speichere(dokument)
     rechnung.finalisiert_am = datetime.now(UTC)
     rechnung.finalisiert_von = nutzer_id
     rechnung.status = "offen"
