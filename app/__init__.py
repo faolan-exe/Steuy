@@ -1,3 +1,4 @@
+import click
 from flask import Flask
 
 from app.config import Config
@@ -66,6 +67,21 @@ def create_app(config: type[Config] = Config) -> Flask:
     from app.web.fehler import registriere as registriere_fehlerseiten
 
     registriere_fehlerseiten(app)
+
+    @app.cli.command("export-pruefen")
+    @click.argument("archiv", type=click.Path(exists=True, dir_okay=False))
+    def export_pruefen(archiv):
+        """Ein steuy-Exportarchiv (ZIP) gegen seine Prüfsummen prüfen."""
+        from pathlib import Path
+
+        from app.services.export import pruefe_archiv
+
+        probleme = pruefe_archiv(Path(archiv).read_bytes())
+        if probleme:
+            for zeile in probleme:
+                print(f"FEHLER: {zeile}")
+            raise SystemExit(1)
+        print("Alle Prüfsummen stimmen.")
 
     @app.cli.command("scan-abruf")
     def scan_abruf():

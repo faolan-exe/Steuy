@@ -106,3 +106,85 @@ def test_knopf_in_einstellungen(angemeldet):
     assert "Gesamtexport herunterladen" in angemeldet.get("/einstellungen/firma").get_data(
         as_text=True
     )
+
+
+# ---------- Prüfsummen (SHA256SUMS) ----------
+
+
+def archiv_neu(zip_: zipfile.ZipFile, ersetze: dict[str, bytes] | None = None) -> bytes:
+    """Das Archiv mit einzelnen geänderten Dateien neu packen (simuliert eine Manipulation)."""
+    puffer = io.BytesIO()
+    with zipfile.ZipFile(puffer, "w") as neu:
+        for name in zip_.namelist():
+            neu.writestr(name, (ersetze or {}).get(name, zip_.read(name)))
+        for name, inhalt in (ersetze or {}).items():
+            if name not in zip_.namelist():
+                neu.writestr(name, inhalt)
+    return puffer.getvalue()
+
+
+def test_jahresexport_hat_pruefsummen_fuer_jede_datei(angemeldet, daten):
+    import hashlib
+
+    zip_ = oeffnen(angemeldet.get(f"/auswertung/export.zip?jahr={HEUTE.year}"))
+    summen = {}
+    for zeile in zip_.read("SHA256SUMS").decode().splitlines():
+        summe, _, name = zeile.partition("  ")
+        summen[name] = summe
+    erwartet = set(zip_.namelist()) - {"SHA256SUMS"}
+    assert set(summen) == erwartet
+    for name, summe in summen.items():
+        assert hashlib.sha256(zip_.read(name)).hexdigest() == summe
+    assert (
+        "PRUEFEN.txt" in zip_.namelist()
+        and "sha256sum -c SHA256SUMS" in zip_.read("PRUEFEN.txt").decode()
+    )
+    assert f"Rechnungen-{HEUTE.year}.csv" in zip_.namelist()
+    uebersicht = zip_.read(f"Rechnungen-{HEUTE.year}.csv").decode("utf-8-sig")
+    assert daten.nummer in uebersicht and daten.pdf_sha256 in uebersicht
+
+
+@pytest.mark.parametrize("adresse", ["/auswertung/export.zip", "/auswertung/gesamtexport.zip"])
+def test_unveraendertes_archiv_besteht_die_pruefung(angemeldet, daten, adresse):
+    from app.services.export import pruefe_archiv
+
+    antwort = angemeldet.get(adresse)
+    assert pruefe_archiv(antwort.data) == []
+
+
+def test_pruefung_findet_veraenderte_fehlende_und_hinzugefuegte_dateien(angemeldet, daten):
+    from app.services.export import pruefe_archiv
+
+    zip_ = oeffnen(angemeldet.get(f"/auswertung/export.zip?jahr={HEUTE.year}"))
+    rechnung_pdf = f"rechnungen/{daten.nummer}.pdf"
+    geaendert = archiv_neu(zip_, {rechnung_pdf: b"%PDF-gefaelscht"})
+    assert any(
+        "Prüfsumme stimmt nicht" in p and rechnung_pdf in p for p in pruefe_archiv(geaendert)
+    )
+    dazu = archiv_neu(zip_, {"zusaetzlich.txt": b"neu"})
+    assert any("zusaetzlich.txt" in p and "steht nicht" in p for p in pruefe_archiv(dazu))
+    # Datei entfernt
+    puffer = io.BytesIO()
+    with zipfile.ZipFile(puffer, "w") as ohne:
+        for name in zip_.namelist():
+            if name != rechnung_pdf:
+                ohne.writestr(name, zip_.read(name))
+    assert any("fehlt im Archiv" in p for p in pruefe_archiv(puffer.getvalue()))
+    # Summenliste fehlt oder keine ZIP-Datei
+    assert pruefe_archiv(b"kein zip") == ["Das ist keine ZIP-Datei."]
+    puffer = io.BytesIO()
+    with zipfile.ZipFile(puffer, "w") as leer:
+        leer.writestr("a.txt", "x")
+    assert "SHA256SUMS fehlt" in pruefe_archiv(puffer.getvalue())[0]
+
+
+def test_befehl_export_pruefen(app, angemeldet, daten, tmp_path):
+    ok = tmp_path / "ok.zip"
+    ok.write_bytes(angemeldet.get("/auswertung/gesamtexport.zip").data)
+    ergebnis = app.test_cli_runner().invoke(args=["export-pruefen", str(ok)])
+    assert ergebnis.exit_code == 0 and "Alle Prüfsummen stimmen" in ergebnis.output
+    kaputt = tmp_path / "kaputt.zip"
+    zip_ = zipfile.ZipFile(ok)
+    kaputt.write_bytes(archiv_neu(zip_, {"daten/gewerbe.csv": b"geaendert"}))
+    ergebnis = app.test_cli_runner().invoke(args=["export-pruefen", str(kaputt)])
+    assert ergebnis.exit_code == 1 and "daten/gewerbe.csv" in ergebnis.output

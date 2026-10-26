@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://faolan-exe.github.io/Steuy/sitemap.xml
+Sitemap: https://faolan-exe.github.io/Steuy/doku/sitemap.xml

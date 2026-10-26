@@ -32,7 +32,7 @@
     </form>
     <a class="knopf" href="{{ url_for('anlagen.verzeichnis_seite', jahr=e.jahr) }}">Anlagen</a>
     <a class="knopf" href="{{ url_for('auswertung.euer_csv', jahr=e.jahr) }}">CSV</a>
-    {% if darf("export") %}<a class="knopf" href="{{ url_for('auswertung.export_zip', jahr=e.jahr) }}" title="EÜR, Zahlungen, Rechnungen und Belege als ZIP">Export für Steuerberatung</a><a class="knopf" href="{{ url_for('auswertung.wechsel') }}" title="Buchungen (DATEV) und Stammdaten für andere Software">Wechsel-Export</a>{% endif %}
+    {% if darf("export") %}<a class="knopf" href="{{ url_for('auswertung.export_zip', jahr=e.jahr) }}" title="Jahresexport: EÜR, Zahlungen, Rechnungen und Belege als ZIP mit SHA-256-Prüfsummen">Jahresexport (ZIP)</a><a class="knopf" href="{{ url_for('auswertung.wechsel') }}" title="Buchungen (DATEV) und Stammdaten für andere Software">Wechsel-Export</a>{% endif %}
     <a class="knopf knopf-primaer" href="{{ url_for('auswertung.euer_pdf', jahr=e.jahr) }}" target="_blank">PDF</a>
   </div>
 </div>

@@ -82,3 +82,22 @@ def test_readme_hat_ueberschrift_und_verweist_auf_die_website():
     assert "<h1>" in readme and "Buchhaltungssoftware für Kleinunternehmer" in readme
     assert "faolan-exe.github.io/Steuy" in readme
     assert (SITE.parent / "docs" / "faq.md").is_file()
+
+
+def test_dokumentation_nav_zeigt_nur_vorhandene_seiten():
+    import re
+
+    konfig = (SITE.parent / "mkdocs.yml").read_text(encoding="utf-8")
+    kopf, _, nav = konfig.partition("\nnav:\n")
+    seiten = re.findall(r":\s+([\w/\-]+\.md)\s*$", nav, re.M)
+    assert seiten
+    for seite in seiten:
+        assert (SITE.parent / "docs" / seite).is_file(), seite
+    # Mit repo_url fragt das Theme bei jedem Aufruf die GitHub-API ab
+    assert not re.search(r"^repo_url:", kopf, re.M)
+    assert "font: false" in kopf
+
+
+def test_workflow_baut_die_dokumentation_nach_site_doku():
+    ablauf = (SITE.parent / ".github" / "workflows" / "pages.yml").read_text(encoding="utf-8")
+    assert "mkdocs build -d site/doku" in ablauf

@@ -1,0 +1,97 @@
+# Dokumentations-Website mit Suche (wird von GitHub Pages unter /doku/ veröffentlicht).
+# Bauen: pip install -r requirements-doku.txt && mkdocs build -d site/doku
+site_name: steuy Dokumentation
+site_description: Dokumentation der selbst gehosteten Buchhaltungssoftware steuy für Kleinunternehmer (Installation, Rechnungen, Mahnwesen, Belege, EÜR, Scanner, Umzug von Lexware).
+site_url: https://faolan-exe.github.io/Steuy/doku/
+docs_dir: docs
+use_directory_urls: true
+copyright: steuy ist keine Steuerberatung. Lizenz PolyForm Shield 1.0.0.
+
+theme:
+  name: material
+  language: de
+  font: false   # keine Schriften von Google laden (Datenschutz)
+  logo: bilder/steuy-signet.svg
+  favicon: bilder/steuy-signet.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - toc.follow
+
+extra:
+  # Kein repo_url: Das Theme würde sonst bei jedem Seitenaufruf die GitHub-API abfragen
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/faolan-exe/Steuy
+      name: steuy auf GitHub
+  generator: false
+
+plugins:
+  - search:
+      lang: de
+
+hooks:
+  - mkdocs_hooks.py
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Start: index.md
+  - Installieren:
+      - Thin Client, ohne Vorkenntnisse: thinclient.md
+      - Proxmox-Container: lxc.md
+      - Betrieb mit Docker: betrieb.md
+  - Benutzen:
+      - Häufige Fragen: faq.md
+      - Rundgang: rundgang.md
+      - Drucklayout: drucklayout.md
+      - Scanner anbinden: scanner.md
+      - Umzug von Lexware: lexware-import.md
+  - Wissen:
+      - Roadmap: roadmap.md
+      - Umfang und Ziele: ziel.md
+      - Aufbau: architektur.md
+      - Fachregeln:
+          - GoBD: domain/gobd.md
+          - EÜR: domain/euer.md
+          - Zahlungen und Prüfung: domain/zahlungen-und-pruefung.md
+          - Mahnwesen: domain/mahnwesen.md
+          - Lieferschein: domain/lieferschein.md
+          - Rollen und Rechte: domain/rollen.md
+          - Export: domain/export.md
+          - Import aus Lexware: domain/import-lexware.md
+          - WooCommerce: domain/woocommerce.md
+  - Entwickeln:
+      - Neue Version veröffentlichen: release.md
+  - Entscheidungen (ADR):
+      - Geldbeträge als Cent: adr/0001-geldbetraege-als-cent.md
+      - Buchungen nur anhängen: adr/0002-append-only-buchungen.md
+      - Getrennte Buchungskreise: adr/0003-getrennte-buchungskreise.md
+      - Oberfläche mit Jinja und HTMX: adr/0004-frontend-jinja-htmx.md
+      - Öffentliches Projekt: adr/0005-oeffentliches-open-source-projekt.md
+      - Belege vor dem Verbuchen löschbar: adr/0006-belege-vor-verbuchung-loeschbar.md
+      - Ein Gewerbe pro Installation: adr/0007-ein-gewerbe-pro-installation.md
+      - PDF mit WeasyPrint: adr/0008-pdf-mit-weasyprint.md
+      - Betrieb mit Docker: adr/0009-betrieb-mit-docker.md
+      - E-Mail über eigenes Postfach: adr/0010-email-ueber-eigenes-postfach.md
+      - Shop-Bestellungen als Entwürfe: adr/0011-shop-bestellungen-als-rechnungsentwuerfe.md
+      - Anlagegüter und Jahreszuordnung: adr/0012-anlagegueter-und-jahreszuordnung.md

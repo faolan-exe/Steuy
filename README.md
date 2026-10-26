@@ -10,11 +10,12 @@
 Kostenloses Rechnungsprogramm und Rechnungswesen für das Kleingewerbe, quelloffen und auf dem eigenen Rechner.
 
 ![Version](https://img.shields.io/badge/Version-0.6.0-0f7c80)
+![Status: Beta](https://img.shields.io/badge/Status-Beta-orange)
 ![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555)
 
 <a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/Live--Demo_ausprobieren-%E2%86%92-0f7c80?style=for-the-badge" alt="Live-Demo ausprobieren" height="44"></a>
 
-[Website](https://faolan-exe.github.io/Steuy/) · [Screenshots](#screenshots) · [Installieren](#installieren) · [Anleitung für Einsteiger](docs/thinclient.md) · [Häufige Fragen](docs/faq.md) · [Dokumentation](#dokumentation)
+[Website](https://faolan-exe.github.io/Steuy/) · [Doku mit Suche](https://faolan-exe.github.io/Steuy/doku/) · [Screenshots](#screenshots) · [Installieren](#installieren) · [Anleitung für Einsteiger](docs/thinclient.md) · [Häufige Fragen](docs/faq.md) · [Roadmap](docs/roadmap.md) · [Dokumentation](#dokumentation)
 
 </div>
 
@@ -23,6 +24,9 @@ steuy ist eine **Buchhaltungssoftware für Kleinunternehmer und Kleingewerbe** n
 steuy ist **selbst gehostet**: Die Software läuft auf deinem eigenen Rechner, zum Beispiel einem kleinen Thin Client im Heimnetz. Deine Buchhaltungsdaten verlassen ihn nicht, es gibt kein Konto bei uns. Der Quellcode ist offen einsehbar (quelloffen, [PolyForm Shield](LICENSE)), die Nutzung im eigenen Gewerbe ist kostenlos.
 
 steuy richtet sich vor allem an Einsteiger. Ein Rundgang erklärt beim ersten Start alle Bereiche, und Hilfetexte an den Feldern sagen, was wo hingehört. Wer von Lexware kommt, importiert seine Daten aus dem DATEV-Archiv und den Zahlungslisten.
+
+> [!WARNING]
+> **Beta:** steuy wird aktiv weiterentwickelt. Datenmodell und Abläufe können sich von Version zu Version ändern. Das Update per Klick sichert vorher automatisch, ein zweites Exemplar auf einem anderen Gerät gehört trotzdem dazu. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. Was kommt, steht in der [Roadmap](docs/roadmap.md).
 
 ## Live-Demo
 
@@ -159,6 +163,7 @@ Beides läuft auch in der CI.
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): Regeln für die Mitarbeit
 - [docs/faq.md](docs/faq.md): Häufige Fragen und Antworten
+- [docs/roadmap.md](docs/roadmap.md): Was steuy kann und was als Nächstes kommt
 - [docs/thinclient.md](docs/thinclient.md): Installation für Einsteiger auf einem Thin Client
 - [docs/scanner.md](docs/scanner.md): Scanner anbinden (Brother ADS-1800W)
 - [docs/betrieb.md](docs/betrieb.md): Betrieb, Sicherung und Wiederherstellung

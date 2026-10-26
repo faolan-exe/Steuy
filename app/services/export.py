@@ -1,6 +1,7 @@
 """Exporte: ZIP für die Steuerberatung, Wechsel-Export (DATEV) und Gesamtexport."""
 
 import csv
+import hashlib
 import io
 import tempfile
 import zipfile
@@ -18,6 +19,7 @@ from app.services import ablage
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.euer import berechne
 from app.services.protokoll import protokolliere
+from app.version import VERSION
 
 # Gesamtexport: alle fachlichen Tabellen
 TABELLEN = (
@@ -39,6 +41,76 @@ TABELLEN = (
     "protokoll",
 )
 OHNE_SPALTEN = {"nutzer": {"passwort_hash"}}
+
+
+PRUEFSUMMEN_DATEI = "SHA256SUMS"
+PRUEFEN_TEXT = """So prüfst du, dass nichts verändert wurde
+==========================================
+
+Die Datei SHA256SUMS enthält zu jeder Datei dieses Archivs eine SHA-256-Prüfsumme (ein
+digitaler Fingerabdruck). Stimmt eine Summe nicht mehr, wurde die Datei nach dem Export
+geändert oder ist beschädigt. Hebe das Archiv samt dieser Datei auf (Aufbewahrungsfristen
+bitte mit der Steuerberatung klären).
+
+1. Archiv entpacken.
+2. Prüfen:
+   - Linux:    sha256sum -c SHA256SUMS
+   - macOS:    shasum -a 256 -c SHA256SUMS
+   - Windows:  in PowerShell: Get-FileHash -Algorithm SHA256 <Datei>
+               und mit der Zeile in SHA256SUMS vergleichen
+   - steuy:    flask export-pruefen <Archiv>.zip
+
+Erstellt mit steuy {version}.
+"""
+
+
+class _Archiv:
+    """ZIP, das beim Schließen eine Prüfsummenliste (SHA256SUMS) und eine Anleitung anhängt."""
+
+    def __init__(self, datei) -> None:
+        self._zip = zipfile.ZipFile(datei, "w", zipfile.ZIP_DEFLATED)
+        self._summen: dict[str, str] = {}
+
+    def writestr(self, name: str, inhalt: bytes | str) -> None:
+        daten = inhalt.encode() if isinstance(inhalt, str) else inhalt
+        self._zip.writestr(name, daten)
+        self._summen[name] = hashlib.sha256(daten).hexdigest()
+
+    def __enter__(self) -> "_Archiv":
+        return self
+
+    def __exit__(self, art, wert, spur) -> None:
+        if art is None:
+            self.writestr("PRUEFEN.txt", PRUEFEN_TEXT.format(version=VERSION))
+            zeilen = "".join(f"{summe}  {name}\n" for name, summe in sorted(self._summen.items()))
+            self._zip.writestr(PRUEFSUMMEN_DATEI, zeilen)
+        self._zip.close()
+
+
+def pruefe_archiv(inhalt: bytes) -> list[str]:
+    """Prüft ein steuy-Archiv gegen seine SHA256SUMS. Leere Liste heißt: alles in Ordnung."""
+    probleme: list[str] = []
+    try:
+        archiv = zipfile.ZipFile(io.BytesIO(inhalt))
+    except zipfile.BadZipFile:
+        return ["Das ist keine ZIP-Datei."]
+    with archiv:
+        if PRUEFSUMMEN_DATEI not in archiv.namelist():
+            return [f"{PRUEFSUMMEN_DATEI} fehlt im Archiv."]
+        erwartet: dict[str, str] = {}
+        for zeile in archiv.read(PRUEFSUMMEN_DATEI).decode().splitlines():
+            summe, _, name = zeile.partition("  ")
+            if summe and name:
+                erwartet[name] = summe
+        vorhanden = {n for n in archiv.namelist() if n != PRUEFSUMMEN_DATEI and not n.endswith("/")}
+        for name in sorted(vorhanden - erwartet.keys()):
+            probleme.append(f"{name}: steht nicht in {PRUEFSUMMEN_DATEI} (hinzugefügt?)")
+        for name, summe in sorted(erwartet.items()):
+            if name not in vorhanden:
+                probleme.append(f"{name}: fehlt im Archiv")
+            elif hashlib.sha256(archiv.read(name)).hexdigest() != summe:
+                probleme.append(f"{name}: Prüfsumme stimmt nicht (verändert oder beschädigt)")
+    return probleme
 
 
 def _betrag(cent: int) -> str:
@@ -68,7 +140,7 @@ def steuerberater_zip(jahr: int, nutzer_id: int) -> tempfile.SpooledTemporaryFil
     # Wird an send_file übergeben und dort geschlossen
     datei = tempfile.SpooledTemporaryFile(max_size=50 * 1024 * 1024)  # noqa: SIM115
     ergebnis = berechne(jahr)
-    with zipfile.ZipFile(datei, "w", zipfile.ZIP_DEFLATED) as zip_:
+    with _Archiv(datei) as zip_:
         zip_.writestr(f"EUER-{jahr}.pdf", euer_pdf(ergebnis))
 
         zeilen = [["Zeile", "Kennzahl", "Bezeichnung", "Betrag EUR"]]
@@ -169,8 +241,33 @@ def steuerberater_zip(jahr: int, nutzer_id: int) -> tempfile.SpooledTemporaryFil
                 ),
             )
         ).scalars()
-        for r in rechnungen:
+        uebersicht = [
+            [
+                "Nummer",
+                "Art",
+                "Datum",
+                "Kunde",
+                "Betrag EUR",
+                "Status",
+                "Fällig am",
+                "SHA-256 (PDF)",
+            ]
+        ]
+        for r in sorted(rechnungen, key=lambda x: (x.rechnungsdatum, x.nummer)):
             zip_.writestr(f"rechnungen/{_dateiname(r.nummer)}.pdf", ablage.lies(r.pdf_sha256))
+            uebersicht.append(
+                [
+                    r.nummer,
+                    "Rechnungskorrektur" if r.belegart == "korrektur" else "Rechnung",
+                    r.rechnungsdatum.strftime("%d.%m.%Y"),
+                    r.empfaenger_name or "",
+                    _betrag(r.summe_cent),
+                    r.status,
+                    r.faellig_am.strftime("%d.%m.%Y") if r.faellig_am else "",
+                    r.pdf_sha256,
+                ]
+            )
+        zip_.writestr(f"Rechnungen-{jahr}.csv", _csv(uebersicht))
 
         zip_.writestr(
             "LIESMICH.txt",
@@ -178,8 +275,10 @@ def steuerberater_zip(jahr: int, nutzer_id: int) -> tempfile.SpooledTemporaryFil
             f"{date.today():%d.%m.%Y}.\n\n"
             "EUER-*.pdf/csv: Werte für die Anlage EÜR (nach Zahlungsdatum)\n"
             "Zahlungen-*.csv: alle Zahlungseingänge und -ausgänge des Jahres\n"
+            "Rechnungen-*.csv: Übersicht der Ausgangsrechnungen mit Prüfsumme des PDFs\n"
             "rechnungen/: Ausgangsrechnungen und Rechnungskorrekturen (PDF/A, Original)\n"
-            "belege/: Eingangsbelege im Original, Index.csv mit SHA-256-Prüfsummen\n",
+            "belege/: Eingangsbelege im Original, Index.csv mit SHA-256-Prüfsummen\n"
+            "SHA256SUMS: Prüfsumme jeder Datei dieses Archivs, Anleitung in PRUEFEN.txt\n",
         )
     protokolliere("export_steuerberater", nutzer_id=nutzer_id, details={"jahr": jahr})
     db.session.commit()
@@ -201,7 +300,7 @@ def gesamt_zip(nutzer_id: int) -> tempfile.SpooledTemporaryFile:
     datei = tempfile.SpooledTemporaryFile(max_size=50 * 1024 * 1024)  # noqa: SIM115
     verbindung = db.session.connection()
     vorhandene = set(inspect(verbindung).get_table_names())
-    with zipfile.ZipFile(datei, "w", zipfile.ZIP_DEFLATED) as zip_:
+    with _Archiv(datei) as zip_:
         for tabelle in TABELLEN:
             if tabelle not in vorhandene:
                 continue
@@ -354,7 +453,7 @@ def wechsel_zip(
     for z in db.session.execute(select(Zahlung).order_by(Zahlung.datum, Zahlung.id)).scalars():
         jahre.setdefault(z.datum.year, []).append(_datev_posten(z))
     jetzt = datetime.now()
-    with zipfile.ZipFile(datei, "w", zipfile.ZIP_DEFLATED) as zip_:
+    with _Archiv(datei) as zip_:
         for jahr, posten in sorted(jahre.items()):
             kopf = Kopf(jahr, kontenrahmen, beraternummer, mandantennummer, jetzt)
             zip_.writestr(f"DATEV/EXTF_Buchungsstapel_{jahr}.csv", buchungsstapel(kopf, posten))

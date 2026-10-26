@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["site/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", "docs/**", "mkdocs.yml", "mkdocs_hooks.py", "requirements-doku.txt", ".github/workflows/pages.yml"]
 
 permissions:
   contents: read
@@ -29,6 +29,17 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-doku.txt
+      - name: Dokumentation bauen (mit Suche)
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: |
+          pip install -r requirements-doku.txt
+          mkdocs build -d site/doku
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
