@@ -9,7 +9,7 @@
 
 Kostenloses Rechnungsprogramm und Rechnungswesen für das Kleingewerbe, quelloffen und auf dem eigenen Rechner.
 
-![Version](https://img.shields.io/badge/Version-0.7.0-0f7c80)
+![Version](https://img.shields.io/badge/Version-0.8.0-0f7c80)
 ![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red)
 ![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555)
 
