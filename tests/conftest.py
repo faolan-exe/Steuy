@@ -1,4 +1,10 @@
+import os
+
 import pytest
+
+# Tests prüfen E-Rechnungen im selben Prozess (schneller). Der eigene Prüfprozess hat einen
+# eigenen Test in test_zugferd.py.
+os.environ.setdefault("ERECHNUNG_PRUEFUNG", "intern")
 from flask_migrate import upgrade
 from sqlalchemy import text
 from sqlalchemy.orm import scoped_session, sessionmaker

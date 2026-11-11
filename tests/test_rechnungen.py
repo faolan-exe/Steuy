@@ -456,3 +456,20 @@ def test_vergebene_nummer_nicht_erneut(angemeldet, final):
     }
     antwort = angemeldet.post("/einstellungen/rechnungen", data=daten)
     assert "RE0001 ist schon vergeben" in antwort.get_data(as_text=True)
+
+
+def test_ueberfaellig_in_liste_und_filter(angemeldet, final, session):
+    from datetime import date, timedelta
+
+    from sqlalchemy import text as sql
+
+    # Fälligkeit in die Vergangenheit (Trigger schützt festgeschriebene Rechnungen)
+    session.execute(sql("ALTER TABLE rechnung DISABLE TRIGGER USER"))
+    final.faellig_am = date.today() - timedelta(days=3)
+    session.commit()
+    session.execute(sql("ALTER TABLE rechnung ENABLE TRIGGER USER"))
+    assert final.ueberfaellig
+    seite = angemeldet.get("/rechnungen?filter=ueberfaellig").get_data(as_text=True)
+    assert final.nummer in seite and "überfällig" in seite
+    final.status = "bezahlt"
+    assert not final.ueberfaellig

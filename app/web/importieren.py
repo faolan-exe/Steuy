@@ -6,7 +6,16 @@ import shutil
 import time
 from pathlib import Path
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 from flask_login import current_user
 
 from app.domain.csvimport import FELDER, PFLICHT, CsvUngueltig, lies, vorschlag
@@ -14,11 +23,13 @@ from app.domain.rollen import Recht
 from app.services.archivimport import (
     importiere_archiv,
     ist_zahlungsliste,
+    stand_nach_import,
     uebernehme_zahlungen,
     zahlungslisten_im_zip,
 )
 from app.services.csvimport import importiere_artikel, importiere_kontakte
 from app.services.kontakte import TYPEN
+from app.services.rechnungseinstellungen import rechnungskreis
 from app.web.rechte import braucht_recht
 
 bp = Blueprint("importieren", __name__, url_prefix="/import")
@@ -172,4 +183,28 @@ def archiv():
         ergebnisse=ergebnisse,
         token=token if pruefen else None,
         fertig=not pruefen,
+        nachher=None if pruefen else stand_nach_import(),
+        nachher_praefix=rechnungskreis().praefix,
     )
+
+
+@bp.post("/nummernkreis")
+@braucht_recht(Recht.EINSTELLUNGEN)
+def nummernkreis_anschliessen():
+    """Nächste Rechnungsnummer hinter die übernommenen Lexware-Nummern setzen."""
+    from app.services.rechnungseinstellungen import NummerSchonVergeben, uebernimm_naechste_nummer
+
+    try:
+        naechste = int(request.form.get("naechste", ""))
+        stellen = int(request.form.get("stellen", ""))
+        if not (1 <= stellen <= 8 and 1 <= naechste < 10**stellen):
+            raise ValueError
+    except ValueError:
+        abort(400)
+    try:
+        nummer = uebernimm_naechste_nummer(naechste, stellen, current_user.id)
+    except NummerSchonVergeben as fehler:
+        flash(str(fehler))
+    else:
+        flash(f"Deine nächste Rechnung bekommt die Nummer {nummer}.")
+    return redirect(url_for("allgemein.pruefen"))

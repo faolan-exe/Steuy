@@ -80,3 +80,38 @@ def test_csrf_schutz_aktiv(app, admin):
         assert antwort.status_code == 400
     finally:
         app.config["WTF_CSRF_ENABLED"] = False
+
+
+def test_anmeldeseite_fuer_passwortmanager_und_ohne_neu_tippen(client, admin):
+    """Passwortmanager brauchen autocomplete-Angaben, nach einem Fehler bleibt alles stehen."""
+    seite = client.get("/anmelden").get_data(as_text=True)
+    assert 'autocomplete="username"' in seite and 'autocomplete="current-password"' in seite
+    antwort = client.post("/anmelden", data={"email": "x@y.example", "passwort": "Tippfehler-123"})
+    seite = antwort.get_data(as_text=True)
+    assert 'value="Tippfehler-123"' in seite and "autofocus" in seite
+    assert antwort.headers["Cache-Control"] == "no-store"
+
+
+def test_sicherheits_kopfzeilen_auch_ausserhalb_der_demo(client, admin):
+    k = client.get("/anmelden").headers
+    assert k["X-Frame-Options"] == "SAMEORIGIN" and k["X-Content-Type-Options"] == "nosniff"
+    assert "script-src 'self' 'nonce-" in k["Content-Security-Policy"]
+    assert "unsafe-inline" not in k["Content-Security-Policy"].split("script-src")[1].split(";")[0]
+
+
+def test_hilfe_symbole_nicht_in_der_tab_reihenfolge(app):
+    from app.web.hilfe import symbol_fuer_begriff
+
+    with app.test_request_context("/"):
+        assert 'tabindex="-1"' in str(symbol_fuer_begriff("versand", True))
+
+
+def test_abmeldung_nach_leerlauf(angemeldet, app):
+    import time
+
+    assert angemeldet.get("/").status_code == 200
+    with angemeldet.session_transaction() as sitzung:
+        sitzung["zuletzt_aktiv"] = time.time() - 9 * 3600
+    antwort = angemeldet.get("/")
+    assert antwort.status_code == 302 and "/anmelden" in antwort.headers["Location"]
+    assert angemeldet.get("/").status_code == 302  # wirklich abgemeldet

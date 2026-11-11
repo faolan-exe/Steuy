@@ -138,15 +138,17 @@ class Rechnung(db.Model):
     )
     kontakt = relationship("Kontakt")
     bezug: Mapped["Rechnung | None"] = relationship(remote_side=[id])
+    # selectin: Listen und Dashboard laden Zahlungen und Mahnungen aller Rechnungen mit je
+    # einer Abfrage statt einer pro Rechnung
     zahlungen: Mapped[list["Zahlung"]] = relationship(  # noqa: F821
-        back_populates="rechnung", order_by="Zahlung.id"
+        back_populates="rechnung", order_by="Zahlung.id", lazy="selectin"
     )
 
     versand: Mapped[list["Versand"]] = relationship(  # noqa: F821
         order_by="Versand.gesendet_am.desc()", viewonly=True
     )
     mahnungen: Mapped[list["Mahnung"]] = relationship(  # noqa: F821
-        back_populates="rechnung", order_by="Mahnung.stufe"
+        back_populates="rechnung", order_by="Mahnung.stufe", lazy="selectin"
     )
 
     @property
@@ -162,6 +164,26 @@ class Rechnung(db.Model):
         if not self.ist_rechnung or self.ist_entwurf or self.status == "storniert":
             return 0
         return self.summe_cent - self.bezahlt_cent
+
+    @property
+    def ueberfaellig(self) -> bool:
+        """Rechnung mit offenem Betrag nach dem Fälligkeitsdatum."""
+        return (
+            self.belegart == "rechnung"
+            and self.status in ("offen", "teilbezahlt")
+            and self.faellig_am is not None
+            and self.faellig_am < date.today()
+        )
+
+    @property
+    def abgelaufen(self) -> bool:
+        """Offenes Angebot nach dem Gültigkeitsdatum."""
+        return (
+            self.belegart == "angebot"
+            and self.status == "offen"
+            and self.gueltig_bis is not None
+            and self.gueltig_bis < date.today()
+        )
 
     @property
     def ist_entwurf(self) -> bool:

@@ -27,8 +27,26 @@
     <p class="meldung" role="status">Bereits aktuelle Version. Du hast die neueste Version ({{ ergebnis.neueste }}).</p>
     {% elif ergebnis.zustand == "fehler" %}
     <p class="meldung warnung" role="alert">{{ ergebnis.meldung }}</p>
+    {% elif ergebnis.zustand == "nicht_gesucht" %}
+    <p class="hinweis">Die automatische Suche ist aus. steuy fragt GitHub erst, wenn du auf „Nach Updates suchen“ klickst.</p>
     {% endif %}
-    <a class="knopf knopf-text" href="{{ url_for('einstellungen.update', pruefen=1) }}">Nach Updates suchen</a>
+    <a class="knopf" href="{{ url_for('einstellungen.update', pruefen=1) }}">Nach Updates suchen</a>
+    {% if gewerbe.update_gesucht_am %}<p class="hinweis">Zuletzt gesucht: {{ gewerbe.update_gesucht_am | datum_zeit }}</p>{% endif %}
+  </div>
+</section>
+
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Automatisch nach Updates suchen</h2></div>
+  <div class="karte-inhalt">
+    <form method="post" action="{{ url_for('einstellungen.update_automatik') }}" id="update-automatik">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="zahlungsart schalterbox">
+        <span><strong>Einmal am Tag nach einer neuen Version suchen</strong><br>
+        <span class="hinweis">Gibt es eine, zeigt steuy einen Hinweis am Einstellungssymbol und im Dashboard. Installiert wird <strong>nie von selbst</strong>, sondern nur, wenn du hier auf „Updaten“ klickst und bestätigst. Dabei fragt steuy nur bei GitHub nach der neuesten Versionsnummer, es werden keine Daten übertragen.</span></span>
+        <input type="checkbox" class="schalter" name="an" value="y" {% if gewerbe.update_auto_suchen %}checked{% endif %} data-sofort-senden aria-label="Automatisch nach Updates suchen">
+      </label>
+      <noscript><button class="knopf" type="submit">Speichern</button></noscript>
+    </form>
   </div>
 </section>
 
@@ -53,7 +71,7 @@
       <button class="knopf" type="submit">Doch aktualisieren</button>
     </form>
     {% elif not automatisch %}
-    <p class="meldung warnung">Das Update per Knopfdruck gibt es nur bei der Installation im LXC mit dem Installationsskript. Sonst im Ordner von steuy: <code>git pull && docker compose up -d --build</code>. Mehr dazu in <code>docs/betrieb.md</code>.</p>
+    <p class="meldung warnung">Das Update per Knopfdruck ist auf diesem Server noch nicht eingerichtet. Einmalig im Ordner von steuy als root ausführen: <code>sh scripts/update-dienst-einrichten.sh</code> (bei der Installation mit dem Installationsskript passiert das automatisch). Ohne Dienst geht es von Hand: <code>git pull && docker compose up -d --build</code>. Mehr dazu in <code>docs/betrieb.md</code>.</p>
     {% elif status.zustand in ("angefragt", "laeuft") %}
     <p class="hinweis">Ein Update läuft bereits.</p>
     {% else %}
@@ -72,7 +90,7 @@
 </section>
 {% endif %}
 
-<script>
+<script nonce="{{ csp_nonce() }}">
 (function () {
   var box = document.getElementById("update-lauf");
   if (!box) return;

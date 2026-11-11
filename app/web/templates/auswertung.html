@@ -26,7 +26,7 @@
   <h1>Einnahmen-Überschuss-Rechnung{{ hilfe("euer") }} <small>{{ e.jahr }}</small></h1>
   <div class="aktionen">
     <form method="get" class="jahreswahl">
-      <select class="feld" name="jahr" aria-label="Jahr" onchange="this.form.submit()">
+      <select class="feld" name="jahr" aria-label="Jahr" data-sofort-senden>
         {% for j in jahre %}<option value="{{ j }}" {% if j == e.jahr %}selected{% endif %}>{{ j }}</option>{% endfor %}
       </select>
     </form>

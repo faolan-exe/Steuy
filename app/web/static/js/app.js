@@ -116,3 +116,77 @@
   });
   window.addEventListener("scroll", verstecke, { passive: true });
 })();
+
+// Formulare, die beim Ändern sofort speichern (Schalter, Jahreswahl, Datei-Auswahl), und
+// Druck-Knöpfe. Ohne Inline-Handler, damit die Content-Security-Policy keine braucht.
+(function () {
+  "use strict";
+  let toast;
+  function zeigeMeldung(text, fehler) {
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.className = "toast";
+      toast.setAttribute("role", "status");
+      document.body.appendChild(toast);
+    }
+    toast.textContent = text;
+    toast.classList.toggle("toast-fehler", !!fehler);
+    toast.classList.add("sichtbar");
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function () { toast.classList.remove("sichtbar"); }, 2500);
+  }
+
+  // Schalter speichern im Hintergrund, die Seite bleibt stehen. Auswahllisten und Dateien
+  // (z. B. Jahreswahl, Beleg-Upload) laden dagegen neuen Inhalt und schicken das Formular ab.
+  function imHintergrund(feld) {
+    const form = feld.form;
+    const daten = new FormData(form); // vor dem Sperren lesen: gesperrte Felder fehlen sonst
+    feld.disabled = true;
+    fetch(form.action, {
+      method: "POST",
+      body: daten,
+      headers: { "X-Requested-With": "fetch" },
+      credentials: "same-origin",
+    })
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
+      .then(function (antwort) { zeigeMeldung(antwort.meldung || "Gespeichert."); })
+      .catch(function () {
+        feld.checked = !feld.checked;
+        zeigeMeldung("Das konnte nicht gespeichert werden. Bitte erneut versuchen.", true);
+      })
+      .finally(function () { feld.disabled = false; });
+  }
+
+  document.addEventListener("change", function (e) {
+    const feld = e.target.closest ? e.target.closest("[data-sofort-senden]") : null;
+    if (!feld || !feld.form) return;
+    if (feld.type === "checkbox" && window.fetch && window.FormData) {
+      imHintergrund(feld);
+      return;
+    }
+    if (feld.form.requestSubmit) feld.form.requestSubmit();
+    else feld.form.submit();
+  });
+  document.addEventListener("click", function (e) {
+    if (e.target.closest && e.target.closest("[data-drucken]")) window.print();
+  });
+})();
+
+// Text aus einem Feld kopieren (z. B. Kundenlink)
+(function () {
+  "use strict";
+  document.addEventListener("click", function (e) {
+    const knopf = e.target.closest ? e.target.closest("[data-kopieren-aus]") : null;
+    if (!knopf) return;
+    const feld = document.querySelector(knopf.dataset.kopierenAus);
+    if (!feld) return;
+    feld.select();
+    const fertig = function () {
+      const alt = knopf.textContent;
+      knopf.textContent = "Kopiert";
+      setTimeout(function () { knopf.textContent = alt; }, 1500);
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(feld.value).then(fertig);
+    else { document.execCommand("copy"); fertig(); }
+  });
+})();

@@ -9,7 +9,12 @@
     {% if darf("rechnungen_versenden") %}
     <form method="post" action="{{ url_for('rechnungen.finalisieren', rechnung_id=r.id) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if mail_bereit %}
+      <button class="knopf" type="submit" {% if fehler %}disabled aria-disabled="true"{% endif %}>Nur finalisieren</button>
+      <button class="knopf knopf-primaer" type="submit" name="danach" value="senden" {% if fehler %}disabled aria-disabled="true"{% endif %}>Finalisieren und senden</button>
+      {% else %}
       <button class="knopf knopf-primaer" type="submit" {% if fehler %}disabled aria-disabled="true"{% endif %}>Finalisieren</button>
+      {% endif %}
     </form>
     {% endif %}
   </div>

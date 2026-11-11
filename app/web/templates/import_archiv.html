@@ -57,6 +57,35 @@
   </div>
 </section>
 {% endfor %}
+{% if fertig and nachher %}
+<section class="karte" id="nachher">
+  <div class="karte-kopf"><h2>Was jetzt noch fehlt</h2></div>
+  <div class="karte-inhalt">
+    {% if nachher.naechste_nummer and darf("einstellungen") %}
+    <div class="hinweisbox">
+      <p><strong>Rechnungsnummern fortsetzen.</strong> Die höchste übernommene Rechnung ist {{ nachher.hoechste_nummer }}. Damit keine Nummer doppelt vergeben wird, sollte deine nächste Rechnung in steuy die Nummer <strong>{{ "%s%0*d" | format(nachher_praefix, nachher.stellen, nachher.naechste_nummer) }}</strong> bekommen. Hast du in Lexware danach noch Rechnungen geschrieben, trag die nächste freie Nummer unter Einstellungen → Rechnungen ein.</p>
+      <form method="post" action="{{ url_for('importieren.nummernkreis_anschliessen') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="naechste" value="{{ nachher.naechste_nummer }}">
+        <input type="hidden" name="stellen" value="{{ nachher.stellen }}">
+        <button class="knopf knopf-primaer" type="submit">Nummer übernehmen</button>
+      </form>
+    </div>
+    {% endif %}
+    {% if nachher.offen %}
+    <p><strong>Ohne Zahlungsdatum</strong> (zählen erst in der EÜR, wenn das Datum da ist):</p>
+    <table class="tabelle">
+      <thead><tr><th>Jahr</th><th class="rechts">Einnahmen</th><th class="rechts">Ausgaben</th></tr></thead>
+      <tbody>{% for jahr, arten in nachher.offen.items() %}<tr><td>{{ jahr }}</td><td class="rechts">{{ arten.get("einnahme", 0) }}</td><td class="rechts">{{ arten.get("ausgabe", 0) }}</td></tr>{% endfor %}</tbody>
+    </table>
+    <p class="hinweis">Am schnellsten: In Lexware für jedes dieser Jahre <em>Export → Listen im CSV-Format</em> herunterladen und hier hochladen. Das ZIP muss <code>Export_RA</code> (Einnahmen) und <code>Export_RE</code> (Ausgaben) enthalten. Was dann noch offen ist, wurde wirklich noch nicht bezahlt oder erfasst du unter „Zu prüfen“.</p>
+    {% else %}
+    <p>Alle übernommenen Buchungen haben ein Zahlungsdatum.</p>
+    {% endif %}
+    {% if nachher.entwuerfe %}<p><strong>{{ nachher.entwuerfe }} Entwürfe</strong> warten unter „Zu prüfen“ auf eine Kategorie.</p>{% endif %}
+  </div>
+</section>
+{% endif %}
 {% if fertig %}
 <div class="formular-fuss">
   <a class="knopf" href="{{ url_for('importieren.archiv_start') }}">Weitere Dateien</a>

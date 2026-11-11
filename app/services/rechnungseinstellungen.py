@@ -16,6 +16,9 @@ GEWERBE_FELDER = (
     "rechnung_einleitung",
     "rechnung_nachbemerkung",
     "e_rechnung",
+    "kundenportal",
+    "kundenportal_plz",
+    "oeffentliche_adresse",
 )
 KREIS_FELDER = ("praefix", "stellen", "naechste_nummer")
 
@@ -82,3 +85,27 @@ def aendere_mail_einstellungen(gewerbe: Gewerbe, daten: dict, nutzer_id: int) ->
         protokolliere("mail_einstellungen", nutzer_id=nutzer_id, details={"felder": geaendert})
     db.session.commit()
     return geaendert
+
+
+def uebernimm_naechste_nummer(naechste: int, stellen: int, nutzer_id: int) -> str:
+    """Nach dem Umzug: Der Nummernkreis macht dort weiter, wo das alte Programm aufgehört hat.
+    Nur vorwärts, nie auf eine schon vergebene Nummer."""
+    kreis = rechnungskreis()
+    if naechste < kreis.naechste_nummer:
+        raise NummerSchonVergeben("Der Nummernkreis ist schon weiter.")
+    kandidat = formatiere_nummer(kreis.praefix, naechste, stellen)
+    if db.session.execute(select(Rechnung.id).where(Rechnung.nummer == kandidat)).first():
+        raise NummerSchonVergeben(f"Die Nummer {kandidat} ist schon vergeben.")
+    protokolliere(
+        "rechnungseinstellungen_geaendert",
+        nutzer_id=nutzer_id,
+        details={
+            "naechste_nummer": {"alt": kreis.naechste_nummer, "neu": naechste},
+            "stellen": {"alt": kreis.stellen, "neu": stellen},
+            "grund": "Umzug: an die übernommenen Rechnungsnummern angeschlossen",
+        },
+    )
+    kreis.naechste_nummer = naechste
+    kreis.stellen = stellen
+    db.session.commit()
+    return kandidat

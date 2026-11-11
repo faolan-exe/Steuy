@@ -34,6 +34,7 @@ def create_app(config: type[Config] = Config) -> Flask:
         einstellungen,
         importieren,
         kontakte,
+        kundenportal,
         profil,
         rechnungen,
         rundgang,
@@ -59,11 +60,16 @@ def create_app(config: type[Config] = Config) -> Flask:
     app.register_blueprint(anlagen.bp)
     app.register_blueprint(rundgang.bp)
     app.register_blueprint(wiederkehrend.bp)
+    app.register_blueprint(kundenportal.bp)
     registriere_filter(app)
 
     from app.web.hilfe import registriere as registriere_hilfe
 
     registriere_hilfe(app)
+
+    from app.web.sicherheit import registriere as registriere_sicherheit
+
+    registriere_sicherheit(app)
     registriere_zugang(app)
 
     from app.web.fehler import registriere as registriere_fehlerseiten

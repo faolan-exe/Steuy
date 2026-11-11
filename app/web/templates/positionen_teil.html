@@ -1,0 +1,81 @@
+{# Positionen im Rechnungs- und im Vorlagen-Editor. Hinzufügen und Entfernen erledigt
+   positionen.js im Browser, ohne die Seite neu zu laden. Ohne JavaScript schicken die Knöpfe
+   das Formular wie früher an den Server (name="aktion"). #}
+{% from "icons.html" import icon %}
+
+{% macro _feld(name, label, wert, klasse, fehler) -%}
+<div class="feldgruppe {{ klasse }}{% if fehler.get(name) %} hat-fehler{% endif %}">
+  <input class="feld" type="text" id="{{ name }}" name="{{ name }}" value="{{ wert if wert is not none else '' }}" placeholder=" " autocomplete="off">
+  <label class="feldlabel" for="{{ name }}">{{ label }}</label>
+  {% if fehler.get(name) %}<div class="feldfehler">{{ fehler[name] }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro _zeile(i, p, nummer, artikelliste, fehler) -%}
+{% set pre = "pos-" ~ i ~ "-" %}
+{% if p.typ == "text" %}
+<div class="position freitext" data-position>
+  <input type="hidden" name="{{ pre }}typ" value="text">
+  <input type="hidden" name="{{ pre }}artikel_id" value="{{ p.artikel_id or '' }}">
+  <span class="positionsnr">T</span>
+  <div class="feldgruppe">
+    <input class="feld" name="{{ pre }}bezeichnung" id="{{ pre }}bezeichnung" value="{{ p.bezeichnung }}" placeholder=" " autocomplete="off">
+    <label class="feldlabel" for="{{ pre }}bezeichnung">Freitext / Zwischenüberschrift</label>
+  </div>
+  <button class="symbolknopf" type="submit" name="aktion" value="entfernen-{{ i }}" data-entfernen title="Position entfernen" aria-label="Position entfernen">✕</button>
+</div>
+{% else %}
+<div class="position" data-position>
+  <input type="hidden" name="{{ pre }}typ" value="artikel">
+  <input type="hidden" name="{{ pre }}artikel_id" value="{{ p.artikel_id or '' }}">
+  <span class="positionsnr">{{ nummer }}</span>
+  <div class="positionsfelder">
+    <div class="feldgruppe bez">
+      <input class="feld" name="{{ pre }}bezeichnung" id="{{ pre }}bezeichnung" value="{{ p.bezeichnung }}" placeholder=" " autocomplete="off"{% if artikelliste %} list="artikelvorschlaege"{% endif %}>
+      <label class="feldlabel" for="{{ pre }}bezeichnung">Bezeichnung</label>
+    </div>
+    {{ _feld(pre ~ "menge", "Menge", p.menge or "1", "zahl", fehler) }}
+    {{ _feld(pre ~ "einheit", "Einheit", p.einheit, "einheit", fehler) }}
+    {{ _feld(pre ~ "preis", "Preis €", p.preis or "0,00", "zahl", fehler) }}
+    {{ _feld(pre ~ "rabatt", "Rabatt %", p.rabatt, "zahl schmal-zahl", fehler) }}
+    <div class="positionsbetrag">{{ (p.betrag_cent or 0) | euro }}</div>
+    <div class="feldgruppe besch">
+      <textarea class="feld" name="{{ pre }}beschreibung" id="{{ pre }}beschreibung" placeholder=" " rows="1">{{ p.beschreibung or "" }}</textarea>
+      <label class="feldlabel" for="{{ pre }}beschreibung">Beschreibung (optional)</label>
+    </div>
+  </div>
+  <button class="symbolknopf" type="submit" name="aktion" value="entfernen-{{ i }}" data-entfernen title="Position entfernen" aria-label="Position entfernen">✕</button>
+</div>
+{% endif %}
+{%- endmacro %}
+
+{% macro positionsbereich(positionen, artikelliste, fehler) -%}
+<div data-positionen>
+  {% set ns = namespace(nr=0) %}
+  {% for p in positionen %}
+  {% if p.typ != "text" %}{% set ns.nr = ns.nr + 1 %}{% endif %}
+  {{ _zeile(loop.index0, p, ns.nr, artikelliste, fehler) }}
+  {% endfor %}
+</div>
+{% set leer = {"typ": "artikel", "artikel_id": None, "bezeichnung": "", "beschreibung": None, "menge": "1", "einheit": None, "preis": "0,00", "rabatt": None, "betrag_cent": 0} %}
+<template id="vorlage-artikel">{{ _zeile("__I__", leer, "", artikelliste, {}) }}</template>
+<template id="vorlage-text">{{ _zeile("__I__", dict(leer, typ="text"), "", artikelliste, {}) }}</template>
+
+{% if artikelliste %}
+<datalist id="artikelvorschlaege">
+  {% for a in artikelliste %}<option value="{{ a.bezeichnung }}" data-id="{{ a.id }}" data-einheit="{{ a.einheit or '' }}" data-preis="{{ (a.preis_cent | euro)[:-2] }}" data-beschreibung="{{ a.beschreibung or '' }}">{{ (a.preis_cent | euro) }}</option>{% endfor %}
+</datalist>
+{% endif %}
+<div class="positionsaktionen">
+  {% if artikelliste %}
+  <div class="artikelwahl">
+    <select class="feld" name="neuer_artikel" aria-label="Artikel auswählen">
+      {% for a in artikelliste %}<option value="{{ a.id }}">{{ a.bezeichnung }} – {{ a.preis_cent | euro }}</option>{% endfor %}
+    </select>
+    <button class="knopf" type="submit" name="aktion" value="artikel" data-neue-position="artikel-aus-liste">{{ icon("plus") }} Artikel</button>
+  </div>
+  {% endif %}
+  <button class="knopf knopf-text" type="submit" name="aktion" value="position" data-neue-position="artikel">+ Freie Position</button>
+  <button class="knopf knopf-text" type="submit" name="aktion" value="freitext" data-neue-position="text">≡ Freitext</button>
+</div>
+{%- endmacro %}

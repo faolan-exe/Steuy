@@ -188,3 +188,10 @@ def test_befehl_export_pruefen(app, angemeldet, daten, tmp_path):
     kaputt.write_bytes(archiv_neu(zip_, {"daten/gewerbe.csv": b"geaendert"}))
     ergebnis = app.test_cli_runner().invoke(args=["export-pruefen", str(kaputt)])
     assert ergebnis.exit_code == 1 and "daten/gewerbe.csv" in ergebnis.output
+
+
+def test_csv_ohne_formeln_aber_mit_negativen_betraegen():
+    from app.services.export import _csv
+
+    text = _csv([['=HYPERLINK("http://x")', "-12,50", "@SUM(A1)", "Normal", "+49 123"]]).decode()
+    assert "'=HYPERLINK" in text and ";-12,50;" in text and "'@SUM" in text and "'+49 123" in text

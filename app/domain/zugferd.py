@@ -20,6 +20,8 @@ from drafthorse.models.tradelines import LineItem
 
 GUIDELINE_EN16931 = "urn:cen.eu:en16931:2017"
 GUIDELINE_XRECHNUNG = "urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0"
+# Geschäftsprozess (BT-23), Pflicht in der XRechnung (PEPPOL-EN16931-R001)
+PROZESS_XRECHNUNG = "urn:fdc:peppol.eu:2017:poacc:billing:01:1.0"
 TYP_RECHNUNG = "380"
 TYP_GUTSCHRIFT = "381"  # Rechnungskorrektur (Storno): Beträge sind in der E-Rechnung positiv
 BEFREIUNG_STANDARD = "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet."
@@ -90,6 +92,7 @@ class Partei:
     email: str | None = None
     steuernummer: str | None = None
     ust_idnr: str | None = None
+    kennung: str | None = None  # Lieferantennummer beim Kunden (BT-29), sonst Steuernummer
 
 
 @dataclass
@@ -155,6 +158,7 @@ def pruefe(r: ERechnung) -> list[str]:
         )
     if not k.name:
         fehler.append("Der Kunde braucht einen Namen.")
+
     if not (k.strasse and k.ort):
         fehler.append("Beim Kunden fehlt Straße oder Ort.")
     if not r.zeilen:
@@ -205,6 +209,9 @@ def _partei(ziel, p: Partei, mit_kontakt: bool) -> None:
         ziel.address.postcode = p.plz
     if p.ort:
         ziel.address.city_name = p.ort
+    if p.email:
+        # Elektronische Adresse (BT-34 / BT-49), in der XRechnung Pflicht
+        ziel.electronic_address.uri_ID = ("EM", p.email)
     if mit_kontakt:
         if p.ansprechpartner:
             ziel.contact.person_name = p.ansprechpartner
@@ -212,8 +219,6 @@ def _partei(ziel, p: Partei, mit_kontakt: bool) -> None:
             ziel.contact.telephone.number = p.telefon
         if p.email:
             ziel.contact.email.address = p.email
-    elif p.email:
-        ziel.electronic_address.uri_ID = ("EM", p.email)
 
 
 def baue_xml(r: ERechnung) -> bytes:
@@ -222,6 +227,8 @@ def baue_xml(r: ERechnung) -> bytes:
     doc.context.guideline_parameter.id = (
         GUIDELINE_XRECHNUNG if r.ist_xrechnung else GUIDELINE_EN16931
     )
+    if r.ist_xrechnung:
+        doc.context.business_parameter.id = PROZESS_XRECHNUNG
     doc.header.id = r.nummer
     doc.header.type_code = TYP_GUTSCHRIFT if r.korrektur else TYP_RECHNUNG
     doc.header.issue_date_time = r.datum
@@ -234,6 +241,11 @@ def baue_xml(r: ERechnung) -> bytes:
         doc.header.notes.add(zusatz)
 
     vertrag = doc.trade.agreement
+    # Kennung des Verkäufers (BT-29). Ohne USt-IdNr. ist sie Pflicht (BR-CO-26), damit der
+    # Kunde den Lieferanten automatisch zuordnen kann. Kleinunternehmer haben meist nur die
+    # Steuernummer, sie dient dann als Kennung.
+    if r.verkaeufer.kennung or not r.verkaeufer.ust_idnr:
+        vertrag.seller.id = r.verkaeufer.kennung or r.verkaeufer.steuernummer
     _partei(vertrag.seller, r.verkaeufer, mit_kontakt=True)
     if r.verkaeufer.steuernummer:
         vertrag.seller.tax_registrations.add(TaxRegistration(id=("FC", r.verkaeufer.steuernummer)))
@@ -242,6 +254,8 @@ def baue_xml(r: ERechnung) -> bytes:
     _partei(vertrag.buyer, r.kaeufer, mit_kontakt=False)
     if r.kaeuferreferenz:
         vertrag.buyer_reference = r.kaeuferreferenz
+        # Behörden empfangen über die Leitweg-ID (Schema 0204), nicht über eine E-Mail
+        vertrag.buyer.electronic_address.uri_ID = ("0204", r.kaeuferreferenz)
 
     abrechnung = doc.trade.settlement
     abrechnung.currency_code = "EUR"

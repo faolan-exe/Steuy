@@ -25,6 +25,7 @@ from wtforms.validators import (
     Regexp,
     ValidationError,
 )
+from wtforms.widgets import PasswordInput
 
 from app.domain.geld import GeldFormatFehler, euro_zu_cent
 from app.domain.passwort import MINDESTLAENGE, schwaches_passwort
@@ -34,6 +35,18 @@ from app.domain.zahlung import ZAHLUNGSARTEN
 
 PFLICHT = "Pflichtfeld"
 EMAIL = "Bitte eine gültige E-Mail-Adresse eingeben."
+
+
+def passwortfeld(label, validators, autocomplete="new-password", behalten=True):
+    """Passwortfeld mit Hinweis für Passwortmanager (autocomplete). Bei einem Fehler in einem
+    anderen Feld bleibt die Eingabe stehen, statt dass man sie neu tippen muss. Die Seite
+    wird nie zwischengespeichert (Cache-Control: no-store, siehe app/web/sicherheit.py)."""
+    return PasswordField(
+        label,
+        validators,
+        widget=PasswordInput(hide_value=not behalten),
+        render_kw={"autocomplete": autocomplete},
+    )
 
 
 def _ohne_leerzeichen(wert):
@@ -122,8 +135,9 @@ class EinrichtungFormular(FirmendatenFormular):
         "E-Mail für die Anmeldung",
         [DataRequired(PFLICHT), Email(EMAIL), Length(max=254)],
         filters=OHNE_LEERZEICHEN,
+        render_kw={"autocomplete": "username"},
     )
-    passwort = PasswordField(
+    passwort = passwortfeld(
         "Passwort",
         [
             DataRequired(PFLICHT),
@@ -131,7 +145,7 @@ class EinrichtungFormular(FirmendatenFormular):
             starkes_passwort("admin_email", "admin_name", "inhaber", "name"),
         ],
     )
-    passwort_wiederholen = PasswordField(
+    passwort_wiederholen = passwortfeld(
         "Passwort wiederholen",
         [
             DataRequired(PFLICHT),
@@ -157,8 +171,10 @@ class CodeFormular(FlaskForm):
 
 
 class PasswortAendernFormular(FlaskForm):
-    alt = PasswordField("Bisheriges Passwort", [DataRequired(PFLICHT)])
-    neu = PasswordField(
+    alt = passwortfeld(
+        "Bisheriges Passwort", [DataRequired(PFLICHT)], autocomplete="current-password"
+    )
+    neu = passwortfeld(
         "Neues Passwort",
         [
             DataRequired(PFLICHT),
@@ -166,15 +182,22 @@ class PasswortAendernFormular(FlaskForm):
             starkes_passwort(),
         ],
     )
-    wiederholen = PasswordField(
+    wiederholen = passwortfeld(
         "Neues Passwort wiederholen",
         [DataRequired(PFLICHT), EqualTo("neu", message="Die Passwörter stimmen nicht überein.")],
     )
 
 
 class AnmeldeFormular(FlaskForm):
-    email = EmailField("E-Mail", [DataRequired(PFLICHT)], filters=OHNE_LEERZEICHEN)
-    passwort = PasswordField("Passwort", [DataRequired(PFLICHT)])
+    # autocomplete="username"/"current-password": Passwortmanager (z. B. Bitwarden) erkennen
+    # die Felder sicher und füllen sie aus.
+    email = EmailField(
+        "E-Mail",
+        [DataRequired(PFLICHT)],
+        filters=OHNE_LEERZEICHEN,
+        render_kw={"autocomplete": "username", "autocapitalize": "none", "spellcheck": "false"},
+    )
+    passwort = passwortfeld("Passwort", [DataRequired(PFLICHT)], autocomplete="current-password")
 
 
 ROLLEN_AUSWAHL = [(rolle.value, name) for rolle, name in ROLLEN_NAMEN.items()]
@@ -209,7 +232,7 @@ class NutzerAnlegenFormular(FlaskForm):
         "E-Mail", [DataRequired(PFLICHT), Email(EMAIL), Length(max=254)], filters=OHNE_LEERZEICHEN
     )
     rolle = AuswahlFeld("Rolle", choices=ROLLEN_AUSWAHL, default="mitarbeiter")
-    passwort = PasswordField(
+    passwort = passwortfeld(
         "Erstes Passwort",
         [DataRequired(PFLICHT), PASSWORT_LAENGE, starkes_passwort("email", "name")],
     )
@@ -228,7 +251,7 @@ class NutzerBearbeitenFormular(FlaskForm):
     rolle = AuswahlFeld("Rolle", choices=ROLLEN_AUSWAHL)
     aktiv = BooleanField("Zugang aktiv")
     zugang_bis = Datumsfeld("Zugang bis", [Optional()])
-    neues_passwort = PasswordField(
+    neues_passwort = passwortfeld(
         "Neues Passwort", [Optional(), PASSWORT_LAENGE, starkes_passwort("email", "name")]
     )
 
@@ -288,6 +311,26 @@ class KontaktFormular(FlaskForm):
         deutschland = (self.land.data or "").strip().lower() in {"deutschland", "de"}
         if deutschland and feld.data and not re.fullmatch(r"\d{5}", feld.data.strip()):
             raise ValidationError("Bitte fünfstellige Postleitzahl.")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Kundenanschrift, nicht die eigene: Der Browser soll sie nicht zum Speichern anbieten
+        for name in (
+            "firmenname",
+            "anrede",
+            "vorname",
+            "nachname",
+            "adresszusatz",
+            "strasse",
+            "plz",
+            "ort",
+            "land",
+            "email",
+            "telefon",
+        ):
+            feld = getattr(self, name, None)
+            if feld is not None:
+                feld.render_kw = {**(feld.render_kw or {}), "autocomplete": "off"}
 
 
 class ArtikelFormular(FlaskForm):
@@ -363,6 +406,20 @@ class RechnungseinstellungenFormular(FlaskForm):
     rechnung_einleitung = TextAreaField("Einleitungstext", [Optional()])
     rechnung_nachbemerkung = TextAreaField("Nachbemerkung", [Optional()])
     e_rechnung = BooleanField("E-Rechnung zu jeder Rechnung erzeugen (ZUGFeRD)")
+    kundenportal = BooleanField("Link zum Kundenportal in jede E-Mail einfügen")
+    kundenportal_plz = BooleanField("Vor dem Öffnen die Postleitzahl des Kunden abfragen")
+    oeffentliche_adresse = StringField(
+        "Öffentliche Adresse von steuy",
+        [
+            Optional(),
+            Length(max=300),
+            Regexp(
+                r"^https://[A-Za-z0-9.-]+(:\d+)?(/[^\s]*)?$",
+                message="Bitte eine https-Adresse, z. B. https://rechnung.meinefirma.de",
+            ),
+        ],
+        filters=[lambda w: w.strip().rstrip("/") if isinstance(w, str) else w],
+    )
 
 
 class ZahlungFormular(FlaskForm):
@@ -486,7 +543,9 @@ class MailEinstellungenFormular(FlaskForm):
         ],
     )
     smtp_benutzer = StringField("Benutzername", [Optional(), Length(max=200)])
-    smtp_passwort = PasswordField("Passwort", [Optional(), Length(max=500)])
+    smtp_passwort = PasswordField(
+        "Passwort", [Optional(), Length(max=500)], render_kw={"autocomplete": "new-password"}
+    )
     mail_absender = EmailField(
         "Absenderadresse", [Optional(), Email("Bitte eine gültige E-Mail-Adresse angeben.")]
     )
@@ -514,8 +573,12 @@ class SendenFormular(FlaskForm):
 
 class ShopFormular(FlaskForm):
     shop_url = StringField("Adresse des Shops", [Optional(), Length(max=300)])
-    shop_schluessel = PasswordField("Consumer Key", [Optional(), Length(max=200)])
-    shop_geheimnis = PasswordField("Consumer Secret", [Optional(), Length(max=200)])
+    shop_schluessel = PasswordField(
+        "Consumer Key", [Optional(), Length(max=200)], render_kw={"autocomplete": "off"}
+    )
+    shop_geheimnis = PasswordField(
+        "Consumer Secret", [Optional(), Length(max=200)], render_kw={"autocomplete": "new-password"}
+    )
     shop_auto_versand = BooleanField(
         "Shop-Rechnungen sofort erstellen und verschicken (Auto-Modus)"
     )

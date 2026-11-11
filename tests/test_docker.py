@@ -12,6 +12,7 @@ def test_startskripte_ausfuehrbar():
         "docker-sicherung.sh",
         "docker-wiederherstellen.sh",
         "lxc-installieren.sh",
+        "update-dienst-einrichten.sh",
     ):
         assert os.access(WURZEL / "scripts" / name, os.X_OK), name
 
@@ -86,3 +87,11 @@ def test_lxc_skript_nennt_die_echte_adresse_nicht_ein_docker_netz():
     zuerst = skript.index('ADRESSE="$(ip -4 route get')
     rueckfall = skript.index('ADRESSE="$(hostname -I')
     assert zuerst < rueckfall
+
+
+def test_update_dienst_fuer_jede_docker_installation():
+    """Update per Knopfdruck: eigenes Skript, das auch das LXC-Installationsskript nutzt."""
+    dienst = (WURZEL / "scripts/update-dienst-einrichten.sh").read_text()
+    assert "PathExists=$ZIEL/update/anfrage" in dienst and "Environment=ZIEL=$ZIEL" in dienst
+    assert 'chown 1000:1000 "$ZIEL/update"' in dienst
+    assert "update-dienst-einrichten.sh" in (WURZEL / "scripts/lxc-installieren.sh").read_text()

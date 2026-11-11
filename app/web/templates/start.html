@@ -2,6 +2,11 @@
 {% from "icons.html" import icon %}
 {% block titel %}Dashboard – steuy{% endblock %}
 {% block inhalt %}
+{% if update_hinweis %}
+<div class="hinweisbox updatehinweis" role="status">
+  <p><strong>steuy {{ update_hinweis }} ist verfügbar.</strong> Installiert ist {{ steuy_version }}. Was neu ist und das Update selbst findest du unter <a href="{{ url_for('einstellungen.update') }}">Einstellungen → Update</a>. Es wird nur installiert, wenn du es dort bestätigst.</p>
+</div>
+{% endif %}
 {% set bald = "kommt in einer späteren Version" %}
 <div class="seitenkopf">
   <h1>Dashboard <small>{{ gewerbe.name }}</small></h1>
@@ -36,7 +41,7 @@
         <div class="gruppe-titel">Einnahmen</div>
         {% if anzahl_offen %}
         <div class="zeile"><span class="offen-icon">{{ icon("beleg") }}</span><a href="{{ url_for('allgemein.pruefen') }}">{{ anzahl_offen }} offene Rechnung{{ "en" if anzahl_offen != 1 }}</a></div>
-        {% if offen.ueberfaellig %}<div class="zeile ueberfaellig">davon {{ offen.ueberfaellig | length }} überfällig</div>{% endif %}
+        {% if offen.ueberfaellig %}<div class="zeile ueberfaellig"><a class="ueberfaellig" href="{{ url_for('rechnungen.liste', filter='ueberfaellig') }}">davon {{ offen.ueberfaellig | length }} überfällig</a></div>{% endif %}
         {% if offen.mahnungen %}<div class="zeile ueberfaellig"><a class="ueberfaellig" href="{{ url_for('allgemein.pruefen') }}">{{ offen.mahnungen | length }} Mahnung{{ "en" if offen.mahnungen | length != 1 }} fällig</a></div>{% endif %}
         {% else %}
         <div class="zeile"><span class="ok">{{ icon("haken") }}</span>Keine offenen Rechnungen</div>
@@ -184,7 +189,7 @@
     <div class="karte-kopf">
       <h2 id="uebersicht">Übersicht</h2>
       <form method="get" class="jahreswahl">
-        <select class="feld" name="jahr" aria-label="Jahr" onchange="this.form.submit()">
+        <select class="feld" name="jahr" aria-label="Jahr" data-sofort-senden>
           {% for j in jahre %}<option value="{{ j }}" {% if j == uebersicht.jahr %}selected{% endif %}>{{ "Aktuelles Jahr (" ~ j ~ ")" if j == aktuell_jahr else j }}</option>{% endfor %}
         </select>
       </form>

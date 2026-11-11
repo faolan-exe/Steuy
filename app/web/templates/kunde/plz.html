@@ -1,0 +1,15 @@
+{% extends "kunde/basis.html" %}
+{% block titel %}{{ link.rechnung.titel }} von {{ gewerbe.name }}{% endblock %}
+{% block inhalt %}
+<section class="k-karte k-schmal">
+  <h1>{{ link.rechnung.titel }} von {{ gewerbe.name }}</h1>
+  <p>Zum Schutz Ihrer Daten geben Sie bitte die Postleitzahl Ihrer Rechnungsadresse ein.</p>
+  {% if fehler %}<div class="k-fehler" role="alert">{{ fehler }}</div>{% endif %}
+  <form method="post" class="k-formular">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="plz">Postleitzahl</label>
+    <input id="plz" name="plz" inputmode="numeric" autocomplete="postal-code" maxlength="10" required autofocus>
+    <button type="submit" class="k-knopf k-knopf-primaer">Weiter</button>
+  </form>
+</section>
+{% endblock %}

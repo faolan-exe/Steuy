@@ -1,0 +1,125 @@
+/* Kundenportal: eigene, schlanke Seite für Kunden (Belege ansehen, bezahlen, Angebote annehmen). */
+
+:root {
+  --k-text: #1d2529;
+  --k-leise: #66737a;
+  --k-linie: #e3e8ea;
+  --k-grund: #f4f6f7;
+  --k-karte: #ffffff;
+  --k-akzent: #0f7c80;
+  --k-akzent-dunkel: #0b6266;
+  --k-ok: #2e7d32;
+  --k-warnung: #b26a00;
+  --k-fehler: #c62828;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Open Sans", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--k-text);
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--k-grund); }
+a { color: var(--k-akzent); }
+h1 { font-size: 1.6rem; margin: 0.1rem 0 0; line-height: 1.2; }
+h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+
+.k-breite { width: 100%; max-width: 46rem; margin: 0 auto; padding: 0 1rem; }
+.k-kopf { background: var(--k-karte); border-bottom: 1px solid var(--k-linie); margin-bottom: 1.25rem; }
+.k-kopf-innen { display: flex; align-items: center; gap: 0.75rem; min-height: 3.75rem; }
+.k-logo { max-height: 2.5rem; max-width: 9rem; object-fit: contain; }
+.k-firma { font-weight: 600; font-size: 1.05rem; }
+
+.k-karte {
+  background: var(--k-karte);
+  border: 1px solid var(--k-linie);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.k-schmal { max-width: 26rem; margin: 2rem auto; }
+.k-held-kopf { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.k-betrag { font-size: 2.25rem; font-weight: 700; margin: 0.75rem 0 0; letter-spacing: -0.01em; }
+.k-leise { color: var(--k-leise); font-size: 0.9rem; margin: 0; }
+.k-ok { color: var(--k-ok); font-weight: 600; }
+
+.k-status {
+  flex: none;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--k-grund);
+  color: var(--k-leise);
+}
+.k-status-offen { background: #e6f1fb; color: #1f5f9e; }
+.k-status-ok { background: #e7f4e8; color: var(--k-ok); }
+.k-status-warnung { background: #fff3e0; color: var(--k-warnung); }
+.k-status-fehler { background: #fdecec; color: var(--k-fehler); }
+
+.k-daten, .k-bank { display: grid; gap: 0.5rem 1.5rem; margin: 1rem 0; }
+.k-daten { grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); }
+.k-daten dt, .k-bank dt { color: var(--k-leise); font-size: 0.85rem; }
+.k-daten dd, .k-bank dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+.k-aktionen { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem; }
+.k-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--k-linie);
+  background: var(--k-karte);
+  color: var(--k-text);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.k-knopf:hover { border-color: var(--k-akzent); }
+.k-knopf-primaer { background: var(--k-akzent); border-color: var(--k-akzent); color: #fff; }
+.k-knopf-primaer:hover { background: var(--k-akzent-dunkel); }
+.k-knopf-text { border-color: transparent; background: none; color: var(--k-leise); }
+.k-knopf:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid #9fd3d5; outline-offset: 1px; }
+
+.k-formular { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.75rem; }
+.k-formular label { font-weight: 600; font-size: 0.9rem; margin-top: 0.5rem; }
+.k-formular input:not([type=checkbox]), .k-formular textarea {
+  font: inherit;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #c9d2d6;
+  border-radius: 8px;
+  width: 100%;
+}
+.k-haken { display: flex; gap: 0.5rem; align-items: flex-start; font-weight: 400 !important; }
+.k-haken input { margin-top: 0.3rem; width: 1.1rem; height: 1.1rem; }
+
+.k-meldung, .k-fehler { border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem; }
+.k-meldung { background: #e7f4e8; color: #1b5e20; }
+.k-fehler { background: #fdecec; color: var(--k-fehler); }
+
+.k-zahlung { display: flex; gap: 1.5rem; align-items: flex-start; flex-wrap: wrap; }
+.k-qr { margin: 0; text-align: center; font-size: 0.8rem; color: var(--k-leise); }
+.k-qr svg { width: 9.5rem; height: 9.5rem; display: block; margin-bottom: 0.25rem; }
+.k-bank { margin: 0; flex: 1; min-width: 14rem; }
+[data-kopieren] { cursor: copy; border-bottom: 1px dashed var(--k-leise); }
+.k-kopiert { font-size: 0.8rem; color: var(--k-ok); margin-left: 0.4rem; font-weight: 400; }
+
+.k-tabelle-rahmen { overflow-x: auto; }
+.k-tabelle { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.k-tabelle th, .k-tabelle td { padding: 0.55rem 0.4rem; border-bottom: 1px solid var(--k-linie); text-align: left; vertical-align: top; }
+.k-tabelle th { font-size: 0.8rem; color: var(--k-leise); font-weight: 600; }
+.k-tabelle tfoot td { border-bottom: none; font-weight: 600; }
+.k-zahl { text-align: right !important; white-space: nowrap; }
+.k-liste { margin: 0; padding-left: 1.2rem; }
+
+.k-fuss { color: var(--k-leise); font-size: 0.85rem; padding-bottom: 2rem; }
+.k-fuss a { color: inherit; }
+
+@media (max-width: 34rem) {
+  h1 { font-size: 1.35rem; }
+  .k-betrag { font-size: 1.9rem; }
+  .k-aktionen .k-knopf { flex: 1 1 100%; }
+  .k-held-kopf { flex-direction: column-reverse; gap: 0.5rem; }
+}

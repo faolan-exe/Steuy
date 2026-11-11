@@ -91,7 +91,7 @@ def test_schalter_ueber_oberflaeche(angemeldet, session):
     antwort = angemeldet.post(
         "/einstellungen/mahnwesen/automatik", headers={"X-Requested-With": "fetch"}
     )
-    assert antwort.get_json() == {"auto_mahnen": False}
+    assert antwort.get_json() == {"ok": True, "meldung": "Automatisches Mahnen ausgeschaltet."}
     assert session.get(Gewerbe, 1).auto_mahnen is False
 
 

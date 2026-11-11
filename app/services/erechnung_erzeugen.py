@@ -86,17 +86,35 @@ def daten(rechnung: Rechnung, absender: dict) -> ERechnung:
     )
 
 
-def fehler(rechnung: Rechnung, absender: dict) -> list[str]:
-    """Was für die E-Rechnung noch fehlt, in verständlichen Worten."""
-    return pruefe(daten(rechnung, absender))
+def fehler(rechnung: Rechnung, absender: dict, regeln: bool = True) -> list[str]:
+    """Was für die E-Rechnung noch fehlt, in verständlichen Worten. Sind alle Angaben da,
+    prüft steuy die fertige E-Rechnung zusätzlich gegen die amtlichen Regeln."""
+    d = daten(rechnung, absender)
+    probleme = pruefe(d)
+    if probleme or not regeln:
+        return probleme
+    return _regelverstoesse(baue_xml(d), d.ist_xrechnung)
+
+
+def _regelverstoesse(xml: bytes, xrechnung: bool) -> list[str]:
+    from app.domain.erechnung_regeln import pruefe_regeln
+
+    return [
+        f"Die E-Rechnung verletzt die Regel {m}" for m in pruefe_regeln(xml, xrechnung) if m.schwer
+    ]
 
 
 def erzeuge_xml(rechnung: Rechnung, absender: dict) -> bytes:
+    """XML bauen und prüfen. Eine ungültige E-Rechnung wird nie festgeschrieben."""
     d = daten(rechnung, absender)
     probleme = pruefe(d)
     if probleme:
         raise ERechnungFehler(probleme)
-    return baue_xml(d)
+    xml = baue_xml(d)
+    probleme = _regelverstoesse(xml, d.ist_xrechnung)
+    if probleme:
+        raise ERechnungFehler(probleme)
+    return xml
 
 
 def einbetten(pdf: bytes, xml: bytes, absender: dict, rechnung: Rechnung) -> bytes:

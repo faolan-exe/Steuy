@@ -3,6 +3,7 @@
 import csv
 import hashlib
 import io
+import re
 import tempfile
 import zipfile
 from datetime import date, datetime
@@ -117,9 +118,25 @@ def _betrag(cent: int) -> str:
     return cent_zu_euro(cent)[:-2].replace(".", "")
 
 
+_BETRAG = re.compile(r"^-?[\d.]+(,\d+)?$")
+
+
+def _zelle(wert):
+    """Schutz vor Formeln in Tabellenprogrammen: Text, der mit =, +, -, @ oder einem
+    Steuerzeichen beginnt (z. B. ein Kundenname aus dem Shop), wird mit ' als Text markiert.
+    Beträge wie -12,50 bleiben Zahlen."""
+    if (
+        isinstance(wert, str)
+        and wert[:1] in ("=", "+", "-", "@", "\t", "\r")
+        and not _BETRAG.match(wert)
+    ):
+        return "'" + wert
+    return wert
+
+
 def _csv(zeilen: list[list]) -> bytes:
     puffer = io.StringIO()
-    csv.writer(puffer, delimiter=";").writerows(zeilen)
+    csv.writer(puffer, delimiter=";").writerows([[_zelle(w) for w in z] for z in zeilen])
     return ("﻿" + puffer.getvalue()).encode()
 
 

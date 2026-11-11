@@ -23,11 +23,11 @@
     {{ icon("plus") }}
     <span><strong>Belege hinzufügen</strong> (hier ablegen oder auswählen)<br>
     <span class="hinweis">PDF, JPG, PNG oder XML (E-Rechnung{{ hilfe("e_rechnung") }}), max. 20 MB pro Datei. Mehrere auf einmal möglich.</span></span>
-    <input type="file" name="dateien" multiple accept=".pdf,.jpg,.jpeg,.png,.xml,application/pdf,image/jpeg,image/png,text/xml,application/xml" onchange="this.form.submit()">
+    <input type="file" name="dateien" multiple accept=".pdf,.jpg,.jpeg,.png,.xml,application/pdf,image/jpeg,image/png,text/xml,application/xml" data-sofort-senden>
   </label>
   <noscript><button class="knopf" type="submit">Hochladen</button></noscript>
 </form>
-<script>
+<script nonce="{{ csp_nonce() }}">
   (function () {
     var zone = document.getElementById("ablagezone");
     var feld = zone.querySelector("input[type=file]");

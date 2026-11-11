@@ -9,9 +9,17 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    # Öffentliche Adresse, z. B. https://buchhaltung.example.de, für Links in E-Mails
+    BASIS_URL = os.environ.get("BASIS_URL", "").rstrip("/")
     # Hinter HTTPS (Reverse Proxy) auf 1 setzen, damit das Cookie nur verschlüsselt geht.
-    SESSION_COOKIE_SECURE = os.environ.get("SESSION_COOKIE_SECURE") == "1"
+    # Ist die öffentliche Adresse https://, gilt das automatisch.
+    SESSION_COOKIE_SECURE = (
+        os.environ.get("SESSION_COOKIE_SECURE", "1" if BASIS_URL.startswith("https://") else "0")
+        == "1"
+    )
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    # Nach so vielen Stunden ohne Aktivität ist man abgemeldet (0 = nie)
+    LEERLAUF_STUNDEN = float(os.environ.get("LEERLAUF_STUNDEN", "8"))
     # Anzahl vorgeschalteter Reverse Proxys (z. B. 1 für Caddy/nginx), sonst 0
     PROXY_ANZAHL = int(os.environ.get("PROXY_ANZAHL", "0"))
     # Unveränderliche Dateien (Rechnungs-PDFs, später Belege). Gehört ins Backup.
@@ -29,8 +37,6 @@ class Config:
     # Steuerdatei für die Samba-Freigabe und deren Adresse im Docker-Netz (Anzeige "läuft")
     FREIGABE_VERZEICHNIS = os.environ.get("FREIGABE_VERZEICHNIS", "instance/freigabe")
     SCAN_FREIGABE_HOST = os.environ.get("SCAN_FREIGABE_HOST", "scanfreigabe")
-    # Öffentliche Adresse, z. B. https://buchhaltung.example.de, für Links in E-Mails
-    BASIS_URL = os.environ.get("BASIS_URL", "")
 
 
 class TestConfig(Config):

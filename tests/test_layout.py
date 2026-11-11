@@ -39,3 +39,31 @@ def test_suche_ist_auf_dem_handy_sichtbar(angemeldet):
     seite = angemeldet.get("/").get_data(as_text=True)
     zeile = next(z for z in seite.splitlines() if 'aria-label="Suche"' in z)
     assert "optional" not in zeile  # „optional“ blendet das Symbol auf dem Handy aus
+
+
+def test_schalter_speichern_ohne_neu_laden(angemeldet, session, admin):
+    """Mit fetch kommt JSON statt Weiterleitung (keine Meldung für die nächste Seite)."""
+    kopf = {"X-Requested-With": "fetch"}
+    for pfad, daten in (
+        ("/profil/wochenmail", {}),
+        ("/profil/hilfe", {"hilfe_anzeigen": "y"}),
+        ("/einstellungen/zwei-faktor-pflicht", {}),
+        ("/einstellungen/mahnwesen/automatik", {"auto_mahnen": "y"}),
+        ("/einstellungen/update/automatik", {"an": "y"}),
+    ):
+        antwort = angemeldet.post(pfad, data=daten, headers=kopf)
+        assert antwort.status_code == 200 and antwort.get_json()["ok"], pfad
+    assert admin.wochenmail is False
+    seite = angemeldet.get("/").get_data(as_text=True)
+    assert "abbestellt" not in seite  # keine liegengebliebene Meldung
+
+
+def test_rechnungseditor_positionen_ohne_neu_laden(angemeldet, admin, session):
+    from app.services.rechnungen import neuer_entwurf
+
+    entwurf = neuer_entwurf(admin.id)
+    seite = angemeldet.get(f"/rechnungen/{entwurf.id}/bearbeiten").get_data(as_text=True)
+    assert 'id="vorlage-artikel"' in seite and 'id="vorlage-text"' in seite
+    assert 'data-neue-position="artikel"' in seite and "data-entfernen" in seite
+    # Kundenanschrift wird dem Browser nicht zum Speichern angeboten (attrs nur aus Vorlagen)
+    assert re.search(r'id="empfaenger_strasse"[^>]*autocomplete="off"', seite)

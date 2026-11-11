@@ -60,7 +60,7 @@ from app.web.rechte import braucht_recht
 bp = Blueprint("rechnungen", __name__, url_prefix="/rechnungen")
 angebote_bp = Blueprint("angebote", __name__, url_prefix="/angebote")
 
-FILTER = {"alle": "Alle", "entwuerfe": "Entwürfe", "offen": "Offen"}
+FILTER = {"alle": "Alle", "entwuerfe": "Entwürfe", "offen": "Offen", "ueberfaellig": "Überfällig"}
 
 
 def _rechnung(rechnung_id: int) -> Rechnung:
@@ -74,8 +74,23 @@ def _auswahl():
     artikel = db.session.execute(
         select(Artikel).where(Artikel.archiviert.is_(False)).order_by(Artikel.bezeichnung)
     ).scalars()
+    kunden = sorted(kunden, key=lambda k: k.name.lower())
+    # Zuletzt verwendete Kunden oben, damit man bei vielen Kontakten nicht suchen muss
+    letzte_ids = []
+    for kontakt_id in db.session.execute(
+        select(Rechnung.kontakt_id)
+        .where(Rechnung.kontakt_id.is_not(None))
+        .order_by(Rechnung.erstellt_am.desc())
+        .limit(50)
+    ).scalars():
+        if kontakt_id not in letzte_ids:
+            letzte_ids.append(kontakt_id)
+        if len(letzte_ids) == 5:
+            break
+    nach_id = {k.id: k for k in kunden}
     return {
-        "kunden": sorted(kunden, key=lambda k: k.name.lower()),
+        "kunden": kunden,
+        "zuletzt": [nach_id[i] for i in letzte_ids if i in nach_id] if len(kunden) > 8 else [],
         "artikelliste": list(artikel),
         "leistung_arten": LEISTUNG_ARTEN,
     }
@@ -88,7 +103,7 @@ def _liste(angebote: bool):
         "rechnungen.html",
         rechnungen=suche_rechnungen(filter, angebote=angebote),
         filter=filter,
-        filter_namen=FILTER,
+        filter_namen={**FILTER, "ueberfaellig": "Abgelaufen"} if angebote else FILTER,
         angebote=angebote,
     )
 
@@ -156,7 +171,38 @@ def _detailseite(rechnung: Rechnung, formular: ZahlungFormular, status: int = 20
         naechste_mahnstufe=naechste_fuer(rechnung) if rechnung.offen_cent > 0 else None,
         mahnstufe_ab=naechste_faellig_ab(rechnung) if rechnung.offen_cent > 0 else None,
         heute=date.today(),
+        portal=_portal(rechnung),
     ), status
+
+
+def _portal(rechnung: Rechnung) -> dict:
+    from app.services import kundenportal
+
+    link = None if rechnung.ist_entwurf else kundenportal.aktueller_link(rechnung)
+    gewerbe = aktuelles_gewerbe()
+    return {
+        "eingeschaltet": bool(gewerbe and gewerbe.kundenportal),
+        "adresse": kundenportal.oeffentliche_adresse(),
+        "link": link,
+        "url": kundenportal.url(link) if link else None,
+    }
+
+
+@bp.post("/<int:rechnung_id>/kundenlink")
+@braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
+def kundenlink_neu(rechnung_id: int):
+    """Link erzeugen oder (falls schon einer besteht) sperren und durch einen neuen ersetzen."""
+    from app.services import kundenportal
+
+    rechnung = _rechnung(rechnung_id)
+    try:
+        kundenportal.neuer_link(rechnung, current_user.id)
+    except kundenportal.PortalFehler as fehler:
+        flash(str(fehler))
+    else:
+        db.session.commit()
+        flash("Neuer Kundenlink erzeugt.")
+    return redirect(url_for("rechnungen.detail", rechnung_id=rechnung.id) + "#kundenlink")
 
 
 @bp.get("/<int:rechnung_id>/zahlungen")
@@ -301,6 +347,7 @@ def vorschau(rechnung_id: int):
         "rechnung_vorschau.html",
         r=rechnung,
         fehler=finalisierungsfehler(rechnung, aktuelles_gewerbe()),
+        mail_bereit=mail_eingerichtet() and bool(rechnung.kontakt and rechnung.kontakt.email),
     )
 
 
@@ -317,6 +364,8 @@ def finalisieren(rechnung_id: int):
     except NichtBearbeitbar:
         return redirect(url_for("rechnungen.detail", rechnung_id=rechnung.id))
     flash(f"{rechnung.belegname} {rechnung.nummer} ist finalisiert.")
+    if request.form.get("danach") == "senden":
+        return redirect(url_for("rechnungen.senden", rechnung_id=rechnung.id))
     return redirect(url_for("rechnungen.detail", rechnung_id=rechnung.id))
 
 

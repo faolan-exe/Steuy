@@ -41,6 +41,7 @@ Trägst du beim Kunden eine **Leitweg-ID** ein (Kontakt bearbeiten), kennzeichne
 
 ## Prüfen und Grenzen
 
-- steuy prüft die erzeugten Daten gegen das offizielle **Schema** (XSD) von Factur-X / EN 16931. Die fachlichen **Schematron-Regeln** der KoSIT-Prüfstelle sind dagegen nicht eingebaut. Prüfe wichtige E-Rechnungen, besonders XRechnungen für Behörden, vor dem Versand mit einem Validator, zum Beispiel dem [KoSIT-Prüftool](https://github.com/itplr-kosit/validator) oder einem Online-Prüfdienst.
+- steuy prüft jede E-Rechnung vor dem Festschreiben gegen das offizielle **Schema** (XSD) und die amtlichen **Prüfregeln** (Schematron): EN 16931 vom CEN (Version 1.3.17) und bei Behörden zusätzlich XRechnung 3.0.2 der KoSIT. Das sind dieselben Regeln, die auch das [KoSIT-Prüftool](https://github.com/itplr-kosit/validator) verwendet. Verletzt eine E-Rechnung eine Regel, schreibt steuy sie nicht fest und nennt die Regel (z. B. „BR-CO-26“).
+- Hast du keine USt-IdNr., steht deine Steuernummer zusätzlich als Kennung des Verkäufers in der E-Rechnung. Das verlangt die Regel BR-CO-26, damit der Empfänger dich automatisch zuordnen kann.
 - Es gibt keine Zertifizierung. Du bleibst für die Richtigkeit deiner Rechnung verantwortlich.
 - Eigene Bildschirmausgaben von Empfängern („Rechnung ansehen“) zeigen oft nur das PDF, das ist normal.

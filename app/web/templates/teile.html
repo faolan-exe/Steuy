@@ -5,6 +5,8 @@
 
 {% macro rechnungsstatus(r) -%}
 {% if r.status == "entwurf" %}<span class="status status-aus">Entwurf</span>
+{% elif r.ueberfaellig %}<span class="status status-rot" title="Fällig seit {{ r.faellig_am | datum }}">überfällig</span>
+{% elif r.abgelaufen %}<span class="status status-aus" title="Gültig bis {{ r.gueltig_bis | datum }}">abgelaufen</span>
 {% elif r.status == "offen" and r.belegart == "rechnung" %}<span class="status status-orange">offen</span>
 {% elif r.status == "teilbezahlt" %}<span class="status status-blau">teilbezahlt</span>
 {% elif r.belegart == "korrektur" %}<span class="status status-aus">Korrektur</span>

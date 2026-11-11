@@ -31,7 +31,8 @@ Zahlungsart ist „Sonstige“. Die Liste der Ausgangsrechnungen führt nur beza
 
 1. Kontakte importieren (optional, sonst legt der Belegimport sie mit Name, Ort und USt-IdNr. an).
 2. *Importieren → Belegarchiv importieren*, ZIP-Dateien wählen, **Vorschau** ansehen, dann **Jetzt importieren**. Doppelte Belege (z. B. Jahres- und Monatsexport) überspringt steuy.
-3. Unter „Zu prüfen“: Entwürfe kategorisieren (steuy rät bei Bewirtung, Werkzeugen, Software und Anschaffungen nicht), Zahlungen erfassen.
-4. Rechnungsnummern: Unter *Einstellungen → Rechnungen* die nächste freie Nummer eintragen, z. B. 131 für RE0131.
+3. Nach dem Import zeigt steuy **Was jetzt noch fehlt**: je Jahr die Einnahmen und Ausgaben ohne Zahlungsdatum (dafür die Listen im CSV-Format dieses Jahres nachladen) und die nächste Rechnungsnummer. Mit **Nummer übernehmen** macht steuy direkt hinter der höchsten übernommenen Lexware-Rechnung weiter, so wird keine Nummer doppelt vergeben.
+4. Unter „Zu prüfen“: Entwürfe kategorisieren (steuy rät bei Bewirtung, Werkzeugen, Software und Anschaffungen nicht), Zahlungen erfassen.
+5. Hast du nach dem Export in Lexware noch Rechnungen geschrieben: Unter *Einstellungen → Rechnungen* die nächste freie Nummer eintragen.
 
 Was steuy beim Belegimport entscheidet, steht in [domain/import-lexware.md](domain/import-lexware.md).

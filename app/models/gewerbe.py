@@ -62,6 +62,10 @@ class Gewerbe(db.Model):
     # Mahnungen automatisch erstellen und per E-Mail schicken (Standard: aus)
     auto_mahnen: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     update_uebersprungen: Mapped[str | None] = mapped_column(String(20))
+    # Einmal am Tag im Hintergrund nach einer neuen Version suchen (nie selbst installieren)
+    update_auto_suchen: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
+    update_gesucht_am: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    update_verfuegbar: Mapped[str | None] = mapped_column(String(20))
     ziel_art: Mapped[str | None] = mapped_column(String(20))
     ziel_wert: Mapped[int | None] = mapped_column(BigInteger)
     zwei_faktor_pflicht: Mapped[bool] = mapped_column(
@@ -85,6 +89,10 @@ class Gewerbe(db.Model):
     mail_absender: Mapped[str | None] = mapped_column(String(254))
     # E-Rechnung: Rechnungen als ZUGFeRD-PDF (mit eingebettetem XML) festschreiben
     e_rechnung: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
+    # Kundenportal: Links in E-Mails, über die Kunden Belege ansehen und Angebote annehmen
+    kundenportal: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
+    kundenportal_plz: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
+    oeffentliche_adresse: Mapped[str | None] = mapped_column(String(300))
     # Scan-Eingang: Belege aus einem Ordner übernehmen, in den der Scanner speichert
     scan_aktiv: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     scan_letzter_lauf: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

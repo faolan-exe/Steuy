@@ -1,0 +1,113 @@
+{% extends "kunde/basis.html" %}
+{% block titel %}{{ r.titel }} {{ r.nummer }} von {{ gewerbe.name }}{% endblock %}
+{% block inhalt %}
+{% set pdf_url = url_for('kunde.pdf', schluessel=schluessel) %}
+<section class="k-karte">
+  <div class="k-held-kopf">
+    <div>
+      <p class="k-leise">{{ r.titel }} · {{ r.nummer }}</p>
+      <h1>{% if r.belegart == "angebot" %}Ihr Angebot{% elif r.belegart == "lieferschein" %}Ihr Lieferschein{% elif r.belegart == "korrektur" %}Ihre Rechnungskorrektur{% else %}Ihre Rechnung{% endif %}</h1>
+    </div>
+    <span class="k-status k-status-{{ zustand.art }}">{{ zustand.text }}</span>
+  </div>
+  {% if r.belegart != "lieferschein" %}
+  <p class="k-betrag">{{ (offen if offen > 0 and offen != r.summe_cent else r.summe_cent) | euro }}</p>
+  {% if offen > 0 and offen != r.summe_cent %}<p class="k-leise">noch offen von {{ r.summe_cent | euro }}</p>{% endif %}
+  {% endif %}
+  <dl class="k-daten">
+    <div><dt>Datum</dt><dd>{{ r.rechnungsdatum | datum }}</dd></div>
+    {% if r.belegart == "rechnung" and r.faellig_am and offen > 0 %}<div><dt>Fällig am</dt><dd>{{ r.faellig_am | datum }}</dd></div>{% endif %}
+    {% if r.belegart == "angebot" and r.gueltig_bis %}<div><dt>Gültig bis</dt><dd>{{ r.gueltig_bis | datum }}</dd></div>{% endif %}
+    {% if r.belegart == "korrektur" and r.bezug %}<div><dt>Zu Rechnung</dt><dd>{{ r.bezug.nummer }}</dd></div>{% endif %}
+  </dl>
+  {% if r.belegart == "rechnung" and r.status == "bezahlt" %}<p class="k-ok">Vielen Dank, die Rechnung ist vollständig bezahlt.</p>{% endif %}
+  <div class="k-aktionen">
+    <a class="k-knopf k-knopf-primaer" href="{{ pdf_url }}?herunterladen=1">PDF herunterladen</a>
+    <a class="k-knopf" href="{{ pdf_url }}" target="_blank" rel="noopener noreferrer">PDF ansehen</a>
+    {% if r.xml_sha256 %}<a class="k-knopf" href="{{ url_for('kunde.xml', schluessel=schluessel) }}" title="Maschinenlesbar nach EN 16931 für Ihre Buchhaltung">E-Rechnung (XML)</a>{% endif %}
+  </div>
+</section>
+
+{% if r.belegart == "angebot" %}
+<section class="k-karte" id="entscheidung">
+  {% if kann_entscheiden %}
+  <h2>Angebot annehmen</h2>
+  <p>Passt alles? Dann nehmen Sie das Angebot hier verbindlich an. Wir erhalten sofort Bescheid.</p>
+  <form method="post" action="{{ url_for('kunde.entscheiden', schluessel=schluessel) }}" class="k-formular">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="name">Ihr Name</label>
+    <input id="name" name="name" autocomplete="name" maxlength="200" required>
+    <label for="kommentar">Nachricht an uns <span class="k-leise">(optional)</span></label>
+    <textarea id="kommentar" name="kommentar" rows="3" maxlength="2000"></textarea>
+    <label class="k-haken"><input type="checkbox" name="verbindlich" value="ja" required> Ich nehme das Angebot {{ r.nummer }} über {{ r.summe_cent | euro }} verbindlich an.</label>
+    <div class="k-aktionen">
+      <button class="k-knopf k-knopf-primaer" name="entscheidung" value="annehmen">Angebot annehmen</button>
+      <button class="k-knopf k-knopf-text" name="entscheidung" value="ablehnen" formnovalidate>Ablehnen</button>
+    </div>
+  </form>
+  {% elif link.entschieden_am %}
+  <h2>{{ "Angenommen" if r.status == "angenommen" else "Abgelehnt" }}</h2>
+  <p>Am {{ link.entschieden_am | datum_zeit }}{% if link.entschieden_von %} von {{ link.entschieden_von }}{% endif %}. Vielen Dank für Ihre Rückmeldung.</p>
+  {% elif zustand.text == "Abgelaufen" %}
+  <h2>Angebot abgelaufen</h2>
+  <p>Die Gültigkeit ist vorbei. Melden Sie sich gern, wir erstellen Ihnen ein neues Angebot.</p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if offen > 0 and iban %}
+<section class="k-karte">
+  <h2>Bezahlen</h2>
+  <div class="k-zahlung">
+    {% if qr %}<figure class="k-qr">{{ qr | safe }}<figcaption>Mit der Banking-App scannen</figcaption></figure>{% endif %}
+    <dl class="k-bank">
+      <div><dt>Empfänger</dt><dd>{{ absender.kontoinhaber or absender.name }}</dd></div>
+      <div><dt>IBAN</dt><dd><span data-kopieren>{{ iban }}</span></dd></div>
+      {% if absender.bic %}<div><dt>BIC</dt><dd>{{ absender.bic }}</dd></div>{% endif %}
+      <div><dt>Betrag</dt><dd><span data-kopieren>{{ offen | euro }}</span></dd></div>
+      <div><dt>Verwendungszweck</dt><dd><span data-kopieren>{{ r.nummer }}</span></dd></div>
+    </dl>
+  </div>
+</section>
+{% endif %}
+
+<section class="k-karte">
+  <h2>Positionen</h2>
+  <div class="k-tabelle-rahmen">
+  <table class="k-tabelle">
+    <thead><tr><th>Bezeichnung</th><th class="k-zahl">Menge</th>{% if r.belegart != "lieferschein" %}<th class="k-zahl">Einzelpreis</th><th class="k-zahl">Gesamt</th>{% endif %}</tr></thead>
+    <tbody>
+      {% for p in r.positionen %}
+      {% if p.typ == "artikel" %}
+      <tr>
+        <td><strong>{{ p.bezeichnung }}</strong>{% if p.beschreibung %}<br><span class="k-leise">{{ p.beschreibung }}</span>{% endif %}</td>
+        <td class="k-zahl">{{ p.menge_tausendstel | menge }} {{ p.einheit or "" }}</td>
+        {% if r.belegart != "lieferschein" %}
+        <td class="k-zahl">{{ p.einzelpreis_cent | euro }}{% if p.rabatt_bp %}<br><span class="k-leise">− {{ p.rabatt_bp | prozent }}</span>{% endif %}</td>
+        <td class="k-zahl">{{ p.betrag_cent | euro }}</td>
+        {% endif %}
+      </tr>
+      {% else %}
+      <tr><td colspan="4" class="k-leise">{{ p.bezeichnung }}{% if p.beschreibung %} {{ p.beschreibung }}{% endif %}</td></tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+    {% if r.belegart != "lieferschein" %}
+    <tfoot><tr><td colspan="3">Gesamtbetrag</td><td class="k-zahl"><strong>{{ r.summe_cent | euro }}</strong></td></tr></tfoot>
+    {% endif %}
+  </table>
+  </div>
+  {% if r.belegart != "lieferschein" and r.hinweis_steuerbefreiung %}<p class="k-leise">{{ r.hinweis_steuerbefreiung }}</p>{% endif %}
+</section>
+
+{% if mahnungen %}
+<section class="k-karte">
+  <h2>Zahlungserinnerungen</h2>
+  <ul class="k-liste">
+    {% for m in mahnungen %}
+    <li><a href="{{ url_for('kunde.mahnung', schluessel=schluessel, mahnung_id=m.id) }}" target="_blank" rel="noopener noreferrer">{{ m.bezeichnung }} vom {{ m.datum | datum }}</a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

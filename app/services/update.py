@@ -7,13 +7,15 @@ selbst: Sie legt eine Anfrage in den gemeinsamen Ordner, der Dienst auf dem Serv
 import json
 import os
 import re
+import threading
 import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from flask import current_app
+from flask import Flask, current_app
 
 from app.domain.update import VersionUngueltig, ist_neuer, release_notizen, tag_fuer
 from app.extensions import db
@@ -26,9 +28,13 @@ CACHE_SEKUNDEN = 600
 _cache: dict = {"zeit": 0.0, "ergebnis": None}
 
 
+SUCHE_ALLE = timedelta(hours=24)
+_suche_laeuft = threading.Lock()
+
+
 @dataclass
 class Pruefung:
-    zustand: str  # "neu", "aktuell", "uebersprungen", "fehler"
+    zustand: str  # "neu", "aktuell", "uebersprungen", "fehler", "nicht_gesucht"
     installiert: str = VERSION
     neueste: str | None = None
     titel: str | None = None
@@ -62,6 +68,7 @@ def _hole_release() -> dict:
 def pruefe(frisch: bool = False) -> Pruefung:
     """Prüft auf eine neue Version. Das Ergebnis wird zehn Minuten gemerkt (GitHub drosselt)."""
     if not frisch and _cache["ergebnis"] and time.time() - _cache["zeit"] < CACHE_SEKUNDEN:
+        _merke_ergebnis(_cache["ergebnis"], nur_wenn_anders=True)
         return _mit_ueberspringen(_cache["ergebnis"])
     try:
         release = _hole_release()
@@ -88,7 +95,88 @@ def pruefe(frisch: bool = False) -> Pruefung:
     except (VersionUngueltig, ValueError, KeyError):
         ergebnis = Pruefung(zustand="fehler", meldung="Die Antwort von GitHub war nicht lesbar.")
     _cache.update(zeit=time.time(), ergebnis=ergebnis)
+    _merke_ergebnis(ergebnis)
     return _mit_ueberspringen(ergebnis)
+
+
+def _merke_ergebnis(ergebnis: Pruefung, nur_wenn_anders: bool = False) -> None:
+    """Ergebnis jeder Suche (von Hand oder automatisch) für den Hinweis in der Oberfläche.
+    So zeigen Dashboard und Update-Seite immer denselben Stand."""
+    gewerbe = aktuelles_gewerbe()
+    if gewerbe is None or ergebnis.zustand == "fehler":
+        return
+    verfuegbar = ergebnis.neueste if ergebnis.zustand == "neu" else None
+    if nur_wenn_anders and gewerbe.update_verfuegbar == verfuegbar:
+        return
+    if not nur_wenn_anders:
+        gewerbe.update_gesucht_am = datetime.now(UTC)
+    gewerbe.update_verfuegbar = verfuegbar
+    db.session.commit()
+
+
+def seite(frisch: bool = False) -> Pruefung:
+    """Für die Update-Seite. Ist die automatische Suche aus, fragt steuy GitHub nur, wenn
+    jemand ausdrücklich auf „Nach Updates suchen“ klickt."""
+    gewerbe = aktuelles_gewerbe()
+    if frisch or (gewerbe and gewerbe.update_auto_suchen):
+        return pruefe(frisch=frisch)
+    if _cache["ergebnis"] and time.time() - _cache["zeit"] < CACHE_SEKUNDEN:
+        return _mit_ueberspringen(_cache["ergebnis"])
+    return Pruefung(zustand="nicht_gesucht")
+
+
+def hinweis() -> str | None:
+    """Neue Version, auf die die Oberfläche hinweisen soll (nicht übersprungen, nicht alt)."""
+    gewerbe = aktuelles_gewerbe()
+    if not gewerbe or not gewerbe.update_verfuegbar:
+        return None
+    try:
+        if not ist_neuer(gewerbe.update_verfuegbar, VERSION):
+            return None
+    except VersionUngueltig:
+        return None
+    if gewerbe.update_uebersprungen == gewerbe.update_verfuegbar:
+        return None
+    return gewerbe.update_verfuegbar
+
+
+def suche_faellig(jetzt: datetime | None = None) -> bool:
+    gewerbe = aktuelles_gewerbe()
+    if not gewerbe or not gewerbe.update_auto_suchen:
+        return False
+    jetzt = jetzt or datetime.now(UTC)
+    return gewerbe.update_gesucht_am is None or jetzt - gewerbe.update_gesucht_am >= SUCHE_ALLE
+
+
+def suche_im_hintergrund(app: Flask) -> bool:
+    """Startet die tägliche Suche in einem eigenen Thread, damit keine Seite wartet.
+    Installiert nie etwas. Gibt zurück, ob eine Suche gestartet wurde."""
+    if not _suche_laeuft.acquire(blocking=False):
+        return False
+
+    def lauf():
+        try:
+            with app.app_context():
+                if suche_faellig():
+                    pruefe(frisch=True)
+        except Exception:  # noqa: BLE001  Hintergrund: nie die App stören
+            app.logger.exception("Automatische Update-Suche fehlgeschlagen")
+        finally:
+            with app.app_context():
+                db.session.remove()
+            _suche_laeuft.release()
+
+    threading.Thread(target=lauf, name="update-suche", daemon=True).start()
+    return True
+
+
+def schalte_automatik(an: bool, nutzer_id: int) -> None:
+    gewerbe = aktuelles_gewerbe()
+    gewerbe.update_auto_suchen = an
+    if not an:
+        gewerbe.update_verfuegbar = None
+    protokolliere("update_automatik", nutzer_id=nutzer_id, details={"an": an})
+    db.session.commit()
 
 
 def _mit_ueberspringen(ergebnis: Pruefung) -> Pruefung:

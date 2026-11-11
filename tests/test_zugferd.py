@@ -448,3 +448,136 @@ def test_betraege_stimmen_ueber_viele_positionen():
         )
     )
     assert wert(x, "//ram:GrandTotalAmount") == str(summe)
+
+
+# ---------- Amtliche Prüfregeln (EN 16931, XRechnung 3.0) ----------
+
+from app.domain.erechnung_regeln import pruefe_regeln  # noqa: E402
+
+
+def schwere(meldungen):
+    return [str(m) for m in meldungen if m.schwer]
+
+
+@pytest.mark.parametrize(
+    "aenderung",
+    [
+        {},
+        {"leistung_bis": None},
+        {"kaeuferreferenz": "04011000-1234512345-35"},
+        {
+            "nummer": "RK0001",
+            "korrektur": True,
+            "faellig_am": None,
+            "bezug_nummer": "RE0001",
+            "bezug_datum": date(2026, 10, 1),
+        },
+        {
+            "verkaeufer": Partei(
+                "Firma",
+                "Weg 1",
+                None,
+                "12345",
+                "Ort",
+                "DE",
+                "Inh",
+                "01",
+                "a@b.example",
+                None,
+                "DE123456789",
+            )
+        },
+        {
+            "kaeufer": Partei(
+                "Kunde AT",
+                "Gasse 1",
+                "3. Stock",
+                "1010",
+                "Wien",
+                "Österreich",
+                email="k@at.example",
+            )
+        },
+        {"zeilen": [Zeile(1, "Gratis", None, 1000, "Stück", 0, 0)]},
+        {
+            "zeilen": [
+                Zeile(
+                    i,
+                    f"P{i}",
+                    "Text <&> ä",
+                    1333,
+                    "Std",
+                    3333 + i,
+                    (1333 * (3333 + i) + 500) // 1000,
+                )
+                for i in range(1, 25)
+            ]
+        },
+    ],
+    ids=[
+        "rechnung",
+        "einzeldatum",
+        "xrechnung",
+        "korrektur",
+        "mit-ustid",
+        "ausland",
+        "null-euro",
+        "krumme-mengen",
+    ],
+)
+def test_e_rechnung_erfuellt_die_amtlichen_regeln(aenderung):
+    r = stoff(**aenderung)
+    assert schwere(pruefe_regeln(baue_xml(r), r.ist_xrechnung)) == []
+
+
+def test_ohne_ustid_dient_die_steuernummer_als_kennung():
+    """BR-CO-26: Ohne USt-IdNr. braucht der Kunde eine Kennung des Lieferanten."""
+    x = baum(baue_xml(stoff()))
+    assert wert(x, "//ram:SellerTradeParty/ram:ID") == "214/815/08150"
+
+
+def test_xrechnung_hat_prozess_und_elektronische_adressen():
+    x = baum(baue_xml(stoff(kaeuferreferenz="04011000-1234512345-35")))
+    assert wert(x, "//ram:BusinessProcessSpecifiedDocumentContextParameter/ram:ID")
+    assert (
+        wert(x, "//ram:SellerTradeParty/ram:URIUniversalCommunication/ram:URIID")
+        == "hallo@andy.example"
+    )
+    knoten = x.xpath(
+        "//ram:BuyerTradeParty/ram:URIUniversalCommunication/ram:URIID", namespaces=NS
+    )[0]
+    assert knoten.text == "04011000-1234512345-35" and knoten.get("schemeID") == "0204"
+
+
+def test_regelverstoss_wird_gemeldet():
+    xml = baue_xml(stoff()).replace(
+        b"<ram:TypeCode>380</ram:TypeCode>", b"<ram:TypeCode>999</ram:TypeCode>"
+    )
+    assert any("BR-CL-01" in m for m in schwere(pruefe_regeln(xml)))
+
+
+def test_regelverstoss_verhindert_das_festschreiben(entwurf, admin, app, session, monkeypatch):
+    from app.domain import erechnung_regeln
+    from app.domain.erechnung_regeln import Meldung
+
+    monkeypatch.setattr(
+        erechnung_regeln, "pruefe_regeln", lambda xml, x=False: [Meldung("BR-TEST", "kaputt", True)]
+    )
+    with app.app_context(), pytest.raises(NichtFinalisierbar) as fehler:
+        finalisiere(entwurf, admin.id)
+    assert "BR-TEST" in str(fehler.value)
+    assert entwurf.ist_entwurf
+
+
+def test_pruefung_im_eigenen_prozess():
+    """Standard im Betrieb: Saxon läuft in einem kurzlebigen Prozess."""
+    from app.domain.erechnung_regeln import pruefe_im_prozess
+
+    assert (
+        schwere(pruefe_im_prozess(baue_xml(stoff(kaeuferreferenz="04011000-1234512345-35")), True))
+        == []
+    )
+    kaputt = baue_xml(stoff()).replace(
+        b"<ram:TypeCode>380</ram:TypeCode>", b"<ram:TypeCode>999</ram:TypeCode>"
+    )
+    assert any(m.startswith("BR-CL-01") for m in schwere(pruefe_im_prozess(kaputt)))

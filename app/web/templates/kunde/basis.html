@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>{% block titel %}{{ gewerbe.name }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kunde.css') }}">
+  <script src="{{ url_for('static', filename='js/kunde.js') }}" defer></script>
+</head>
+<body>
+  <header class="k-kopf">
+    <div class="k-breite k-kopf-innen">
+      {% if logo %}<img class="k-logo" src="{{ logo }}" alt="">{% endif %}
+      <span class="k-firma">{{ gewerbe.name }}</span>
+    </div>
+  </header>
+  <main class="k-breite">
+    {% with meldungen = get_flashed_messages() %}
+    {% for meldung in meldungen %}<div class="k-meldung" role="status">{{ meldung }}</div>{% endfor %}
+    {% endwith %}
+    {% block inhalt %}{% endblock %}
+  </main>
+  <footer class="k-fuss k-breite">
+    <p>
+      <strong>{{ gewerbe.name }}</strong>{% if gewerbe.inhaber and gewerbe.inhaber != gewerbe.name %} · {{ gewerbe.inhaber }}{% endif %}<br>
+      {{ gewerbe.strasse }}, {{ gewerbe.plz }} {{ gewerbe.ort }}<br>
+      {% if gewerbe.email %}<a href="mailto:{{ gewerbe.email }}">{{ gewerbe.email }}</a>{% endif %}{% if gewerbe.telefon %} · {{ gewerbe.telefon }}{% endif %}
+    </p>
+    <p class="k-leise">Diese Seite ist nur über Ihren persönlichen Link erreichbar. Bitte geben Sie ihn nicht weiter.</p>
+  </footer>
+</body>
+</html>

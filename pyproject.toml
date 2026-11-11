@@ -36,6 +36,7 @@ dependencies = [
     "gunicorn>=23.0",
     "webauthn>=3.0.1",
     "drafthorse>=2025.2.0",
+    "saxonche>=13.1.1",
 ]
 
 [project.urls]

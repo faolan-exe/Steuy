@@ -17,11 +17,14 @@ trap 'rm -rf "$ARBEIT"' EXIT
 cd "$ZIEL" || exit 1
 
 setze_status() { # Zustand, Schritt, Meldung
+    # Erst im eigenen (root-)Arbeitsordner schreiben, dann verschieben: Der Ordner update/ ist
+    # für die App beschreibbar. Ein dort untergeschobener Symlink darf root nicht dazu bringen,
+    # eine fremde Datei zu überschreiben (mv ersetzt den Link selbst, statt ihm zu folgen).
     printf '{"zustand":"%s","version":"%s","von":"%s","schritt":"%s","meldung":"%s"}\n' \
-        "$1" "${TAG:-}" "${VON:-}" "$2" "$3" > "$UPDATE/status.tmp"
-    chmod 644 "$UPDATE/status.tmp"
-    chown 1000:1000 "$UPDATE/status.tmp" 2> /dev/null || true
-    mv -f "$UPDATE/status.tmp" "$STATUS"
+        "$1" "${TAG:-}" "${VON:-}" "$2" "$3" > "$ARBEIT/status.json"
+    chmod 644 "$ARBEIT/status.json"
+    chown 1000:1000 "$ARBEIT/status.json" 2> /dev/null || true
+    mv -f "$ARBEIT/status.json" "$STATUS"
 }
 
 scheitern() { # Meldung

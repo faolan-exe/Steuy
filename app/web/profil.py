@@ -33,6 +33,7 @@ from app.services.zwei_faktor import (
 )
 from app.web.formulare import CodeFormular, PasswortAendernFormular
 from app.web.rechte import braucht_recht
+from app.web.schalter import schalter_antwort
 
 bp = Blueprint("profil", __name__, url_prefix="/profil")
 
@@ -197,8 +198,10 @@ def hilfe_umschalten():
             "hilfe_umgeschaltet", nutzer_id=current_user.id, details={"hilfe_anzeigen": an}
         )
         db.session.commit()
-    flash("Hilfe-Fragezeichen werden angezeigt." if an else "Hilfe-Fragezeichen ausgeblendet.")
-    return redirect(url_for("profil.profil") + "#darstellung")
+    return schalter_antwort(
+        "Hilfe-Fragezeichen werden angezeigt." if an else "Hilfe-Fragezeichen ausgeblendet.",
+        url_for("profil.profil") + "#darstellung",
+    )
 
 
 @bp.post("/wochenmail")
@@ -209,9 +212,9 @@ def wochenmail_umschalten():
         current_user.wochenmail = an
         protokolliere("wochenmail_umgeschaltet", nutzer_id=current_user.id, details={"an": an})
         db.session.commit()
-    flash(
+    return schalter_antwort(
         "Wöchentliche Zusammenfassung eingeschaltet."
         if an
-        else "Wöchentliche Zusammenfassung abbestellt."
+        else "Wöchentliche Zusammenfassung abbestellt.",
+        url_for("profil.profil") + "#email",
     )
-    return redirect(url_for("profil.profil") + "#email")

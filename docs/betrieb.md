@@ -41,6 +41,18 @@ PROXY_ANZAHL=1
 
 ### Update
 
+**Per Knopfdruck in steuy** (*Einstellungen → Update*): steuy zeigt die neue Version mit „Das ist neu“ und „Das wurde behoben“. Erst nach **Updaten** und deiner Bestätigung legt steuy eine Sicherung an, lädt die Version, baut neu und prüft, ob alles läuft. Klappt etwas nicht, läuft automatisch die bisherige Version weiter. Von selbst installiert steuy nie etwas.
+
+Bei der Installation mit `lxc-installieren.sh` ist das schon eingerichtet. Bei einer eigenen Docker-Installation einmalig als root im Ordner von steuy:
+
+```sh
+sh scripts/update-dienst-einrichten.sh
+```
+
+**Automatisch nach Updates suchen:** steuy fragt einmal am Tag bei GitHub nach der neuesten Versionsnummer, sobald jemand mit Einstellungsrecht angemeldet ist. Gibt es eine neue Version, erscheint ein Punkt am Einstellungssymbol und ein Hinweis im Dashboard. Übertragen wird dabei nichts außer der Anfrage selbst. Abschalten unter *Einstellungen → Update → Automatisch nach Updates suchen*. Danach fragt steuy GitHub nur, wenn du selbst auf „Nach Updates suchen“ klickst.
+
+**Von Hand** geht es jederzeit so:
+
 ```sh
 git pull
 docker compose up -d --build

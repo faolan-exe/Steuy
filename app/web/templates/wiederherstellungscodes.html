@@ -9,7 +9,7 @@
     <p><strong>Bewahre diese Codes sicher auf</strong>, z. B. ausgedruckt oder im Passwortmanager. Jeder Code funktioniert einmal, falls dein Handy weg ist. Sie werden nur jetzt angezeigt.</p>
     <ul class="codeliste">{% for c in codes %}<li><code>{{ c }}</code></li>{% endfor %}</ul>
     <div class="formular-fuss">
-      <button class="knopf" type="button" onclick="window.print()">Drucken</button>
+      <button class="knopf" type="button" data-drucken>Drucken</button>
       <a class="knopf knopf-primaer" href="{{ url_for('profil.profil') }}">Fertig</a>
     </div>
   </div>

@@ -103,7 +103,7 @@ class Buchung(db.Model):
     kategorie: Mapped[Kategorie | None] = relationship()
     kontakt = relationship("Kontakt")
     zahlungen: Mapped[list["Zahlung"]] = relationship(  # noqa: F821
-        back_populates="buchung", order_by="Zahlung.id"
+        back_populates="buchung", order_by="Zahlung.id", lazy="selectin"
     )
 
     @property

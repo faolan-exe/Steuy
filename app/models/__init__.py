@@ -10,6 +10,7 @@ from app.models.gewerbe import Gewerbe
 from app.models.jahreszuordnung import Jahreszuordnung
 from app.models.kleinunternehmergrenze import Kleinunternehmergrenze
 from app.models.kontakt import Kontakt
+from app.models.kundenlink import Kundenlink
 from app.models.mahnung import Mahnstufe, Mahnung
 from app.models.nutzer import Nutzer, Wiederherstellungscode
 from app.models.passkey import Passkey
@@ -29,6 +30,7 @@ from app.models.zahlung import Zahlung
 
 __all__ = [
     "Drucklayout",
+    "Kundenlink",
     "AfaVorgabe",
     "Anlagegut",
     "Nutzungsdauer",

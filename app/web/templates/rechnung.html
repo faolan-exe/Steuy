@@ -78,6 +78,40 @@
       {% endfor %}
     </ul>
     {% endif %}
+    {% if not r.ist_entwurf and r.belegart in ("rechnung", "angebot", "korrektur", "lieferschein") %}
+    <div class="karte-kopf" id="kundenlink"><h2>Kundenlink{{ hilfe("kundenlink") }}</h2></div>
+    <div class="karte-inhalt kundenlink">
+      {% if not portal.eingeschaltet %}
+      <p class="hinweis">Das Kundenportal ist aus. {% if darf("einstellungen") %}<a href="{{ url_for('einstellungen.rechnungen') }}#portal-einstellungen">Einschalten</a>{% endif %}</p>
+      {% elif not portal.adresse %}
+      <p class="hinweis">Damit Kunden den Link öffnen können, braucht steuy eine öffentliche Adresse. {% if darf("einstellungen") %}<a href="{{ url_for('einstellungen.rechnungen') }}#portal-einstellungen">Jetzt eintragen</a>{% endif %}</p>
+      {% elif portal.link %}
+      <div class="kopierzeile">
+        <input class="feld" type="text" readonly value="{{ portal.url }}" aria-label="Kundenlink" data-kopierfeld>
+        <button type="button" class="knopf" data-kopieren-aus="[data-kopierfeld]">Kopieren</button>
+        <a class="knopf" href="{{ portal.url }}" target="_blank" rel="noopener noreferrer">Öffnen</a>
+      </div>
+      <p class="hinweis">
+        {% if portal.link.zuletzt_abgerufen %}Vom Kunden angesehen: {{ portal.link.abrufe }}×, zuletzt {{ portal.link.zuletzt_abgerufen | datum_zeit }}.{% else %}Noch nicht angesehen.{% endif %}
+        {% if portal.link.entschieden_am %}<br>Online {{ "angenommen" if r.status == "angenommen" else "abgelehnt" }} am {{ portal.link.entschieden_am | datum_zeit }}{% if portal.link.entschieden_von %} von {{ portal.link.entschieden_von }}{% endif %}.{% if portal.link.kommentar %} Nachricht: „{{ portal.link.kommentar }}“{% endif %}{% endif %}
+      </p>
+      {% if darf("rechnungen_versenden") %}
+      <form method="post" action="{{ url_for('rechnungen.kundenlink_neu', rechnung_id=r.id) }}" data-bestaetigen="Den bisherigen Link sperren und einen neuen erzeugen? Der alte Link funktioniert danach nicht mehr." data-bestaetigen-knopf="Neuen Link erzeugen">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="knopf knopf-text" type="submit">Link sperren und neu erzeugen</button>
+      </form>
+      {% endif %}
+      {% else %}
+      <p class="hinweis">Der Link entsteht beim Senden per E-Mail.</p>
+      {% if darf("rechnungen_versenden") %}
+      <form method="post" action="{{ url_for('rechnungen.kundenlink_neu', rechnung_id=r.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="knopf" type="submit">Link jetzt erzeugen</button>
+      </form>
+      {% endif %}
+      {% endif %}
+    </div>
+    {% endif %}
   </section>
   <div class="spalte">
   {% if r.ist_rechnung %}

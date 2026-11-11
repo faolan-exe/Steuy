@@ -198,7 +198,9 @@ def absender_daten(gewerbe: Gewerbe) -> dict:
     }
 
 
-def finalisierungsfehler(rechnung: Rechnung, gewerbe: Gewerbe) -> list[str]:
+def finalisierungsfehler(rechnung: Rechnung, gewerbe: Gewerbe, regeln: bool = True) -> list[str]:
+    """Was vor dem Festschreiben fehlt. regeln=False lässt die (langsame) Prüfung der
+    E-Rechnung gegen die amtlichen Regeln aus, finalisiere() prüft sie einmal am fertigen XML."""
     anschrift_empfaenger = rechnung.empfaenger_strasse and rechnung.empfaenger_ort
     anschrift_absender = gewerbe.strasse and gewerbe.plz and gewerbe.ort
     fehler = fehlende_pflichtangaben(
@@ -232,7 +234,7 @@ def finalisierungsfehler(rechnung: Rechnung, gewerbe: Gewerbe) -> list[str]:
     if gewerbe.e_rechnung and rechnung.belegart in ("rechnung", "korrektur"):
         from app.services import erechnung_erzeugen
 
-        fehler += erechnung_erzeugen.fehler(rechnung, absender_daten(gewerbe))
+        fehler += erechnung_erzeugen.fehler(rechnung, absender_daten(gewerbe), regeln=regeln)
     if rechnung.qr_ueberweisung and rechnung.ist_rechnung:
         try:
             pruefe_iban(gewerbe.iban or "")
@@ -260,7 +262,7 @@ def finalisiere(rechnung: Rechnung, nutzer_id: int) -> Rechnung:
 
     _pruefe_entwurf(rechnung)
     gewerbe = aktuelles_gewerbe()
-    fehler = finalisierungsfehler(rechnung, gewerbe)
+    fehler = finalisierungsfehler(rechnung, gewerbe, regeln=False)
     if fehler:
         raise NichtFinalisierbar(fehler)
 
@@ -277,7 +279,11 @@ def finalisiere(rechnung: Rechnung, nutzer_id: int) -> Rechnung:
     if gewerbe.e_rechnung and rechnung.belegart in ("rechnung", "korrektur"):
         from app.services import erechnung_erzeugen
 
-        xml = erechnung_erzeugen.erzeuge_xml(rechnung, rechnung.absender)
+        try:
+            xml = erechnung_erzeugen.erzeuge_xml(rechnung, rechnung.absender)
+        except erechnung_erzeugen.ERechnungFehler as fehler:
+            # Nummer und alles andere verwirft der Aufrufer mit dem Rollback
+            raise NichtFinalisierbar(fehler.fehler) from fehler
         rechnung.xml_sha256 = ablage.speichere(xml)
         dokument = erechnung_erzeugen.einbetten(dokument, xml, rechnung.absender, rechnung)
     rechnung.pdf_sha256 = ablage.speichere(dokument)
@@ -316,10 +322,13 @@ def suche_rechnungen(filter: str = "alle", angebote: bool = False) -> list[Rechn
         abfrage = select(Rechnung).where(Rechnung.belegart.in_(["rechnung", "korrektur"]))
     if filter == "entwuerfe":
         abfrage = abfrage.where(Rechnung.status == "entwurf")
-    elif filter == "offen":
+    elif filter in ("offen", "ueberfaellig"):
         abfrage = abfrage.where(Rechnung.status.in_(["offen", "teilbezahlt"]))
         if not angebote:
             abfrage = abfrage.where(Rechnung.belegart == "rechnung")
+        if filter == "ueberfaellig":
+            spalte = Rechnung.gueltig_bis if angebote else Rechnung.faellig_am
+            abfrage = abfrage.where(spalte < date.today())
     return list(
         db.session.execute(
             abfrage.order_by(Rechnung.rechnungsdatum.desc(), Rechnung.id.desc())

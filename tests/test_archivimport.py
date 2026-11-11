@@ -364,3 +364,30 @@ def test_zahlungen_der_einnahmen_aus_ausgangsliste(admin, session):
     assert [(e.liste, e.erfasst) for e in ergebnisse] == [("Einnahmen", 1), ("Ausgaben", 1)]
     stand = {b.belegnummer: b.zahlstatus for b in session.execute(select(Buchung)).scalars()}
     assert stand == {"RE5": "bezahlt", "RE6": "offen", "EK1": "bezahlt"}
+
+
+# ---------- Stand nach dem Import ----------
+
+
+def test_nach_dem_import_offene_jahre_und_nummernkreis(angemeldet, admin, session):
+    from app.models import Nummernkreis
+    from app.services.archivimport import stand_nach_import
+    from app.services.rechnungseinstellungen import NummerSchonVergeben, uebernimm_naechste_nummer
+
+    importiere_archiv(
+        archiv(
+            beleg("RE0128", "100.00", "einnahme", "4185", "2024-03-01"),
+            beleg("RE0130", "50.00", "einnahme", "4185", "2025-03-01"),
+            beleg("ANDERS7", "20.00", "einnahme", "4185", "2025-04-01"),
+        ),
+        admin.id,
+    )
+    nachher = stand_nach_import()
+    assert nachher.offen == {2024: {"einnahme": 1}, 2025: {"einnahme": 2}}
+    assert nachher.hoechste_nummer == "RE0130" and nachher.naechste_nummer == 131
+    antwort = angemeldet.post("/import/nummernkreis", data={"naechste": "131", "stellen": "4"})
+    assert antwort.status_code == 302
+    assert session.get(Nummernkreis, "rechnung").naechste_nummer == 131
+    with pytest.raises(NummerSchonVergeben):  # nie rückwärts
+        uebernimm_naechste_nummer(100, 4, admin.id)
+    assert stand_nach_import().naechste_nummer is None  # danach kein Vorschlag mehr

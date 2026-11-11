@@ -71,6 +71,97 @@
     const form = e.target.closest("form");
     if (form) rechne(form);
   });
+  // Positionen hinzugefügt oder entfernt: Summe neu
+  document.addEventListener("positionen-geaendert", function (e) { rechne(e.target); });
+})();
+
+// Positionen hinzufügen und entfernen, ohne die Seite neu zu laden. Der Server liest die
+// Positionen nach ihrem Index (pos-<n>-...), Lücken sind egal. Ohne JavaScript schicken die
+// Knöpfe das Formular wie früher ab.
+(function () {
+  "use strict";
+
+  function bereich(form) { return form.querySelector("[data-positionen]"); }
+
+  function naechsterIndex(form) {
+    let hoechster = -1;
+    form.querySelectorAll('[name^="pos-"][name$="-typ"]').forEach(function (feld) {
+      const n = parseInt(feld.name.split("-")[1], 10);
+      if (n > hoechster) hoechster = n;
+    });
+    return hoechster + 1;
+  }
+
+  function nummerieren(form) {
+    let nr = 0;
+    bereich(form).querySelectorAll("[data-position]").forEach(function (zeile) {
+      if (zeile.classList.contains("freitext")) return;
+      nr += 1;
+      zeile.querySelector(".positionsnr").textContent = nr;
+    });
+    form.dispatchEvent(new CustomEvent("positionen-geaendert", { bubbles: true }));
+  }
+
+  function neueZeile(form, art) {
+    const vorlage = document.getElementById(art === "text" ? "vorlage-text" : "vorlage-artikel");
+    const i = String(naechsterIndex(form));
+    const html = vorlage.innerHTML.replace(/__I__/g, i);
+    const huelle = document.createElement("div");
+    huelle.innerHTML = html.trim();
+    const zeile = huelle.firstElementChild;
+    bereich(form).appendChild(zeile);
+    nummerieren(form);
+    return zeile;
+  }
+
+  function istLeer(zeile) {
+    if (zeile.classList.contains("freitext")) return false;
+    const wert = function (ende) {
+      const f = zeile.querySelector('[name$="-' + ende + '"]');
+      return f ? f.value.trim() : "";
+    };
+    return !wert("bezeichnung") && /^0*(,0*)?$/.test(wert("preis"));
+  }
+
+  function artikelEinfuegen(form) {
+    const auswahl = form.querySelector('select[name="neuer_artikel"]');
+    const liste = document.getElementById("artikelvorschlaege");
+    if (!auswahl || !liste) return;
+    const daten = Array.from(liste.options).find(function (o) { return o.dataset.id === auswahl.value; });
+    if (!daten) return;
+    // Wie auf dem Server: eine leere Position (z. B. die erste im neuen Entwurf) wird ersetzt
+    const leer = Array.from(bereich(form).querySelectorAll("[data-position]")).find(istLeer);
+    const zeile = leer || neueZeile(form, "artikel");
+    const setze = function (ende, wert) {
+      const f = zeile.querySelector('[name$="-' + ende + '"]');
+      if (f) f.value = wert;
+    };
+    setze("bezeichnung", daten.value);
+    setze("artikel_id", daten.dataset.id);
+    setze("einheit", daten.dataset.einheit || "");
+    setze("preis", daten.dataset.preis || "0,00");
+    setze("beschreibung", daten.dataset.beschreibung || "");
+    nummerieren(form);
+    const menge = zeile.querySelector('[name$="-menge"]');
+    if (menge) { menge.focus(); menge.select(); }
+  }
+
+  document.addEventListener("click", function (e) {
+    const knopf = e.target.closest ? e.target.closest("[data-neue-position], [data-entfernen]") : null;
+    if (!knopf || !knopf.form || !bereich(knopf.form)) return;
+    e.preventDefault();
+    const form = knopf.form;
+    if (knopf.hasAttribute("data-entfernen")) {
+      knopf.closest("[data-position]").remove();
+      nummerieren(form);
+      return;
+    }
+    const art = knopf.dataset.neuePosition;
+    if (art === "artikel-aus-liste") { artikelEinfuegen(form); return; }
+    const zeile = neueZeile(form, art);
+    const erstes = zeile.querySelector('[name$="-bezeichnung"]');
+    if (erstes) erstes.focus();
+  });
 })();
 
 // Kunde gewählt: Anschrift sofort in die Felder eintragen (nicht erst beim Speichern)
@@ -92,5 +183,36 @@
       const eingabe = document.getElementById(feld);
       if (eingabe) eingabe.value = option.dataset[felder[feld]] || "";
     });
+  });
+})();
+
+// Artikel beim Tippen in „Bezeichnung“ vorschlagen. Passt der Text genau zu einem Artikel,
+// werden Einheit, Preis und Beschreibung übernommen (nur in leere Felder bzw. Preis 0).
+(function () {
+  "use strict";
+  function uebernehmen(feld) {
+    const liste = document.getElementById("artikelvorschlaege");
+    if (!liste || !/-bezeichnung$/.test(feld.name || "")) return;
+    const wahl = Array.from(liste.options).find(function (o) { return o.value === feld.value; });
+    if (!wahl) return;
+    const pre = feld.name.replace(/bezeichnung$/, "");
+    const form = feld.form;
+    const setze = function (name, wert, nurWennLeer) {
+      const ziel = form.querySelector('[name="' + pre + name + '"]');
+      if (!ziel || !wert) return;
+      const leer = !ziel.value.trim() || (name === "preis" && /^0+(,0+)?$/.test(ziel.value.trim()));
+      if (!nurWennLeer || leer) ziel.value = wert;
+    };
+    setze("artikel_id", wahl.dataset.id, false);
+    setze("einheit", wahl.dataset.einheit, true);
+    setze("preis", wahl.dataset.preis, true);
+    setze("beschreibung", wahl.dataset.beschreibung, true);
+    const menge = form.querySelector('[name="' + pre + 'menge"]');
+    if (menge) menge.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+  document.addEventListener("change", function (e) { uebernehmen(e.target); });
+  document.addEventListener("input", function (e) {
+    // Auswahl aus der Vorschlagsliste kommt in manchen Browsern nur als input-Ereignis
+    if (e.inputType === undefined || e.inputType === "insertReplacementText") uebernehmen(e.target);
   });
 })();

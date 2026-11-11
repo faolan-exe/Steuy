@@ -379,6 +379,11 @@ BEGRIFFE = {
         "aus einer CSV-Datei übernehmen. Belege und Buchungen alter Jahre bleiben im alten "
         "Programm bzw. in dessen Export, die musst du dort aufbewahren."
     ),
+    "kundenlink": (
+        "Ein persönlicher Link für deinen Kunden. Er steht automatisch in der E-Mail. Darüber "
+        "sieht der Kunde den Beleg, lädt PDF und E-Rechnung herunter, bezahlt per QR-Code und "
+        "nimmt Angebote mit einem Klick an. Du siehst hier, ob und wann er ihn geöffnet hat."
+    ),
     "versand": (
         "Jede verschickte Mail wird hier festgehalten, mit Empfänger und Zeitpunkt. So kannst "
         "du nachweisen, wann eine Rechnung oder Mahnung rausging."
@@ -393,7 +398,9 @@ BEGRIFFE = {
 
 def _symbol(text: str) -> Markup:
     return Markup(
-        '<span class="hilfe" tabindex="0" role="img" aria-label="Erklärung: {t}" '
+        # Nicht in der Tab-Reihenfolge: Wer mit Tab durchs Formular springt, will von Feld zu
+        # Feld. Die Erklärung erscheint bei Maus und Antippen, Screenreader lesen das Label.
+        '<span class="hilfe" tabindex="-1" role="img" aria-label="Erklärung: {t}" '
         'title="{t}" data-hilfe="{t}">?</span>'
     ).format(t=escape(text))
 

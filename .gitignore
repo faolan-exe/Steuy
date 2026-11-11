@@ -13,3 +13,4 @@ htmlcov/
 .DS_Store
 .claude/settings.local.json
 update/
+.claude/launch.json

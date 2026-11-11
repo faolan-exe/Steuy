@@ -5,6 +5,7 @@ EÜR zählt erst die Zahlung (Zuflussprinzip), die erfasst der Nutzer danach sel
 """
 
 import io
+import re
 import zipfile
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -497,3 +498,51 @@ def _verbuche(schluessel, zeilen_dazu, passende, ergebnis, nutzer_id, pruefen) -
             except (ZahlungUngueltig, ValueError) as fehler:
                 db.session.rollback()
                 ergebnis.probleme.append(f"{bezeichnung}: {fehler}")
+
+
+# ---------- Stand nach dem Import: Was fehlt noch? ----------
+
+
+@dataclass
+class Nachher:
+    """Offene Punkte nach dem Umzug, damit nichts vergessen wird."""
+
+    offen: dict[int, dict[str, int]] = field(default_factory=dict)  # Jahr -> Art -> Anzahl
+    entwuerfe: int = 0
+    hoechste_nummer: str | None = None  # höchste übernommene Rechnungsnummer
+    naechste_nummer: int | None = None  # Vorschlag für den Nummernkreis, falls nötig
+    stellen: int | None = None
+
+    @property
+    def offene_einnahmen(self) -> int:
+        return sum(j.get("einnahme", 0) for j in self.offen.values())
+
+
+def stand_nach_import() -> Nachher:
+    from app.services.rechnungseinstellungen import rechnungskreis
+
+    nachher = Nachher()
+    offen: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    buchungen = db.session.execute(select(Buchung).where(Buchung.storno_von_id.is_(None))).scalars()
+    kreis = rechnungskreis()
+    praefix = (kreis.praefix or "").upper()
+    hoechste = None
+    for b in buchungen:
+        if b.status == "entwurf":
+            nachher.entwuerfe += 1
+            continue
+        if b.zahlstatus == "offen":
+            offen[b.belegdatum.year][b.art] += 1
+        if b.art == "einnahme" and b.belegnummer:
+            treffer = re.fullmatch(r"([A-Za-z]*)(\d+)", b.belegnummer.strip())
+            if treffer and treffer.group(1).upper() == praefix:
+                zahl = int(treffer.group(2))
+                if hoechste is None or zahl > hoechste[0]:
+                    hoechste = (zahl, len(treffer.group(2)), b.belegnummer.strip())
+    nachher.offen = {jahr: dict(arten) for jahr, arten in sorted(offen.items())}
+    if hoechste:
+        nachher.hoechste_nummer = hoechste[2]
+        if hoechste[0] >= kreis.naechste_nummer:
+            nachher.naechste_nummer = hoechste[0] + 1
+            nachher.stellen = max(kreis.stellen, hoechste[1])
+    return nachher

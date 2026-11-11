@@ -1,12 +1,13 @@
 {% extends "basis.html" %}
 {% from "icons.html" import icon %}
+{% from "positionen_teil.html" import positionsbereich %}
 {% set nav_aktiv = "rechnungen" %}
 {% block titel %}Wiederkehrende Rechnung bearbeiten – steuy{% endblock %}
 {% block inhalt_klasse %}mittel{% endblock %}
 {% macro fehler_von(name) %}{% if fehler.get(name) %}<div class="feldfehler">{{ fehler[name] }}</div>{% endif %}{% endmacro %}
 {% macro eingabe(name, label, wert, typ="text", klasse="", attrs="") -%}
 <div class="feldgruppe {{ klasse }}{% if fehler.get(name) %} hat-fehler{% endif %}">
-  <input class="feld" type="{{ typ }}" id="{{ name }}" name="{{ name }}" value="{{ wert if wert is not none else '' }}" placeholder=" " {{ attrs }}>
+  <input class="feld" type="{{ typ }}" id="{{ name }}" name="{{ name }}" value="{{ wert if wert is not none else '' }}" placeholder=" " {{ attrs | safe }}>
   <label class="feldlabel" for="{{ name }}">{{ label }}{{ namenhilfe(name) }}</label>
   {{ fehler_von(name) }}
 </div>
@@ -69,12 +70,12 @@
           <label class="feldlabel" for="kontakt_id">Kunde</label>
           <div class="feldhinweis">Die Anschrift wird sofort aus dem Kontakt übernommen und lässt sich danach noch ändern.</div>
         </div>
-        {{ eingabe("empfaenger_name", "Name", r.empfaenger_name, klasse="ganz") }}
-        {{ eingabe("empfaenger_zusatz", "Adresszusatz", r.empfaenger_zusatz, klasse="ganz") }}
-        {{ eingabe("empfaenger_strasse", "Straße", r.empfaenger_strasse, klasse="ganz") }}
-        {{ eingabe("empfaenger_plz", "PLZ", r.empfaenger_plz, klasse="schmal") }}
-        {{ eingabe("empfaenger_ort", "Ort", r.empfaenger_ort, klasse="breit") }}
-        {{ eingabe("empfaenger_land", "Land", r.empfaenger_land or "Deutschland", klasse="ganz") }}
+        {{ eingabe("empfaenger_name", "Name", r.empfaenger_name, klasse="ganz", attrs='autocomplete="off"') }}
+        {{ eingabe("empfaenger_zusatz", "Adresszusatz", r.empfaenger_zusatz, klasse="ganz", attrs='autocomplete="off"') }}
+        {{ eingabe("empfaenger_strasse", "Straße", r.empfaenger_strasse, klasse="ganz", attrs='autocomplete="off"') }}
+        {{ eingabe("empfaenger_plz", "PLZ", r.empfaenger_plz, klasse="schmal", attrs='autocomplete="off"') }}
+        {{ eingabe("empfaenger_ort", "Ort", r.empfaenger_ort, klasse="breit", attrs='autocomplete="off"') }}
+        {{ eingabe("empfaenger_land", "Land", r.empfaenger_land or "Deutschland", klasse="ganz", attrs='autocomplete="off"') }}
       </div>
     </div>
   </section>
@@ -91,55 +92,7 @@
 
   <section class="karte abstand-oben" id="positionen">
     <div class="karte-inhalt">
-      {% for p in positionen %}
-      {% set i = loop.index0 %}
-      {% set pre = "pos-" ~ i ~ "-" %}
-      <input type="hidden" name="{{ pre }}typ" value="{{ p.typ }}">
-      <input type="hidden" name="{{ pre }}artikel_id" value="{{ p.artikel_id or '' }}">
-      {% if p.typ == "text" %}
-      <div class="position freitext">
-        <span class="positionsnr">T</span>
-        <div class="feldgruppe">
-          <input class="feld" name="{{ pre }}bezeichnung" id="{{ pre }}bezeichnung" value="{{ p.bezeichnung }}" placeholder=" ">
-          <label class="feldlabel" for="{{ pre }}bezeichnung">Freitext / Zwischenüberschrift</label>
-        </div>
-        <button class="symbolknopf" type="submit" name="aktion" value="entfernen-{{ i }}" title="Position entfernen" aria-label="Position entfernen">✕</button>
-      </div>
-      {% else %}
-      <div class="position">
-        <span class="positionsnr">{{ loop.index }}</span>
-        <div class="positionsfelder">
-          <div class="feldgruppe bez">
-            <input class="feld" name="{{ pre }}bezeichnung" id="{{ pre }}bezeichnung" value="{{ p.bezeichnung }}" placeholder=" ">
-            <label class="feldlabel" for="{{ pre }}bezeichnung">Bezeichnung</label>
-          </div>
-          {{ eingabe(pre ~ "menge", "Menge", p.menge or "1", klasse="zahl") }}
-          {{ eingabe(pre ~ "einheit", "Einheit", p.einheit, klasse="einheit") }}
-          {{ eingabe(pre ~ "preis", "Preis €", p.preis or "0,00", klasse="zahl") }}
-          {{ eingabe(pre ~ "rabatt", "Rabatt %", p.rabatt, klasse="zahl schmal-zahl") }}
-          <div class="positionsbetrag">{{ (p.betrag_cent or 0) | euro }}</div>
-          <div class="feldgruppe besch">
-            <textarea class="feld" name="{{ pre }}beschreibung" id="{{ pre }}beschreibung" placeholder=" " rows="1">{{ p.beschreibung or "" }}</textarea>
-            <label class="feldlabel" for="{{ pre }}beschreibung">Beschreibung (optional)</label>
-          </div>
-        </div>
-        <button class="symbolknopf" type="submit" name="aktion" value="entfernen-{{ i }}" title="Position entfernen" aria-label="Position entfernen">✕</button>
-      </div>
-      {% endif %}
-      {% endfor %}
-
-      <div class="positionsaktionen">
-        {% if artikelliste %}
-        <div class="artikelwahl">
-          <select class="feld" name="neuer_artikel" aria-label="Artikel auswählen">
-            {% for a in artikelliste %}<option value="{{ a.id }}">{{ a.bezeichnung }} – {{ a.preis_cent | euro }}</option>{% endfor %}
-          </select>
-          <button class="knopf" type="submit" name="aktion" value="artikel">{{ icon("plus") }} Artikel</button>
-        </div>
-        {% endif %}
-        <button class="knopf knopf-text" type="submit" name="aktion" value="position">+ Freie Position</button>
-        <button class="knopf knopf-text" type="submit" name="aktion" value="freitext">≡ Freitext</button>
-      </div>
+      {{ positionsbereich(positionen, artikelliste, fehler) }}
     </div>
     <div class="summenleiste">
       <span>Gesamtbetrag</span>

@@ -65,6 +65,7 @@ def sende(
     text: str,
     kopie_an: str | None = None,
     anhaenge: tuple[Anhang, ...] = (),
+    html: str | None = None,
 ) -> EmailMessage:
     if not eingerichtet():
         raise MailFehler("E-Mail-Versand ist noch nicht eingerichtet (Einstellungen → E-Mail).")
@@ -79,6 +80,7 @@ def sende(
             kopie_an=kopie_an,
             antwort_an=gewerbe.email,
             anhaenge=anhaenge,
+            html=html,
         )
     except EmailUngueltig as fehler:
         raise MailFehler(str(fehler)) from fehler

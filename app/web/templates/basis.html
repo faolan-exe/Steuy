@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="htmx-config" content='{"allowEval": false, "allowScriptTags": false, "selfRequestsOnly": true}'>
   <title>{% block titel %}steuy{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/steuy-signet.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
@@ -16,14 +17,12 @@
     <a class="marke" href="{{ url_for('allgemein.start') }}"><img src="{{ url_for('static', filename='img/steuy-signet.svg') }}" alt="" width="26" height="26"><span>steuy</span></a>
     {% block navigation %}
     <nav class="hauptnavi" aria-label="Hauptnavigation">
-      {% set bald = "kommt in einer späteren Version" %}
       {% set bereich = nav_aktiv or request.blueprint %}
       <a href="{{ url_for('allgemein.start') }}" {% if request.endpoint == 'allgemein.start' %}class="aktiv" aria-current="page"{% endif %}>Dashboard</a>
       <a href="{{ url_for('allgemein.pruefen') }}" {% if request.endpoint == 'allgemein.pruefen' %}class="aktiv" aria-current="page"{% endif %}>Zu prüfen</a>
       <a href="{{ url_for('angebote.angebote') }}" {% if bereich == 'angebote' %}class="aktiv" aria-current="page"{% endif %}>Angebote</a>
       <a href="{{ url_for('rechnungen.liste') }}" {% if bereich == 'rechnungen' %}class="aktiv" aria-current="page"{% endif %}>Rechnungen</a>
       <a href="{{ url_for('belege.liste') }}" {% if bereich == 'belege' %}class="aktiv" aria-current="page"{% endif %}>Belege</a>
-      <span class="bald" title="{{ bald }}">Finanzen</span>
       <a href="{{ url_for('kontakte.liste') }}" {% if bereich == 'kontakte' %}class="aktiv" aria-current="page"{% endif %}>Kontakte</a>
       <a href="{{ url_for('artikel.liste') }}" {% if bereich == 'artikel' %}class="aktiv" aria-current="page"{% endif %}>Artikel</a>
       {% if darf("auswertungen") %}<a href="{{ url_for('auswertung.euer') }}" {% if bereich == 'auswertung' %}class="aktiv" aria-current="page"{% endif %}>Auswertung</a>{% endif %}
@@ -32,7 +31,11 @@
       <a class="leiste-knopf" href="{{ url_for('allgemein.suche_seite') }}" title="Suchen: Kunden, Rechnungen, Belege, Beträge" aria-label="Suche">{{ icon("suche") }}</a>
       <a class="leiste-knopf optional" href="{{ url_for('profil.profil') }}#darstellung" title="Hilfe-Fragezeichen ein- oder ausschalten" aria-label="Hilfe-Einstellungen">{{ icon("hilfe") }}</a>
       {% if darf("einstellungen") %}
+      {% if update_hinweis %}
+      <a class="leiste-knopf mit-punkt{% if request.blueprint == 'einstellungen' %} aktiv{% endif %}" href="{{ url_for('einstellungen.update') }}" title="Einstellungen: steuy {{ update_hinweis }} ist verfügbar" aria-label="Einstellungen, neue Version {{ update_hinweis }} verfügbar">{{ icon("einstellungen") }}</a>
+      {% else %}
       <a class="leiste-knopf{% if request.blueprint == 'einstellungen' %} aktiv{% endif %}" href="{{ url_for('einstellungen.firmendaten') }}" title="Einstellungen" aria-label="Einstellungen">{{ icon("einstellungen") }}</a>
+      {% endif %}
       {% endif %}
       {% if current_user.is_authenticated %}
       <details class="nutzermenue">

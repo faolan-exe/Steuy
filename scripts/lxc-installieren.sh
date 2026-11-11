@@ -98,31 +98,8 @@ else
     echo "    Vorhandene .env bleibt unverändert."
 fi
 
-# Ordner und Dienst für das Update per Knopfdruck in den Einstellungen: Die App legt eine Anfrage
-# in update/ ab, der Dienst führt scripts/update-ausfuehren.sh aus (als root, nur dieses Skript).
-mkdir -p "$ZIEL/update"
-chown 1000:1000 "$ZIEL/update"
-cat > /etc/systemd/system/steuy-update.service << EOF
-[Unit]
-Description=steuy aktualisieren (Anfrage aus den Einstellungen)
-
-[Service]
-Type=oneshot
-ExecStart=/bin/sh $ZIEL/scripts/update-ausfuehren.sh
-EOF
-cat > /etc/systemd/system/steuy-update.path << EOF
-[Unit]
-Description=steuy: wartet auf eine Update-Anfrage
-
-[Path]
-PathExists=$ZIEL/update/anfrage
-Unit=steuy-update.service
-
-[Install]
-WantedBy=multi-user.target
-EOF
-systemctl daemon-reload
-systemctl enable --now steuy-update.path > /dev/null 2>&1 || true
+# Update per Knopfdruck in den Einstellungen (Ordner update/ und systemd-Dienst)
+ZIEL="$ZIEL" sh "$ZIEL/scripts/update-dienst-einrichten.sh" > /dev/null
 
 echo "==> 4/5 steuy bauen und starten (beim ersten Mal einige Minuten)"
 # BAKE aus: Sonst warnt Compose bei fehlendem buildx, obwohl das Bauen auch so klappt.

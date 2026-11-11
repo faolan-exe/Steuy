@@ -3,7 +3,7 @@
 from datetime import date
 
 from app.domain.geld import cent_zu_euro
-from app.domain.mail import Anhang, vorlage
+from app.domain.mail import KNOPF_TEXTE, Anhang, als_html, vorlage
 from app.extensions import db
 from app.models import Mahnung, Rechnung, Versand
 from app.services import ablage
@@ -22,6 +22,12 @@ def dateiname(rechnung: Rechnung, mahnung: Mahnung | None = None) -> str:
     return f"{rechnung.titel}-{rechnung.anzeige_nummer}.pdf".replace(" ", "-")
 
 
+def portal_link(rechnung: Rechnung) -> str | None:
+    from app.services import kundenportal
+
+    return kundenportal.url_fuer(rechnung)
+
+
 def vorschlag(rechnung: Rechnung, mahnung: Mahnung | None = None) -> dict[str, str]:
     """Empfänger, Betreff und Text zum Bearbeiten vor dem Senden."""
     gewerbe = aktuelles_gewerbe()
@@ -34,6 +40,7 @@ def vorschlag(rechnung: Rechnung, mahnung: Mahnung | None = None) -> dict[str, s
         "gueltig": _datum(rechnung.gueltig_bis),
         "bezeichnung": mahnung.bezeichnung if mahnung else "",
         "frist": _datum(mahnung.frist_bis) if mahnung else "",
+        "link": portal_link(rechnung) or "",
     }
     art = "mahnung" if mahnung else rechnung.belegart
     betreff, text = vorlage(art, werte)
@@ -66,6 +73,10 @@ def sende_beleg(
         anhang=name,
         gesendet_von=nutzer_id,
     )
+    link = portal_link(rechnung)
+    art = "mahnung" if mahnung else rechnung.belegart
+    # Steht der Portal-Link (noch) im Text, gibt es ihn in der HTML-Fassung als Knopf
+    html = als_html(text, link, KNOPF_TEXTE.get(art, "Ansehen")) if link and link in text else None
     try:
         sende(
             an=an,
@@ -73,6 +84,7 @@ def sende_beleg(
             text=text,
             kopie_an=kopie_an or None,
             anhaenge=(Anhang(name, ablage.lies(sha)),),
+            html=html,
         )
     except MailFehler as fehler:
         versand.erfolgreich = False

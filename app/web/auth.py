@@ -64,6 +64,8 @@ def anmelden():
             login_user(nutzer)
             return redirect(sicheres_ziel(request.args.get("next")))
         fehler = "E-Mail oder Passwort ist falsch."
+        # Eingaben bleiben stehen, der Cursor steht im Passwortfeld zum Korrigieren
+        formular.passwort.render_kw = {**formular.passwort.render_kw, "autofocus": True}
 
     return render_template("anmelden.html", formular=formular, fehler=fehler)
 

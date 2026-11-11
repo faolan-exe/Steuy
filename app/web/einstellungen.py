@@ -58,7 +58,13 @@ from app.services.rechnungseinstellungen import (
 from app.services.rechte import rechte_matrix, setze_rechte
 from app.services.update import automatisch_moeglich as update_moeglich
 from app.services.update import pruefe as pruefe_update
-from app.services.update import starte_update, ueberspringe, vergiss_ueberspringen
+from app.services.update import (
+    schalte_automatik,
+    starte_update,
+    ueberspringe,
+    vergiss_ueberspringen,
+)
+from app.services.update import seite as update_seite
 from app.services.update import status as update_status
 from app.services.zwei_faktor import deaktiviere
 from app.version import VERSION
@@ -70,6 +76,7 @@ from app.web.formulare import (
     RechnungseinstellungenFormular,
 )
 from app.web.rechte import braucht_recht
+from app.web.schalter import schalter_antwort
 
 bp = Blueprint("einstellungen", __name__, url_prefix="/einstellungen")
 
@@ -168,10 +175,23 @@ def update():
     frisch = request.args.get("pruefen") == "1"
     return render_template(
         "update.html",
-        ergebnis=pruefe_update(frisch=frisch),
+        ergebnis=update_seite(frisch=frisch),
         status=update_status(),
         automatisch=update_moeglich(),
         version=VERSION,
+    )
+
+
+@bp.post("/update/automatik")
+@braucht_recht(Recht.EINSTELLUNGEN)
+def update_automatik():
+    an = request.form.get("an") == "y"
+    schalte_automatik(an, current_user.id)
+    return schalter_antwort(
+        "steuy sucht einmal am Tag nach neuen Versionen."
+        if an
+        else "Automatische Suche aus. steuy fragt GitHub nur noch, wenn du selbst suchst.",
+        url_for("einstellungen.update"),
     )
 
 
@@ -406,10 +426,10 @@ def scanner_pruefen():
 def mahnautomatik():
     an = request.form.get("auto_mahnen") == "y"
     setze_automatik(an, current_user.id)
-    if request.headers.get("X-Requested-With") == "fetch":
-        return jsonify({"auto_mahnen": an})
-    flash("Automatisches Mahnen eingeschaltet." if an else "Automatisches Mahnen ausgeschaltet.")
-    return redirect(url_for("einstellungen.mahnwesen"))
+    return schalter_antwort(
+        "Automatisches Mahnen eingeschaltet." if an else "Automatisches Mahnen ausgeschaltet.",
+        url_for("einstellungen.mahnwesen"),
+    )
 
 
 @bp.route("/mahnwesen", methods=["GET", "POST"])
@@ -456,12 +476,12 @@ def zwei_faktor_pflicht():
             "zwei_faktor_pflicht", nutzer_id=current_user.id, details={"pflicht": pflicht}
         )
         db.session.commit()
-    flash(
+    return schalter_antwort(
         "Zwei-Faktor-Anmeldung ist jetzt für alle verpflichtend."
         if pflicht
-        else "Zwei-Faktor-Anmeldung ist freiwillig."
+        else "Zwei-Faktor-Anmeldung ist freiwillig.",
+        url_for("einstellungen.nutzer"),
     )
-    return redirect(url_for("einstellungen.nutzer"))
 
 
 @bp.post("/nutzer/<int:nutzer_id>/zwei-faktor-zuruecksetzen")

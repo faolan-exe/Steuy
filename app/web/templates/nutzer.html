@@ -39,7 +39,7 @@
 
 <form method="post" action="{{ url_for('einstellungen.zwei_faktor_pflicht') }}" class="karte abstand-oben karte-inhalt pflichtschalter">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-  <label class="haken"><input type="checkbox" name="pflicht" value="y" {% if gewerbe.zwei_faktor_pflicht %}checked{% endif %} onchange="this.form.submit()"> <span><strong>Zwei-Faktor-Anmeldung für alle verpflichtend</strong><br><span class="hinweis">Wer sie noch nicht eingerichtet hat, wird nach der Anmeldung direkt dorthin geführt.</span></span></label>
+  <label class="haken"><input type="checkbox" name="pflicht" value="y" {% if gewerbe.zwei_faktor_pflicht %}checked{% endif %} data-sofort-senden> <span><strong>Zwei-Faktor-Anmeldung für alle verpflichtend</strong><br><span class="hinweis">Wer sie noch nicht eingerichtet hat, wird nach der Anmeldung direkt dorthin geführt.</span></span></label>
   <noscript><button class="knopf" type="submit">Speichern</button></noscript>
 </form>
 

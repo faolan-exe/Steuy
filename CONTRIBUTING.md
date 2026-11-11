@@ -10,7 +10,7 @@ Details: `docs/ziel.md` (Umfang), `docs/architektur.md` (Aufbau), `docs/domain/`
 
 1. **Geld nur als Integer-Cent** (`BigInteger` in der DB, `int` in Python). Kein `float`, nirgends. Formatierung nur in der Anzeige. → ADR 0001
 2. **Festgeschriebene Buchungen sind unveränderlich.** Kein UPDATE, kein DELETE. Korrektur = Stornobuchung + neue Buchung. Die DB erzwingt das per Trigger, nicht nur der Code. → ADR 0002, `docs/domain/gobd.md`
-3. **Jede Route prüft Rechte.** Jede Route außer Anmeldung, Einrichtung und `/gesund` hat `@braucht_recht(...)`, Templates blenden Aktionen über `darf(...)` aus. Ein Gewerbe pro Installation, keine Mandanten-Logik. → ADR 0007, `docs/domain/rollen.md`
+3. **Jede Route prüft Rechte.** Jede Route außer Anmeldung, Einrichtung, `/gesund` und dem Kundenportal `/k/<schlüssel>` (dort ist der Schlüssel im Link die Berechtigung für genau einen Beleg) hat `@braucht_recht(...)`, Templates blenden Aktionen über `darf(...)` aus. Ein Gewerbe pro Installation, keine Mandanten-Logik. → ADR 0007, `docs/domain/rollen.md`
 4. **Zuflussprinzip:** Für die EÜR zählt das Zahlungsdatum, nicht Bestell- oder Rechnungsdatum. → `docs/domain/euer.md`
 5. **Belege sind unveränderlich:** Datei wird mit SHA-256 gespeichert, nie überschrieben, nie gelöscht.
 6. **Keine Fachregel raten.** Wenn eine steuerliche Regel unklar ist: nachfragen oder als offene Frage in `docs/domain/` markieren, nicht implementieren.
@@ -38,6 +38,10 @@ Details: `docs/ziel.md` (Umfang), `docs/architektur.md` (Aufbau), `docs/domain/`
 - Schema nur per Alembic-Migration ändern, nie per `create_all` in Produktion.
 - Keine Secrets im Code. Konfiguration über Umgebungsvariablen, `.env` ist in `.gitignore`.
 - Kleine, fokussierte Änderungen. Kein Refactoring nebenbei, das nicht zur Aufgabe gehört.
+- Tests prüfen die Wirkung, nicht nur das Vorhandensein: Ein Attribut muss so im HTML stehen,
+  dass der Browser es versteht, ein Wert muss nach dem Speichern wirklich gespeichert sein.
+- `tests/test_seitenpruefung.py` besucht jede Seite und muss grün bleiben. Neue Seiten werden
+  automatisch mitgeprüft. Findet sie etwas, wird der Fehler behoben, nie die Prüfung gelockert.
 
 ## Git
 

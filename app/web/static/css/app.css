@@ -88,6 +88,11 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 .hauptnavi a:hover { background: var(--leiste-hover); color: #fff; }
 .hauptnavi a.aktiv { background: #182429; color: #fff; }
 .hauptnavi .bald { opacity: 0.4; cursor: default; }
+/* Mittlere Breiten (Tablet, halbes Fenster): enger, damit alle Punkte sichtbar bleiben */
+@media (min-width: 48.01rem) and (max-width: 72rem) {
+  .hauptnavi a, .hauptnavi span { padding: 0 0.55rem; font-size: 0.93rem; }
+  .leiste-knopf.optional { display: none; }
+}
 
 .leiste-rechts {
   display: flex;
@@ -682,6 +687,7 @@ textarea.feld { min-height: 5rem; resize: vertical; }
 .inhalt.mittel { max-width: 64rem; }
 
 .status-orange { background: #fdf0e3; color: #b25600; }
+.status-rot { background: var(--rot-hell); color: var(--rot); }
 
 .editor-kopf {
   display: grid;
@@ -812,6 +818,9 @@ textarea.feld { min-height: 5rem; resize: vertical; }
 }
 
 .schalter:checked { background: var(--gruen); }
+.schalter { flex: none; }
+.zahlungsart.schalterbox { max-width: none; }
+.zahlungsart .schalter:not(:checked) { background: #9aa5aa; }
 .schalter:checked::after { left: 1.25rem; }
 
 .formular-fuss.zwischen { justify-content: space-between; }
@@ -1114,3 +1123,60 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
 /* Anmeldung mit Passkey */
 .passkey-anmeldung { margin-top: 0.75rem; }
 .passkey-anmeldung .fehlermeldung, .passkey-anmeldung .hinweis { margin-top: 0.5rem; }
+
+/* ---------- Kundenlink auf der Belegseite ---------- */
+.kundenlink { padding-top: 0.25rem; }
+.kopierzeile { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.kopierzeile .feld { flex: 1 1 100%; min-width: 0; font-size: 0.85rem; }
+
+/* Hervorgehobener Hinweis mit Aktion (z. B. nach dem Import) */
+.hinweisbox {
+  border-left: 4px solid var(--gruen);
+  background: var(--gruen-hell);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+.hinweisbox p { margin-top: 0; }
+
+/* Hinweis auf eine neue Version: Punkt am Einstellungssymbol */
+.leiste-knopf.mit-punkt { position: relative; }
+.leiste-knopf.mit-punkt::after {
+  content: "";
+  position: absolute;
+  top: 0.55rem;
+  right: 0.45rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--orange);
+  box-shadow: 0 0 0 2px var(--leiste);
+}
+.updatehinweis { margin-bottom: 1rem; }
+.updatehinweis p { margin: 0; }
+
+/* Kurze Bestätigung nach dem Speichern im Hintergrund */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  z-index: 50;
+  transform: translate(-50%, 1rem);
+  max-width: calc(100% - 2rem);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius);
+  background: var(--leiste);
+  color: #fff;
+  box-shadow: var(--schatten);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.toast.sichtbar { opacity: 1; transform: translate(-50%, 0); }
+.toast-fehler { background: var(--rot); }
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+
+/* Schlichte Liste ohne Aufzählungszeichen (z. B. Verlauf des Scan-Eingangs) */
+.liste-schlicht { list-style: none; margin: 0; padding: 0; }
+.liste-schlicht li { padding: 0.35rem 0; border-bottom: 1px solid var(--linie); }
+.liste-schlicht li:last-child { border-bottom: none; }

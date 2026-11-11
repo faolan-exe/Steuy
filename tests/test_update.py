@@ -180,11 +180,14 @@ def test_update_nur_mit_einstellungsrecht(client, admin, session):
         ("get", "/einstellungen/update/status"),
         ("post", "/einstellungen/update/starten"),
         ("post", "/einstellungen/update/ueberspringen"),
+        ("post", "/einstellungen/update/automatik"),
     ):
         assert getattr(client, methode)(pfad).status_code == 403
 
 
-@pytest.mark.parametrize("skript", ["update-ausfuehren.sh", "lxc-installieren.sh"])
+@pytest.mark.parametrize(
+    "skript", ["update-ausfuehren.sh", "lxc-installieren.sh", "update-dienst-einrichten.sh"]
+)
 def test_skripte_syntaktisch_in_ordnung(skript):
     subprocess.run(["sh", "-n", str(ROOT / "scripts" / skript)], check=True)
 
@@ -204,3 +207,63 @@ def test_update_skript_lehnt_ungueltige_version_ab(tmp_path):
     status = json.loads((tmp_path / "update" / "status.json").read_text())
     assert status["zustand"] == "fehlgeschlagen" and "Ungültige Version" in status["meldung"]
     assert not (tmp_path / "update" / "anfrage").exists()
+
+
+# ---------- Automatische Suche ----------
+
+
+def test_automatik_standardmaessig_an_und_taeglich(mit_release, admin, session):
+    from datetime import UTC, datetime, timedelta
+
+    assert admin and dienst.suche_faellig()
+    dienst.pruefe(frisch=True)
+    gewerbe = dienst.aktuelles_gewerbe()
+    assert gewerbe.update_verfuegbar == "v9.0.0" and dienst.hinweis() == "v9.0.0"
+    assert not dienst.suche_faellig()
+    morgen = datetime.now(UTC) + timedelta(hours=25)
+    assert dienst.suche_faellig(morgen)
+
+
+def test_hinweis_im_dashboard_und_am_symbol(angemeldet, mit_release, session):
+    dienst.pruefe(frisch=True)
+    seite = angemeldet.get("/").get_data(as_text=True)
+    assert "steuy v9.0.0 ist verfügbar" in seite and "mit-punkt" in seite
+    assert "nur installiert, wenn du es dort bestätigst" in seite
+
+
+def test_uebersprungene_version_ohne_hinweis(angemeldet, mit_release, session, admin):
+    dienst.pruefe(frisch=True)
+    dienst.ueberspringe("v9.0.0", admin.id)
+    assert dienst.hinweis() is None
+    assert "ist verfügbar" not in angemeldet.get("/").get_data(as_text=True)
+
+
+def test_automatik_aus_fragt_github_nicht(angemeldet, monkeypatch, app, session):
+    aufrufe = []
+    monkeypatch.setattr(dienst, "_hole_release", lambda: aufrufe.append(1) or dict(RELEASE))
+    antwort = angemeldet.post("/einstellungen/update/automatik", data={})
+    assert antwort.status_code == 302
+    with app.app_context():
+        assert not dienst.suche_faellig()
+    seite = angemeldet.get("/einstellungen/update").get_data(as_text=True)
+    assert aufrufe == [] and "automatische Suche ist aus" in seite
+    # Von Hand suchen geht weiterhin
+    seite = angemeldet.get("/einstellungen/update?pruefen=1").get_data(as_text=True)
+    assert aufrufe == [1] and "v9.0.0" in seite
+    angemeldet.post("/einstellungen/update/automatik", data={"an": "y"})
+    with app.app_context():
+        assert dienst.aktuelles_gewerbe().update_auto_suchen
+
+
+def test_hintergrundsuche_installiert_nie(monkeypatch, app, admin, session, tmp_path):
+    """Die tägliche Suche merkt sich nur die Version, eine Update-Anfrage entsteht nie."""
+    import threading
+
+    app.config["UPDATE_VERZEICHNIS"] = str(tmp_path)
+    fertig = threading.Event()
+    monkeypatch.setattr(dienst, "pruefe", lambda frisch=False: fertig.set())
+    with app.app_context():
+        assert dienst.suche_im_hintergrund(app)
+    assert fertig.wait(5)
+    assert not (tmp_path / "anfrage").exists()
+    app.config["UPDATE_VERZEICHNIS"] = ""

@@ -1,0 +1,8 @@
+{% extends "kunde/basis.html" %}
+{% block titel %}Link nicht gültig{% endblock %}
+{% block inhalt %}
+<section class="k-karte k-schmal">
+  <h1>Dieser Link ist nicht (mehr) gültig</h1>
+  <p>Vielleicht wurde er durch einen neuen ersetzt. Bitte nutzen Sie den Link aus der neuesten E-Mail oder melden Sie sich bei uns{% if gewerbe and gewerbe.email %}: <a href="mailto:{{ gewerbe.email }}">{{ gewerbe.email }}</a>{% endif %}.</p>
+</section>
+{% endblock %}
