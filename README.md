@@ -80,7 +80,8 @@ GitHub, ob es eine neue Version gibt (abschaltbar unter *Einstellungen → Updat
   setzt die Rechnungsnummern mit einem Klick fort.
 - **WooCommerce:** Bestellungen aus dem eigenen Shop übernehmen.
 - **Sicher und nachvollziehbar (GoBD):** festgeschriebene Rechnungen und Buchungen lassen sich nicht mehr ändern, jede Änderung
-  steht im Protokoll. Rollen und Rechte, Anmeldung per [Passkey](docs/passkeys.md) oder Passwort mit Zwei-Faktor.
+  steht im Protokoll. Rollen und Rechte, Anmeldung per [Passkey](docs/passkeys.md) oder Passwort mit Zwei-Faktor. Aus dem
+  Internet ist steuy nur über HTTPS erreichbar, im Heimnetz auch ohne.
 - **Hell oder dunkel:** folgt automatisch deinem System, Sonne/Mond oben rechts schaltet um, fest einstellbar unter
   *Einstellungen → Darstellung*.
 - **Updates per Klick:** steuy sucht einmal am Tag nach einer neuen Version und installiert sie erst, wenn du bestätigst.
@@ -174,9 +175,10 @@ In der Shell des Proxmox-Hosts (Oberfläche → dein Server → *Shell*):
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/faolan-exe/Steuy/main/scripts/proxmox-installieren.sh)"
 ```
 
-Das Skript schlägt einen Container vor (2 Kerne, 2 GB RAM, 16 GB, DHCP, Ubuntu 24.04), den du übernimmst oder anpasst. Dann lädt
-es die Vorlage, legt den Container mit allen nötigen Einstellungen an (Nesting und keyctl für Docker, Start beim Booten),
-installiert Docker, Webserver und steuy und zeigt am Ende die Adresse an. Wer erst lesen will, was es tut: siehe
+Du wählst den Container-Namen und die Laufwerke für System, Datenbank und Belege und die nächtlichen Sicherungen aus der
+Liste deiner Proxmox-Speicher, unter *Erweitert* auch Größe, Netzwerk, VLAN, feste Adresse, System und Passwort. Dann lädt
+das Skript die Vorlage, legt den Container mit allen nötigen Einstellungen an (Nesting und keyctl für Docker), installiert
+Docker, Webserver und steuy, richtet die nächtliche Sicherung ein und zeigt am Ende die Adresse an. Mehr in
 [docs/lxc.md](docs/lxc.md).
 
 ### Docker
@@ -223,8 +225,9 @@ Wer von Lexware kommt, startet unter *Einstellungen → Import/Export* mit dem [
   Die Werte der Anlage EÜR überträgst du selbst in ELSTER. Mehr in der [Roadmap](docs/roadmap.md#nicht-geplant).
 - **Ein Gewerbe pro Installation.** Für ein zweites Gewerbe läuft eine zweite Installation, zum Beispiel ein zweiter Container.
 - **Oberfläche und Dokumentation sind auf Deutsch.**
-- **Nur im eigenen Netz ohne Verschlüsselung.** Die Adresse nach der Installation ist `http://`. Für den Zugriff von
-  unterwegs: HTTPS mit eigener Domain oder ein VPN, siehe [docs/lxc.md](docs/lxc.md#von-unterwegs-erreichen-https-mit-eigener-domain).
+- **Von außen nur über HTTPS.** Im eigenen Netz reicht die `http://`-Adresse nach der Installation. Aus dem Internet
+  antwortet steuy nur verschlüsselt, ein Aufruf über `http://` bekommt eine Erklärseite statt Anmeldung oder Rechnung.
+  Für unterwegs: HTTPS mit eigener Domain oder ein VPN, siehe [docs/lxc.md](docs/lxc.md#von-unterwegs-erreichen-https-mit-eigener-domain).
 - **Sichern ist deine Aufgabe.** Die Daten gehören dir, und damit auch die Sicherung. Das Skript dafür ist dabei.
 - **Updates brauchen Internet.** Ohne Verbindung läuft steuy normal weiter, die Update-Suche meldet nur, dass GitHub nicht
   erreichbar ist.

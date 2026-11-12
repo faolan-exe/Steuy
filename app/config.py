@@ -22,6 +22,10 @@ class Config:
     LEERLAUF_STUNDEN = float(os.environ.get("LEERLAUF_STUNDEN", "8"))
     # Anzahl vorgeschalteter Reverse Proxys (z. B. 1 für Caddy/nginx), sonst 0
     PROXY_ANZAHL = int(os.environ.get("PROXY_ANZAHL", "0"))
+    # Aus dem Internet nur über HTTPS, im eigenen Netz auch ohne (app/web/nur_https.py)
+    NUR_HTTPS_VON_AUSSEN = os.environ.get("NUR_HTTPS_VON_AUSSEN", "1") != "0"
+    # Weitere Netze, die als eigenes Netz gelten, z. B. "203.0.113.0/24, 2001:db8::/48"
+    INTERNE_NETZE = os.environ.get("INTERNE_NETZE", "")
     # Unveränderliche Dateien (Rechnungs-PDFs, später Belege). Gehört ins Backup.
     ABLAGE_VERZEICHNIS = os.environ.get("ABLAGE_VERZEICHNIS", "instance/ablage")
     # Update-Prüfung: GitHub-Repository, optional ein Token (nur nötig bei privatem Repository)

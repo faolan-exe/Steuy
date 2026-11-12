@@ -30,13 +30,17 @@ Beispiel mit [Caddy](https://caddyserver.com) (holt das HTTPS-Zertifikat selbst)
 rechnung.meinefirma.de {
     @portal path /k/* /static/*
     handle @portal {
-        reverse_proxy 192.168.1.20:8000
+        reverse_proxy 192.168.1.20
     }
     handle {
         respond 404
     }
 }
 ```
+
+`192.168.1.20` ist die Adresse des steuy-Containers (nginx auf Port 80, Installation mit dem Proxmox- oder LXC-Skript). Läuft Caddy auf demselben Rechner wie eine Docker-Installation, heißt das Ziel `127.0.0.1:8000`.
+
+Aus dem Internet beantwortet steuy ohnehin nur verschlüsselte Aufrufe (siehe [Betrieb](betrieb.md), Abschnitt „Von außen nur über HTTPS“). Der Proxy mit Zertifikat steht im eigenen Netz, deshalb lässt steuy durch, was er weiterreicht.
 
 In der `.env` von steuy dazu:
 

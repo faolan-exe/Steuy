@@ -39,6 +39,19 @@ SESSION_COOKIE_SECURE=1
 PROXY_ANZAHL=1
 ```
 
+### Von außen nur über HTTPS
+
+steuy antwortet Anfragen aus dem Internet nur, wenn sie verschlüsselt (`https://`) ankommen. Wer von außen `http://` aufruft, bekommt eine kurze Erklärseite, sonst nichts: kein Anmeldeformular, keine Rechnung, kein Kundenlink. Abgeschickte Formulare werden abgelehnt. Ist in der `.env` eine öffentliche Adresse mit `https://` eingetragen (`BASIS_URL`), leitet steuy Seitenaufrufe automatisch dorthin um.
+
+Im **eigenen Netz** geht es ohne HTTPS weiter: Als eigenes Netz zählen die privaten Adressbereiche (`10.x`, `172.16–31.x`, `192.168.x`, IPv6 `fc00::/7`), localhost und der Bereich `100.64.0.0/10`, den Tailscale und viele VPNs nutzen.
+
+| Einstellung in der `.env` | Wirkung |
+|---|---|
+| `INTERNE_NETZE=203.0.113.0/24` | weitere Netze, die als eigenes Netz gelten, durch Komma getrennt (z. B. ein VPN mit öffentlichen Adressen) |
+| `NUR_HTTPS_VON_AUSSEN=0` | schaltet die Sperre ab, nicht empfohlen |
+
+**Wichtig:** Damit steuy erkennt, woher ein Besucher kommt, muss `PROXY_ANZAHL` zum Aufbau passen. Bei der Installation mit `lxc-installieren.sh` oder dem Proxmox-Skript stimmt das schon (nginx im Container, `PROXY_ANZAHL=1`). Steht davor noch ein weiterer Reverse Proxy mit dem Zertifikat (z. B. Nginx Proxy Manager), muss er `X-Forwarded-For` und `X-Forwarded-Proto` weitergeben. Dann sieht steuy die Adresse des Proxys als intern und lässt durch, was er schickt. Leite deshalb nie Port 80 deines Routers direkt auf steuy weiter, sondern nur 443 auf einen Proxy mit Zertifikat.
+
 ### Update
 
 **Per Knopfdruck in steuy** (*Einstellungen → Update*): steuy zeigt die neue Version mit „Das ist neu“ und „Das wurde behoben“. Erst nach **Updaten** und deiner Bestätigung legt steuy eine Sicherung an, lädt die Version, baut neu und prüft, ob alles läuft. Klappt etwas nicht, läuft automatisch die bisherige Version weiter. Von selbst installiert steuy nie etwas.

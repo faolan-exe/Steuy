@@ -23,6 +23,8 @@ def anmelden(client, email=ADMIN_EMAIL, passwort=ADMIN_PASSWORT, ip="10.0.0.1"):
         "/anmelden",
         data={"email": email, "passwort": passwort},
         environ_base={"REMOTE_ADDR": ip},
+        # Von außen geht es nur über HTTPS (app/web/nur_https.py), im Heimnetz egal
+        base_url="https://localhost",
     )
 
 

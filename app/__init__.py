@@ -67,9 +67,11 @@ def create_app(config: type[Config] = Config) -> Flask:
 
     registriere_hilfe(app)
 
+    from app.web.nur_https import registriere as registriere_nur_https
     from app.web.sicherheit import registriere as registriere_sicherheit
 
     registriere_sicherheit(app)
+    registriere_nur_https(app)  # als erste Prüfung jeder Anfrage, siehe app/web/nur_https.py
     registriere_zugang(app)
 
     from app.web.fehler import registriere as registriere_fehlerseiten

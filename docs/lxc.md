@@ -10,25 +10,43 @@ Am schnellsten mit dem **Proxmox-Helper-Skript**: ein Befehl auf dem Proxmox-Hos
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/faolan-exe/Steuy/main/scripts/proxmox-installieren.sh)"
 ```
 
-Das Skript zeigt einen Vorschlag (nächste freie Nummer, 2 Kerne, 2 GB RAM, 16 GB Festplatte, DHCP, Ubuntu 24.04). Du übernimmst ihn mit Enter oder legst unter *Selbst festlegen* Nummer, Hostname, Größe, Speicher, Netzwerk-Bridge, eine feste Adresse und das System (Ubuntu 24.04, Debian 12 oder 13) selbst fest. Danach läuft alles von allein:
+Das Skript begrüßt dich mit dem steuy-Logo und fragt in Dialogen nach den Einstellungen. Du wählst zuerst **Einfach** oder **Erweitert**.
 
-1. Vorlage für das System laden (falls noch nicht vorhanden)
-2. Container anlegen: unprivilegiert, mit **Nesting** und **keyctl** (ohne die läuft Docker nicht), Start beim Booten, Markierung `steuy`
-3. Container starten und warten, bis er im Internet ist
+**Immer selbst gewählt**, jeweils aus einer Liste deiner Proxmox-Speicher mit freiem Platz:
+
+| Frage | Bedeutung |
+|---|---|
+| Container-Name | Hostname im Netzwerk, z. B. `steuy` oder `buchhaltung` |
+| Laufwerk für das System | Betriebssystem, Docker und steuy |
+| Datenbank und Belege | mit auf dem System-Laufwerk oder ein **eigenes Laufwerk** (eigene Größe, in der Proxmox-Sicherung enthalten). Ein eigenes Laufwerk lässt sich später leichter vergrößern oder auf schnellen Speicher legen. |
+| Nächtliche Sicherung | jede Nacht um 2 Uhr Datenbank und Belege sichern: auf ein **eigenes Laufwerk** (empfohlen, z. B. ein NAS-Speicher), in den Container oder gar nicht |
+| Speicher für die Vorlage | nur gefragt, wenn es mehrere gibt |
+
+**Unter Erweitert zusätzlich:** Container-Nummer, CPU-Kerne, Arbeitsspeicher, Swap, Größe des System-Laufwerks, wie viele Tage Sicherungen aufgehoben werden, Netzwerk-Bridge (aus der Liste), VLAN, feste Adresse mit Gateway, DNS-Server, System (Ubuntu 24.04, Debian 12 oder 13), ein eigenes oder zufälliges root-Passwort und Autostart mit dem Host. Im einfachen Modus gilt: nächste freie Nummer, 2 Kerne, 2 GB RAM, 512 MB Swap, DHCP, Ubuntu 24.04, zufälliges Passwort, Autostart.
+
+Eine Zusammenfassung zeigt alles noch einmal, erst mit **Anlegen** passiert etwas. Dann läuft es von allein, jeder Schritt mit Fortschrittsanzeige und Haken:
+
+1. Vorlage laden (falls noch nicht vorhanden)
+2. Container anlegen: unprivilegiert, mit **Nesting** und **keyctl** (ohne die läuft Docker nicht), Zeitzone wie der Host, Markierung `steuy`, dazu die gewählten Laufwerke
+3. Container starten und warten, bis er im Internet ist, root-Passwort setzen
 4. steuy im Container installieren, mit demselben Skript wie in Schritt 2 unten
-5. Adresse, Konsolenbefehl und ein zufälliges root-Passwort anzeigen und die Adresse in die *Notes* des Containers schreiben
+5. Nächtliche Sicherung einrichten (Ordner `/var/backups/steuy` im Container, ältere als die eingestellten Tage werden gelöscht)
+6. In die *Notes* des Containers kommen das steuy-Logo, die Adresse und die gewählten Laufwerke
 
-Am Ende siehst du:
+Am Ende steht alles Wichtige in einem Kasten:
 
 ```
- steuy läuft in Container 105.
-
-   Öffne im Browser:   http://192.168.1.77
-   Konsole:            pct enter 105
-   root-Passwort:      …
+  ╭───────────────────────────────────────────────────────╮
+  │  steuy läuft in Container 105                         │
+  │                                                       │
+  │  Im Browser      http://192.168.178.77                │
+  │  Konsole         pct enter 105                        │
+  │  root-Passwort   …                                    │
+  │  Sicherungen     jede Nacht auf nas (50 GB), 14 Tage  │
+  ╰───────────────────────────────────────────────────────╯
 ```
 
-Bricht etwas ab, bleibt der Container zur Fehlersuche stehen und das Skript nennt die Befehle zum Nachsehen (`pct enter`) und Löschen (`pct destroy`). Gelöscht wird nie etwas ungefragt.
+Bricht etwas ab, zeigt das Skript die letzten Zeilen aus dem Protokoll (`/var/log/steuy-installation.log` auf dem Host). Der Container bleibt zur Fehlersuche stehen, das Skript nennt die Befehle zum Nachsehen (`pct enter`) und Löschen (`pct destroy`). Gelöscht wird nie etwas ungefragt. Mit *Abbrechen* in einem Dialog wird gar nichts angelegt.
 
 > **Erst lesen, dann ausführen:** `curl -fsSL https://raw.githubusercontent.com/faolan-exe/Steuy/main/scripts/proxmox-installieren.sh -o steuy-proxmox.sh`, mit `less steuy-proxmox.sh` ansehen, dann `bash steuy-proxmox.sh`.
 
@@ -38,20 +56,25 @@ Bricht etwas ab, bleibt der Container zur Fehlersuche stehen und das Skript nenn
 Alle Werte sind optional, nicht gesetzte nehmen den Vorschlag:
 
 ```sh
-STEUY_JA=1 STEUY_CTID=210 STEUY_HOSTNAME=steuy STEUY_KERNE=2 STEUY_RAM=2048 STEUY_DISK=16 \
-STEUY_SPEICHER=local-lvm STEUY_BRIDGE=vmbr0 STEUY_IP=192.168.1.50/24 STEUY_GATEWAY=192.168.1.1 \
-STEUY_OS=ubuntu-24.04 bash steuy-proxmox.sh
+STEUY_JA=1 STEUY_HOSTNAME=buchhaltung STEUY_SPEICHER=local-lvm \
+STEUY_DATEN=local-lvm STEUY_DATEN_DISK=30 STEUY_SICHERUNG=nas STEUY_SICHERUNG_DISK=50 \
+STEUY_IP=192.168.1.50/24 STEUY_GATEWAY=192.168.1.1 bash steuy-proxmox.sh
 ```
 
 | Variable | Vorschlag | Bedeutung |
 |---|---|---|
+| `STEUY_HOSTNAME` | `steuy` | Container-Name |
 | `STEUY_CTID` | nächste freie Nummer | Nummer des Containers |
-| `STEUY_HOSTNAME` | `steuy` | Name im Netzwerk |
-| `STEUY_KERNE` / `STEUY_RAM` / `STEUY_DISK` | 2 / 2048 MB / 16 GB | Größe |
-| `STEUY_SPEICHER` | erster LVM-Thin-Speicher | Speicher für die Festplatte |
-| `STEUY_BRIDGE` | `vmbr0` | Netzwerk-Bridge |
-| `STEUY_IP` / `STEUY_GATEWAY` | `dhcp` | feste Adresse mit Netzmaske und Gateway |
+| `STEUY_SPEICHER` / `STEUY_DISK` | erster LVM-Thin-Speicher / 16 GB (10 GB mit eigenem Datenlaufwerk) | System-Laufwerk |
+| `STEUY_DATEN` / `STEUY_DATEN_DISK` | `system` / 20 GB | `system` oder ein Speicher für ein eigenes Laufwerk mit Datenbank und Belegen |
+| `STEUY_SICHERUNG` / `STEUY_SICHERUNG_DISK` | `system` / 16 GB | `system`, `keine` oder ein Speicher für ein eigenes Sicherungslaufwerk |
+| `STEUY_SICHERUNG_TAGE` | 14 | so lange werden Sicherungen aufgehoben |
+| `STEUY_VORLAGEN_SPEICHER` | erster passender Speicher | wohin die Vorlage geladen wird |
+| `STEUY_KERNE` / `STEUY_RAM` / `STEUY_SWAP` | 2 / 2048 MB / 512 MB | Leistung |
+| `STEUY_BRIDGE` / `STEUY_VLAN` | erste Bridge / ohne | Netzwerk |
+| `STEUY_IP` / `STEUY_GATEWAY` / `STEUY_DNS` | `dhcp` / – / wie der Host | feste Adresse mit Netzmaske, Gateway, DNS-Server |
 | `STEUY_OS` | `ubuntu-24.04` | oder `debian-12`, `debian-13` |
+| `STEUY_AUTOSTART` | 1 | 0: nicht mit dem Host starten |
 
 </details>
 
@@ -195,6 +218,8 @@ BASIS_URL=https://buchhaltung.example.de
 ```sh
 cd /opt/steuy && docker compose up -d
 ```
+
+> **Von außen nur verschlüsselt:** steuy beantwortet Aufrufe aus dem Internet nur über `https://`. Wer von unterwegs `http://` aufruft, bekommt eine Erklärseite statt steuy. Im Heimnetz geht `http://` weiter. Details: [Betrieb](betrieb.md), Abschnitt „Von außen nur über HTTPS“.
 
 > **Sicherheit:** Eine Buchhaltung gehört nicht ungeschützt ins Internet. Schalte unter *Profil → Zwei-Faktor-Anmeldung* die 2FA ein und nutze starke Passwörter. Wer nur selten von unterwegs braucht, ist mit einem VPN (z. B. WireGuard oder Tailscale) besser beraten als mit offenen Ports.
 
