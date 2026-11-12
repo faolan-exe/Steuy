@@ -5,7 +5,8 @@ steuy ist in der **Alpha-Phase**. Es kann noch Fehler geben und wird aktiv weite
 ## Schon da
 
 - Angebote, Rechnungen, Lieferscheine, Rechnungskorrekturen und Storno, PDF/A, E-Mail-Versand, QR-Code für die Überweisung, eigenes Drucklayout
-- E-Rechnung erzeugen (ZUGFeRD-PDF und XRechnung-XML)
+- E-Rechnung erzeugen (ZUGFeRD-PDF und XRechnung-XML), vor dem Festschreiben gegen die amtlichen Regeln geprüft
+- Kundenportal: persönlicher Link in jeder Mail, PDF und E-Rechnung herunterladen, per QR-Code bezahlen, Angebote online annehmen
 - Anmeldung per Passkey (WebAuthn), auch ohne Passwort und Code
 - Wiederkehrende Rechnungen für Abos und Dauerkunden (monatlich bis jährlich, mit Platzhaltern, auf Wunsch automatisch festgeschrieben und verschickt)
 - Zahlungen und Teilzahlungen, Mahnwesen von Hand oder automatisch
@@ -13,7 +14,9 @@ steuy ist in der **Alpha-Phase**. Es kann noch Fehler geben und wird aktiv weite
 - EÜR nach Zuflussprinzip, Dashboard, Anlagegüter mit Abschreibung
 - Umzug von Lexware (DATEV-Archiv und Zahlungslisten), WooCommerce-Import
 - Rollen und Rechte, Zwei-Faktor-Anmeldung, unveränderliche Buchungen (GoBD)
-- Updates per Klick, Sicherungsskript, Exporte (Jahresexport mit Prüfsummen, Wechsel-Export, Gesamtexport)
+- Update-Suche (abschaltbar) und Updates per Klick, Sicherungsskript, Exporte (Jahresexport mit Prüfsummen, Wechsel-Export, Gesamtexport)
+- Heller und dunkler Modus, automatisch nach Systemeinstellung
+- Installation auf Proxmox mit einem Befehl
 - Dokumentations-Website mit Suche
 
 ## Als Nächstes (in dieser Reihenfolge)

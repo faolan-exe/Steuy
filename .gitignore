@@ -14,3 +14,4 @@ htmlcov/
 .claude/settings.local.json
 update/
 .claude/launch.json
+dist/

@@ -7,7 +7,7 @@
   <div class="karte-inhalt">
     <p>{{ text }}</p>
     <div class="formular-fuss">
-      <a class="knopf" href="javascript:history.back()">Zurück</a>
+      <a class="knopf" href="{{ url_for('allgemein.start') }}" data-zurueck>Zurück</a>
       <a class="knopf knopf-primaer" href="{{ url_for('allgemein.start') }}">Zur Übersicht</a>
     </div>
     <p class="hinweis">Fehler {{ status }}</p>

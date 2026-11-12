@@ -124,7 +124,7 @@
         {% set pb = (stand.bezahlt * 100 / g) if g else 0 %}
         {% set po = (stand.offen * 100 / g) if g else 0 %}
         {% set pu = (stand.ueberfaellig * 100 / g) if g else 0 %}
-        <div class="kreis" role="img" aria-label="{{ g }} Rechnungen: {{ stand.bezahlt }} bezahlt, {{ stand.offen }} offen, {{ stand.ueberfaellig }} überfällig">
+        <div class="kreis" role="img" aria-label="{{ g }} Rechnung{{ "en" if g != 1 }}: {{ stand.bezahlt }} bezahlt, {{ stand.offen }} offen, {{ stand.ueberfaellig }} überfällig">
           <svg viewBox="0 0 42 42" width="150" height="150">
             <circle class="kreis-grund" cx="21" cy="21" r="15.9155" fill="none" stroke-width="5"/>
             {% if g %}

@@ -13,11 +13,13 @@ Hier findest du, wie du steuy installierst, einrichtest und benutzt. Oben rechts
 ## Installieren
 
 - [Thin Client oder Mini-PC, ohne Vorkenntnisse](thinclient.md)
-- [Proxmox-Container](lxc.md)
+- [Proxmox-Container](lxc.md), auch mit einem Befehl auf dem Host
 - [Betrieb mit Docker, Sicherung und Wiederherstellung](betrieb.md)
 
 ## Benutzen
 
+- [E-Rechnung](e-rechnung.md): ZUGFeRD und XRechnung, amtlich geprüft
+- [Kundenportal](kundenportal.md): Kunden laden Rechnungen selbst herunter und nehmen Angebote an
 - [Scanner anbinden](scanner.md): Belege direkt vom Scanner übernehmen
 - [Umzug von Lexware](lexware-import.md)
 - [Drucklayout](drucklayout.md): Rechnungen mit eigenem Logo gestalten

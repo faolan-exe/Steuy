@@ -79,7 +79,11 @@ def test_sitemap_und_robots_zeigen_auf_die_startseite():
 
 def test_readme_hat_ueberschrift_und_verweist_auf_die_website():
     readme = (SITE.parent / "README.md").read_text(encoding="utf-8")
-    assert "<h1>" in readme and "Buchhaltungssoftware für Kleinunternehmer" in readme
+    import re
+
+    # Der Suchbegriff gehört in die Hauptüberschrift, zentriert oder nicht
+    ueberschrift = re.search(r"<h1[^>]*>(.*?)</h1>", readme, re.S)
+    assert ueberschrift and "Buchhaltungssoftware für Kleinunternehmer" in ueberschrift.group(1)
     assert "faolan-exe.github.io/Steuy" in readme
     assert (SITE.parent / "docs" / "faq.md").is_file()
 

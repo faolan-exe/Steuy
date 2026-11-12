@@ -169,6 +169,36 @@ def drucklayout_zuruecksetzen():
     return redirect(url_for("einstellungen.drucklayout"))
 
 
+FARBSCHEMATA = {
+    "auto": "Hell oder dunkel wie dein System.",
+    "hell": "steuy bleibt hell.",
+    "dunkel": "steuy bleibt dunkel.",
+}
+
+
+@bp.get("/darstellung")
+@braucht_recht(Recht.ANSEHEN)
+def darstellung():
+    return render_template("darstellung.html")
+
+
+@bp.post("/darstellung")
+@braucht_recht(Recht.ANSEHEN)
+def farbschema():
+    """Speichert hell, dunkel oder automatisch, auch für den Sonne/Mond-Knopf in der Leiste."""
+    wert = request.form.get("farbschema", "")
+    if wert not in FARBSCHEMATA:
+        abort(400)
+    if current_user.farbschema != wert:
+        current_user.farbschema = wert
+        db.session.commit()
+    zurueck = request.form.get("zurueck", "")
+    # Nur Pfade dieser Seite, keine fremden Adressen („//…“ wäre ein anderer Server)
+    if not zurueck.startswith("/") or zurueck.startswith("//") or "\\" in zurueck:
+        zurueck = url_for("einstellungen.darstellung")
+    return schalter_antwort(FARBSCHEMATA[wert], zurueck)
+
+
 @bp.get("/update")
 @braucht_recht(Recht.EINSTELLUNGEN)
 def update():

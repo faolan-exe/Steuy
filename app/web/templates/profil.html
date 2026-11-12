@@ -10,7 +10,7 @@
   <div class="karte-inhalt">
     {% if current_user.totp_aktiv %}
     <p><span class="status status-an">eingeschaltet</span> Beim Anmelden fragt steuy zusätzlich nach einem Code {{ "per E-Mail an " ~ current_user.email if current_user.zwei_faktor_art == "mail" else "aus deiner Authenticator-App" }}.</p>
-    <p class="hinweis">Noch {{ offene_codes }} unbenutzte Wiederherstellungscodes.</p>
+    <p class="hinweis">Noch {{ offene_codes }} unbenutzte{{ "r" if offene_codes == 1 }} Wiederherstellungscode{{ "s" if offene_codes != 1 }}.</p>
     <div class="zweispaltig">
       <form method="post" action="{{ url_for('profil.neue_wiederherstellungscodes') }}" class="passwortaktion">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

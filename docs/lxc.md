@@ -1,5 +1,62 @@
 # Buchhaltungssoftware selbst hosten: steuy in einem Proxmox-LXC-Container installieren
 
+Am schnellsten mit dem **Proxmox-Helper-Skript**: ein Befehl auf dem Proxmox-Host, und steuy läuft in einem eigenen Container. Wer den Container lieber selbst anlegt, folgt den drei Schritten weiter unten.
+
+## Am schnellsten: ein Befehl auf dem Proxmox-Host
+
+Öffne die Shell des Proxmox-Hosts (Proxmox-Oberfläche → dein Server → *Shell*, oder per SSH als `root`) und gib ein:
+
+```sh
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/faolan-exe/Steuy/main/scripts/proxmox-installieren.sh)"
+```
+
+Das Skript zeigt einen Vorschlag (nächste freie Nummer, 2 Kerne, 2 GB RAM, 16 GB Festplatte, DHCP, Ubuntu 24.04). Du übernimmst ihn mit Enter oder legst unter *Selbst festlegen* Nummer, Hostname, Größe, Speicher, Netzwerk-Bridge, eine feste Adresse und das System (Ubuntu 24.04, Debian 12 oder 13) selbst fest. Danach läuft alles von allein:
+
+1. Vorlage für das System laden (falls noch nicht vorhanden)
+2. Container anlegen: unprivilegiert, mit **Nesting** und **keyctl** (ohne die läuft Docker nicht), Start beim Booten, Markierung `steuy`
+3. Container starten und warten, bis er im Internet ist
+4. steuy im Container installieren, mit demselben Skript wie in Schritt 2 unten
+5. Adresse, Konsolenbefehl und ein zufälliges root-Passwort anzeigen und die Adresse in die *Notes* des Containers schreiben
+
+Am Ende siehst du:
+
+```
+ steuy läuft in Container 105.
+
+   Öffne im Browser:   http://192.168.1.77
+   Konsole:            pct enter 105
+   root-Passwort:      …
+```
+
+Bricht etwas ab, bleibt der Container zur Fehlersuche stehen und das Skript nennt die Befehle zum Nachsehen (`pct enter`) und Löschen (`pct destroy`). Gelöscht wird nie etwas ungefragt.
+
+> **Erst lesen, dann ausführen:** `curl -fsSL https://raw.githubusercontent.com/faolan-exe/Steuy/main/scripts/proxmox-installieren.sh -o steuy-proxmox.sh`, mit `less steuy-proxmox.sh` ansehen, dann `bash steuy-proxmox.sh`.
+
+<details>
+<summary>Ohne Rückfragen, z. B. für Ansible oder eigene Skripte</summary>
+
+Alle Werte sind optional, nicht gesetzte nehmen den Vorschlag:
+
+```sh
+STEUY_JA=1 STEUY_CTID=210 STEUY_HOSTNAME=steuy STEUY_KERNE=2 STEUY_RAM=2048 STEUY_DISK=16 \
+STEUY_SPEICHER=local-lvm STEUY_BRIDGE=vmbr0 STEUY_IP=192.168.1.50/24 STEUY_GATEWAY=192.168.1.1 \
+STEUY_OS=ubuntu-24.04 bash steuy-proxmox.sh
+```
+
+| Variable | Vorschlag | Bedeutung |
+|---|---|---|
+| `STEUY_CTID` | nächste freie Nummer | Nummer des Containers |
+| `STEUY_HOSTNAME` | `steuy` | Name im Netzwerk |
+| `STEUY_KERNE` / `STEUY_RAM` / `STEUY_DISK` | 2 / 2048 MB / 16 GB | Größe |
+| `STEUY_SPEICHER` | erster LVM-Thin-Speicher | Speicher für die Festplatte |
+| `STEUY_BRIDGE` | `vmbr0` | Netzwerk-Bridge |
+| `STEUY_IP` / `STEUY_GATEWAY` | `dhcp` | feste Adresse mit Netzmaske und Gateway |
+| `STEUY_OS` | `ubuntu-24.04` | oder `debian-12`, `debian-13` |
+
+</details>
+
+## Oder Schritt für Schritt
+
 In drei Schritten: Container anlegen, **einen Befehl** eingeben, die angezeigte Adresse im Browser öffnen. Das Skript richtet alles andere ein (Docker, steuy, Webserver, Zugangsdaten).
 
 > **Getestet:** Das Skript lief am 22.10.2026 in einem echten LXC-Container mit Ubuntu 24.04 durch (Installation, Erreichbarkeit über die IP, zweiter Lauf, Neustart des Containers, Sicherung). Auf Debian 12 und mit einem Container ganz ohne Docker prüft es zusätzlich die automatische Prüfung auf GitHub. Wenn etwas nicht klappt, bitte als Issue melden.

@@ -51,7 +51,9 @@ Ja, in der [Live-Demo](https://steuy.philsit.de). Sie läuft ohne Anmeldung mit 
 - EÜR-Auswertung nach Zuflussprinzip, Dashboard mit Jahresziel
 - Anlagegüter mit Abschreibung
 - Umzug von Lexware, Import von WooCommerce-Bestellungen
-- Rollen und Rechte, Zwei-Faktor-Anmeldung, Updates per Klick
+- Kundenportal: Rechnungen online abrufen, per QR-Code bezahlen, Angebote annehmen
+- E-Rechnung (ZUGFeRD, XRechnung), vor dem Festschreiben amtlich geprüft
+- Rollen und Rechte, Zwei-Faktor-Anmeldung, Updates per Klick, heller und dunkler Modus
 
 Die vollständige Liste steht in der [README](../README.md#funktionen).
 
@@ -65,7 +67,15 @@ Ja. steuy importiert das DATEV-Archiv und die CSV-Zahlungslisten aus Lexware, pr
 
 ## Werden E-Rechnungen unterstützt (ZUGFeRD, XRechnung)?
 
-Ja, in beide Richtungen. Eingehende E-Rechnungen (XRechnung, ZUGFeRD) liest steuy ein und bewahrt sie im Originalformat auf. Eigene Rechnungen kann steuy als **ZUGFeRD-PDF** (EN 16931) festschreiben, bei Kunden mit Leitweg-ID als XRechnung. Mehr dazu unter [E-Rechnung erzeugen](e-rechnung.md). Prüfe wichtige E-Rechnungen vor dem Versand mit einem Validator.
+Ja, in beide Richtungen. Eingehende E-Rechnungen (XRechnung, ZUGFeRD) liest steuy ein und bewahrt sie im Originalformat auf. Eigene Rechnungen kann steuy als **ZUGFeRD-PDF** (EN 16931) festschreiben, bei Kunden mit Leitweg-ID als XRechnung. Vor dem Festschreiben prüft steuy jede E-Rechnung gegen dieselben amtlichen Regeln (EN 16931, XRechnung 3.0.2) wie das KoSIT-Prüftool. Mehr dazu unter [E-Rechnung erzeugen](e-rechnung.md).
+
+## Können meine Kunden Rechnungen online abrufen und Angebote annehmen?
+
+Ja, über das **Kundenportal**. Jede Mail zu Rechnung, Angebot, Lieferschein oder Mahnung enthält einen persönlichen Link. Dort sieht dein Kunde den Stand, lädt PDF und E-Rechnung herunter, bezahlt per QR-Code und nimmt Angebote verbindlich an. Dafür braucht steuy eine öffentliche https-Adresse, nach außen freigeben musst du nur das Portal: [Kundenportal](kundenportal.md).
+
+## Gibt es einen dunklen Modus?
+
+Ja. steuy folgt automatisch der Einstellung deines Systems. Die Sonne bzw. der Mond oben rechts schaltet um, unter *Einstellungen → Darstellung* stellst du hell, dunkel oder automatisch fest ein. Rechnungen, PDFs und das Kundenportal bleiben immer hell.
 
 ## Ist steuy GoBD-konform?
 

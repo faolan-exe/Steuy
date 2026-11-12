@@ -15,7 +15,13 @@ def test_404_ist_deutsch_mit_weg_zurueck(angemeldet):
     seite = text(antwort)
     assert antwort.status_code == 404
     assert "Seite nicht gefunden" in seite and "Zur Übersicht" in seite
-    assert "Not Found" not in seite and "history.back()" in seite
+    assert "Not Found" not in seite
+    # „Zurück“ darf keine javascript:-Adresse sein: Die CSP blockiert sie, der Knopf tat nichts.
+    # app.js geht über data-zurueck im Verlauf zurück, ohne Verlauf führt der Link zur Übersicht.
+    assert "javascript:" not in seite
+    assert 'href="/" data-zurueck>Zurück</a>' in seite
+    app_js = angemeldet.get("/static/js/app.js").get_data(as_text=True)
+    assert '"[data-zurueck]"' in app_js and "history.back()" in app_js
 
 
 def test_405_nach_neuladen_ist_verstaendlich(angemeldet):

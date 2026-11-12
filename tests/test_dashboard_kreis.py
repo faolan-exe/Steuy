@@ -171,3 +171,22 @@ def test_jahreswahl_nur_jahre_mit_daten(angemeldet, rechnung, admin, session, ap
     assert f'value="{HEUTE.year - 3}"' in seite and f'value="{HEUTE.year - 1}"' not in seite
     fremd = angemeldet.get(f"/?jahr={HEUTE.year - 1}").get_data(as_text=True)
     assert f'value="{HEUTE.year}" selected' in fremd  # Jahr ohne Daten: zurück auf aktuell
+
+
+def test_zu_pruefen_zaehlt_ueberfaellige_tage_richtig(angemeldet, rechnung, monkeypatch):  # noqa: F811
+    """„1 Tage“ stand so in der Liste, bis es auf einem Screenshot auffiel."""
+    import app.services.zahlungen as zahlungsdienst
+    import app.web.allgemein as allgemein
+
+    for tage, text in ((1, "(1 Tag)"), (2, "(2 Tage)")):
+
+        class Datum(date):
+            @classmethod
+            def today(cls, _tage=tage):
+                return rechnung.faellig_am + timedelta(days=_tage)
+
+        monkeypatch.setattr(allgemein, "date", Datum)
+        monkeypatch.setattr(zahlungsdienst, "date", Datum)
+        seite = angemeldet.get("/zu-pruefen").get_data(as_text=True)
+        assert text in seite, text
+        assert "(1 Tage)" not in seite

@@ -1,9 +1,10 @@
 {% from "icons.html" import icon %}
 <!doctype html>
-<html lang="de">
+<html lang="de"{% if current_user.is_authenticated and current_user.farbschema != "auto" %} data-farbschema="{{ current_user.farbschema }}"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
   <meta name="htmx-config" content='{"allowEval": false, "allowScriptTags": false, "selfRequestsOnly": true}'>
   <title>{% block titel %}steuy{% endblock %}</title>
   <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='img/steuy-signet.svg') }}">
@@ -28,6 +29,14 @@
       {% if darf("auswertungen") %}<a href="{{ url_for('auswertung.euer') }}" {% if bereich == 'auswertung' %}class="aktiv" aria-current="page"{% endif %}>Auswertung</a>{% endif %}
     </nav>
     <div class="leiste-rechts">
+      {% if current_user.is_authenticated %}
+      <form class="farbschema-form" method="post" action="{{ url_for('einstellungen.farbschema') }}" data-farbschema-schalter>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="farbschema" value="{{ 'hell' if current_user.farbschema == 'dunkel' else 'dunkel' }}">
+        <input type="hidden" name="zurueck" value="{{ request.full_path if request.method == 'GET' else url_for('allgemein.start') }}">
+        <button class="leiste-knopf" type="submit" title="Hell oder dunkel umschalten" aria-label="Hell oder dunkel umschalten"><span class="nur-hell">{{ icon("mond") }}</span><span class="nur-dunkel">{{ icon("sonne") }}</span></button>
+      </form>
+      {% endif %}
       <a class="leiste-knopf" href="{{ url_for('allgemein.suche_seite') }}" title="Suchen: Kunden, Rechnungen, Belege, Beträge" aria-label="Suche">{{ icon("suche") }}</a>
       <a class="leiste-knopf optional" href="{{ url_for('profil.profil') }}#darstellung" title="Hilfe-Fragezeichen ein- oder ausschalten" aria-label="Hilfe-Einstellungen">{{ icon("hilfe") }}</a>
       {% if darf("einstellungen") %}
@@ -47,6 +56,7 @@
             <span>Rolle: {{ current_user.rolle | capitalize }}</span>
           </div>
           <a class="menue-eintrag" href="{{ url_for('profil.profil') }}">Profil und Sicherheit</a>
+          <a class="menue-eintrag" href="{{ url_for('einstellungen.darstellung') }}">Darstellung</a>
           <form method="post" action="{{ url_for('auth.abmelden') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="menue-eintrag">Abmelden</button>

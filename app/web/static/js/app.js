@@ -151,7 +151,7 @@
       .then(function (r) { return r.ok ? r.json() : Promise.reject(r.status); })
       .then(function (antwort) { zeigeMeldung(antwort.meldung || "Gespeichert."); })
       .catch(function () {
-        feld.checked = !feld.checked;
+        if (feld.type === "checkbox") feld.checked = !feld.checked;
         zeigeMeldung("Das konnte nicht gespeichert werden. Bitte erneut versuchen.", true);
       })
       .finally(function () { feld.disabled = false; });
@@ -160,7 +160,7 @@
   document.addEventListener("change", function (e) {
     const feld = e.target.closest ? e.target.closest("[data-sofort-senden]") : null;
     if (!feld || !feld.form) return;
-    if (feld.type === "checkbox" && window.fetch && window.FormData) {
+    if ((feld.type === "checkbox" || feld.type === "radio") && window.fetch && window.FormData) {
       imHintergrund(feld);
       return;
     }
@@ -169,6 +169,11 @@
   });
   document.addEventListener("click", function (e) {
     if (e.target.closest && e.target.closest("[data-drucken]")) window.print();
+    // „Zurück“ auf Fehlerseiten: ohne Verlauf (neuer Tab) führt der Link zur Übersicht
+    if (e.target.closest && e.target.closest("[data-zurueck]") && window.history.length > 1) {
+      e.preventDefault();
+      window.history.back();
+    }
   });
 })();
 
@@ -188,5 +193,52 @@
     };
     if (navigator.clipboard) navigator.clipboard.writeText(feld.value).then(fertig);
     else { document.execCommand("copy"); fertig(); }
+  });
+})();
+
+// Hell oder dunkel: sofort umschalten, im Hintergrund speichern. „auto“ heißt wie das System.
+(function () {
+  "use strict";
+  const system = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  const wurzel = document.documentElement;
+
+  function systemDunkel() { return !!(system && system.matches); }
+  function istDunkel() {
+    const fest = wurzel.dataset.farbschema;
+    return fest ? fest === "dunkel" : systemDunkel();
+  }
+  function setze(wert) {
+    if (wert === "hell" || wert === "dunkel") wurzel.dataset.farbschema = wert;
+    else delete wurzel.dataset.farbschema;
+  }
+
+  document.addEventListener("submit", function (e) {
+    const form = e.target.closest ? e.target.closest("[data-farbschema-schalter]") : null;
+    if (!form || !window.fetch || !window.FormData) return;
+    e.preventDefault();
+    const ziel = istDunkel() ? "hell" : "dunkel";
+    // Landet der Klick wieder beim System, folgt steuy ihm ab jetzt wieder
+    const wert = (ziel === "dunkel") === systemDunkel() ? "auto" : ziel;
+    const vorher = wurzel.dataset.farbschema || "auto";
+    setze(wert);
+    const daten = new FormData(form);
+    daten.set("farbschema", wert);
+    fetch(form.action, {
+      method: "POST",
+      body: daten,
+      headers: { "X-Requested-With": "fetch" },
+      credentials: "same-origin",
+    })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); })
+      .then(function () {
+        const wahl = document.querySelector('input[name="farbschema"][value="' + wert + '"]');
+        if (wahl && wahl.type === "radio") wahl.checked = true;
+      })
+      .catch(function () { setze(vorher); });
+  });
+
+  document.addEventListener("change", function (e) {
+    const feld = e.target;
+    if (feld && feld.name === "farbschema" && feld.type === "radio" && feld.checked) setze(feld.value);
   });
 })();

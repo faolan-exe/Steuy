@@ -29,6 +29,9 @@ class Nutzer(UserMixin, db.Model):
         CheckConstraint(f"rolle IN ({_ROLLEN_SQL})", name="nutzer_rolle_gueltig"),
         CheckConstraint("zwei_faktor_art IN ('app', 'mail')", name="nutzer_zwei_faktor_art"),
         CheckConstraint(
+            "farbschema IN ('auto', 'hell', 'dunkel')", name="nutzer_farbschema_gueltig"
+        ),
+        CheckConstraint(
             "erfahrung IN ('anfaenger', 'erfahren', 'experte')", name="nutzer_erfahrung"
         ),
     )
@@ -45,6 +48,8 @@ class Nutzer(UserMixin, db.Model):
     totp_geheimnis: Mapped[str | None] = mapped_column(Text)
     totp_aktiv: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     hilfe_anzeigen: Mapped[bool] = mapped_column(Boolean, server_default=true(), default=True)
+    # Hell, dunkel oder wie das Betriebssystem („auto“)
+    farbschema: Mapped[str] = mapped_column(String(6), server_default="auto", default="auto")
     # Rundgang: Vorkenntnisse (Buchhaltung), schon mit steuy gearbeitet, aktueller Schritt
     erfahrung: Mapped[str | None] = mapped_column(String(12))
     kennt_steuy: Mapped[bool | None] = mapped_column(Boolean)

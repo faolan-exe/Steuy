@@ -1,129 +1,185 @@
-<div align="center">
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/bilder/steuy-logo-dunkel.svg">
-  <img src="docs/bilder/steuy-logo.svg" alt="steuy" width="240">
-</picture>
-
-<h1>steuy: selbst gehostete Buchhaltungssoftware für Kleinunternehmer</h1>
-
-Kostenloses Rechnungsprogramm und Rechnungswesen für das Kleingewerbe, quelloffen und auf dem eigenen Rechner.
-
-![Version](https://img.shields.io/badge/Version-0.8.0-0f7c80)
-![Status: Alpha](https://img.shields.io/badge/Status-Alpha-red)
-![Lizenz](https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555)
-
-<a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/Live--Demo_ausprobieren-%E2%86%92-0f7c80?style=for-the-badge" alt="Live-Demo ausprobieren" height="44"></a>
-
-[Website](https://faolan-exe.github.io/Steuy/) · [Doku mit Suche](https://faolan-exe.github.io/Steuy/doku/) · [Screenshots](#screenshots) · [Installieren](#installieren) · [Anleitung für Einsteiger](docs/thinclient.md) · [Häufige Fragen](docs/faq.md) · [Roadmap](docs/roadmap.md) · [Dokumentation](#dokumentation)
-
-</div>
-
-steuy ist eine **Buchhaltungssoftware für Kleinunternehmer und Kleingewerbe** nach § 19 UStG, die ihren Gewinn per **Einnahmen-Überschuss-Rechnung (EÜR)** ermitteln. Du schreibst Angebote und Rechnungen, legst Belege ab, behältst Zahlungen und Mahnungen im Blick und bekommst am Jahresende die Werte für die Anlage EÜR. Das Rechnungswesen für Selbstständige, Freiberufler und kleine Online-Shops, ohne Abo und ohne Cloud.
-
-steuy ist **selbst gehostet**: Die Software läuft auf deinem eigenen Rechner, zum Beispiel einem kleinen Thin Client im Heimnetz. Deine Buchhaltungsdaten verlassen ihn nicht, es gibt kein Konto bei uns. Der Quellcode ist offen einsehbar (quelloffen, [PolyForm Shield](LICENSE)), die Nutzung im eigenen Gewerbe ist kostenlos.
-
-steuy richtet sich vor allem an Einsteiger. Ein Rundgang erklärt beim ersten Start alle Bereiche, und Hilfetexte an den Feldern sagen, was wo hingehört. Wer von Lexware kommt, importiert seine Daten aus dem DATEV-Archiv und den Zahlungslisten.
-
-> [!WARNING]
-> **Alpha:** steuy ist noch in der Alpha-Phase und wird aktiv weiterentwickelt. Es kann noch Fehler geben. Datenmodell und Abläufe können sich von Version zu Version ändern. Das Update per Klick sichert vorher automatisch, ein zweites Exemplar auf einem anderen Gerät gehört trotzdem dazu. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. Was kommt, steht in der [Roadmap](docs/roadmap.md).
-
-## Warum es steuy gibt
-
-steuy ist von Philipp ([skyplayser](https://github.com/skyplayser)) und Tobi ([faolan-exe](https://github.com/faolan-exe)) entstanden. Wir wollten nicht länger jedes Jahr rund 350 Euro für Buchhaltungssoftware ausgeben. Philipp ist technischer Betriebswirt, Tobi hat gerade sein Gewerbe eröffnet und bietet IT-Dienstleistungen und Online-Shops an. Wir haben uns zusammengesetzt, gesammelt, was uns an anderer Software gefällt, was fehlt und was zu viel ist, und daraus steuy gebaut: ohne die Funktionen, die wir mitbezahlen mussten und nie brauchten, dafür mit einer WooCommerce-Anbindung und der direkten Scanner-Anbindung. Die steuerlichen Regeln haben wir nach bestem Wissen geprüft. Das ist keine Steuerberatung.
-
-steuy ist noch in der **Alpha-Phase**. Wir freuen uns über jeden, der es ausprobiert und uns Rückmeldung gibt, damit wir es gemeinsam zu einer wirklich guten, kostenlosen Software machen. Fehler und Wünsche bitte als [Issue](https://github.com/faolan-exe/Steuy/issues).
-
-## Live-Demo
-
 <p align="center">
-  <a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/steuy.philsit.de-Jetzt_ohne_Anmeldung_ausprobieren-0f7c80?style=for-the-badge" alt="Live-Demo ohne Anmeldung ausprobieren" height="52"></a>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/bilder/steuy-logo-dunkel.svg">
+    <img src="docs/bilder/steuy-logo.svg" alt="steuy" width="240">
+  </picture>
 </p>
 
-Die Demo zeigt eine erfundene Musterfirma, einen Fotografen mit Rechnungen, Mahnungen, Belegen und Equipment-Vermietung. Ein Rundgang startet von selbst. Alle Änderungen werden alle 15 Minuten zurückgesetzt, bitte gib dort keine echten Daten ein.
+<h1 align="center">steuy: Buchhaltungssoftware für Kleinunternehmer, selbst gehostet</h1>
 
-## 🌱 Für Einsteiger gemacht
+<p align="center">
+  Rechnungen, Angebote, Mahnungen, Belege und EÜR auf deinem eigenen Rechner.<br>
+  Kostenlos, ohne Abo, ohne Cloud. Für das Kleingewerbe nach § 19 UStG.
+</p>
 
-Du hast noch nie eine Buchhaltung geführt? Genau dafür ist steuy gebaut. Diese Funktionen helfen dir dabei:
+<p align="center">
+  <a href="https://steuy.philsit.de">Live-Demo</a> &nbsp;·&nbsp;
+  <a href="https://faolan-exe.github.io/Steuy/">Website</a> &nbsp;·&nbsp;
+  <a href="https://faolan-exe.github.io/Steuy/doku/">Dokumentation</a> &nbsp;·&nbsp;
+  <a href="#installieren">Installieren</a> &nbsp;·&nbsp;
+  <a href="#erste-schritte">Erste Schritte</a> &nbsp;·&nbsp;
+  <a href="docs/faq.md">Häufige Fragen</a> &nbsp;·&nbsp;
+  <a href="docs/roadmap.md">Roadmap</a> &nbsp;·&nbsp;
+  <a href="https://github.com/faolan-exe/Steuy/releases/latest">Was ist neu?</a>
+</p>
 
-- **Rundgang beim ersten Start.** steuy fragt nach deinen Vorkenntnissen (kompletter Anfänger, bereits mal gemacht, Experte) und zeigt dir passend dazu Schritt für Schritt, was wo ist und wofür du es brauchst. Du kannst ihn jederzeit im Profil neu starten.
-- **Erklärungen direkt am Feld.** Ein kleines Fragezeichen neben Feldern und Fachbegriffen wie EÜR, Zuflussprinzip, Kleinunternehmergrenze oder Festschreiben erklärt sie in einfachen Worten. Wer sie nicht braucht, schaltet sie ab.
-- **„Zu prüfen“ als Aufgabenliste.** Eine Seite sammelt alles, was noch zu tun ist: offene und überfällige Rechnungen, fällige Mahnungen, neue Belege, Entwürfe und unbezahlte Ausgaben.
-- **Prüfungen, bevor etwas schiefgeht.** Vor dem Festschreiben einer Rechnung prüft steuy die Pflichtangaben. Unplausible Eingaben wie ein Belegdatum weit in der Zukunft oder eine falsch aufgebaute Steuernummer werden angemerkt.
-- **Kleinunternehmerregelung im Blick.** Der Hinweis nach § 19 UStG steht automatisch auf jeder Rechnung, und das Dashboard zeigt, wie nah du an der Umsatzgrenze bist.
-- **Belege per Foto oder Scanner.** Die Texterkennung liest Betrag und Datum aus und schlägt sie vor, du bestätigst nur noch. Mit dem Scan-Eingang landen Scans vom Scanner direkt in steuy.
-- **Mahnungen ohne Nachdenken.** steuy sagt dir, wann eine Erinnerung fällig ist, und verschickt sie auf Wunsch automatisch.
-- **Wöchentliche Zusammenfassung** per E-Mail, damit nichts liegen bleibt.
-- **Updates und Sicherung per Klick**, ohne Kommandozeile.
-- **Installation ohne Vorkenntnisse** mit der [Schritt-für-Schritt-Anleitung](docs/thinclient.md) für einen kleinen Thin Client.
+<p align="center">
+  <a href="https://github.com/faolan-exe/Steuy/releases/latest"><img alt="Version 0.8.0" src="https://img.shields.io/badge/Version-0.8.0-0f7c80"></a>
+  <img alt="Status: Alpha" src="https://img.shields.io/badge/Status-Alpha-c62828">
+  <a href="https://github.com/faolan-exe/Steuy/actions/workflows/ci.yml"><img alt="Tests" src="https://github.com/faolan-exe/Steuy/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="E-Rechnung: ZUGFeRD und XRechnung" src="https://img.shields.io/badge/E--Rechnung-ZUGFeRD%20%C2%B7%20XRechnung-2f6fb6">
+  <img alt="Selbst gehostet: Docker und Proxmox" src="https://img.shields.io/badge/selbst%20gehostet-Docker%20%C2%B7%20Proxmox-555">
+  <a href="LICENSE"><img alt="Lizenz: PolyForm Shield 1.0.0" src="https://img.shields.io/badge/Lizenz-PolyForm%20Shield%201.0.0-555"></a>
+</p>
+
+<p align="center">
+  <a href="https://steuy.philsit.de"><img src="https://img.shields.io/badge/Live--Demo_ohne_Anmeldung_ausprobieren-%E2%86%92-0f7c80?style=for-the-badge" alt="Live-Demo ohne Anmeldung ausprobieren" height="44"></a>
+</p>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/bilder/dashboard-dunkel.png">
+  <img src="docs/bilder/dashboard.png" alt="Das Dashboard von steuy: offene Posten, Rechnungsstand, Einnahmen und Ausgaben im Jahresverlauf, Kleinunternehmergrenze">
+</picture>
+
+Wer klein anfängt, braucht keine Buchhaltung für Konzerne, sondern eine, die mitdenkt: Rechnung schreiben, Geld kommt an,
+Beleg ablegen, und im Januar stehen die Werte für die Anlage EÜR da. steuy ist eine **Buchhaltungssoftware und ein
+Rechnungsprogramm für Kleinunternehmer und Kleingewerbe** nach § 19 UStG, die ihren Gewinn per **Einnahmen-Überschuss-Rechnung
+(EÜR)** ermitteln: Selbstständige, Freiberufler, Fotografen, Handwerker, Berater und kleine Online-Shops.
+
+steuy läuft **auf deinem eigenen Rechner**, zum Beispiel einem gebrauchten Thin Client im Heimnetz oder einem
+Proxmox-Container. Es gibt kein Konto bei uns, keine Cloud und keine Telemetrie. Nach außen spricht steuy nur, wenn du es
+willst: E-Mails über deinen eigenen Mailserver, Bestellungen aus deinem WooCommerce-Shop, und einmal am Tag die Frage an
+GitHub, ob es eine neue Version gibt (abschaltbar unter *Einstellungen → Update*).
+
+> [!WARNING]
+> **steuy ist in der Alpha-Phase.** Es läuft im echten Alltag, kann aber noch Fehler haben, und Datenmodell und Abläufe
+> können sich ändern. Das Update per Klick sichert vorher automatisch, eine Sicherung auf einem zweiten Gerät gehört trotzdem
+> dazu. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung. steuy ist keine Steuerberatung.
 
 ## Funktionen
 
-- **Angebote, Rechnungen und Lieferscheine** mit fortlaufenden Nummern, Artikeln und Kunden aus der Kontaktliste. Aus einem Angebot wird mit einem Klick eine Rechnung, die Belege bleiben miteinander verknüpft. Korrekturen laufen über Rechnungskorrektur oder Storno.
-- **PDF/A** zum Archivieren, auf Wunsch mit QR-Code für die Überweisung, und Versand per E-Mail.
-- **Drucklayout** mit fünf Vorlagen, eigenem Logo, Farben und Schrift, mit Vorschau beim Bearbeiten.
-- **E-Rechnung:** Jede Rechnung auf Wunsch als ZUGFeRD-PDF (EN 16931), bei Behörden als XRechnung, mit XML-Download, siehe [docs/e-rechnung.md](docs/e-rechnung.md).
-- **Wiederkehrende Rechnungen:** Vorlage für Abos und Dauerkunden, monatlich bis jährlich, mit Platzhaltern wie `{monat}`. Auf Wunsch automatisch festgeschrieben und per E-Mail verschickt, siehe [docs/wiederkehrend.md](docs/wiederkehrend.md).
-- **Zahlungen und Mahnwesen:** Zahlungseingänge und Teilzahlungen erfassen, offene Posten sehen, Mahnungen von Hand oder automatisch verschicken.
-- **Belege und Ausgaben:** Belege hochladen oder fotografieren, die Texterkennung schlägt Betrag und Datum vor. Jede Datei wird mit Prüfsumme gespeichert und nie überschrieben.
-- **Scan-Eingang:** Dein Scanner (z. B. Brother ADS-1800W) speichert über eine eingebaute Netzwerkfreigabe direkt in steuy, die Scans werden automatisch zu Belegen. In den Einstellungen mit einem Haken ein- und ausschaltbar, siehe [docs/scanner.md](docs/scanner.md).
-- **EÜR und Dashboard:** Auswertung nach Zahlungsdatum (Zuflussprinzip), Jahresübersicht, Jahresziel und die Werte für die Anlage EÜR. Dazu Anlagegüter mit Abschreibung.
-- **Umzug von Lexware:** Import aus dem DATEV-Archiv und aus CSV-Zahlungslisten.
+- **Angebote, Rechnungen, Lieferscheine:** fortlaufende Nummern, Kunden und Artikel aus der Liste (Artikel werden beim Tippen
+  vorgeschlagen), aus dem Angebot mit einem Klick die Rechnung. Korrekturen laufen sauber über Rechnungskorrektur oder Storno.
+  *Finalisieren und senden* in einem Schritt.
+- **E-Rechnung, amtlich geprüft:** jede Rechnung als ZUGFeRD-PDF (EN 16931), für Behörden als XRechnung. Vor dem Festschreiben
+  prüft steuy sie gegen dieselben Regeln wie das KoSIT-Prüftool. Eine fehlerhafte E-Rechnung wird gar nicht erst festgeschrieben.
+- **Kundenportal:** Jede Mail enthält einen persönlichen Link. Dein Kunde sieht dort den Stand, lädt PDF und E-Rechnung,
+  bezahlt per QR-Code den offenen Betrag und nimmt Angebote online an. Du siehst am Beleg, ob und wann er den Link geöffnet hat.
+- **PDF/A mit eigenem Gesicht:** fünf Drucklayouts, dein Logo, deine Farben und Schrift, QR-Code für die Überweisung,
+  Vorschau beim Bearbeiten.
+- **Zahlungen und Mahnwesen:** Zahlungseingänge und Teilzahlungen, PayPal-Gebühren, offene Posten, Erinnerung und Mahnstufen
+  von Hand oder automatisch. Überfällige Rechnungen sind rot markiert und haben einen eigenen Filter.
+- **Wiederkehrende Rechnungen** für Abos und Dauerkunden, monatlich bis jährlich, mit Platzhaltern wie `{monat}`, auf Wunsch
+  automatisch festgeschrieben und verschickt.
+- **Belege ohne Zettelwirtschaft:** hochladen, fotografieren oder direkt vom Netzwerkscanner (z. B. Brother ADS-1800W).
+  Die Texterkennung schlägt Betrag und Datum vor, jede Datei liegt mit Prüfsumme und wird nie überschrieben.
+- **EÜR und Dashboard:** Auswertung nach Zahlungsdatum (Zuflussprinzip), Werte für die Anlage EÜR, Anlagegüter mit
+  Abschreibung, Jahresziel und die Kleinunternehmergrenze immer im Blick.
+- **„Zu prüfen“:** eine Seite mit allem, was noch zu tun ist: überfällige Rechnungen, fällige Mahnungen, neue Belege, Entwürfe.
+- **Umzug von Lexware:** Import aus dem DATEV-Archiv und den Zahlungslisten. Danach zeigt steuy je Jahr, was noch fehlt, und
+  setzt die Rechnungsnummern mit einem Klick fort.
 - **WooCommerce:** Bestellungen aus dem eigenen Shop übernehmen.
-- **Sicherheit und Nachvollziehbarkeit:** Rollen und Rechte, Anmeldung per [Passkey](docs/passkeys.md) oder Passwort mit Zwei-Faktor, festgeschriebene Buchungen lassen sich nicht mehr ändern (GoBD).
-- **Updates aus der App heraus**, mit automatischer Sicherung vorher.
+- **Sicher und nachvollziehbar (GoBD):** festgeschriebene Rechnungen und Buchungen lassen sich nicht mehr ändern, jede Änderung
+  steht im Protokoll. Rollen und Rechte, Anmeldung per [Passkey](docs/passkeys.md) oder Passwort mit Zwei-Faktor.
+- **Hell oder dunkel:** folgt automatisch deinem System, Sonne/Mond oben rechts schaltet um, fest einstellbar unter
+  *Einstellungen → Darstellung*.
+- **Updates per Klick:** steuy sucht einmal am Tag nach einer neuen Version und installiert sie erst, wenn du bestätigst.
+  Vorher legt es eine Sicherung an.
 
-Eine Installation gehört genau einem Gewerbe. Alle Beträge werden auf den Cent genau gerechnet.
+Eine Installation gehört genau einem Gewerbe. Alle Beträge rechnet steuy auf den Cent genau.
 
-## Haftung
+<table>
+  <tr>
+    <td width="50%"><img src="docs/bilder/rechnung-erstellen.png" alt="Rechnung erstellen"><br><sub><b>Rechnung schreiben.</b> Kunde wählen, Artikel antippen, fertig.</sub></td>
+    <td width="50%"><img src="docs/bilder/kundenportal-angebot.png" alt="Angebot im Kundenportal"><br><sub><b>Kundenportal.</b> Der Kunde nimmt das Angebot online an.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/bilder/zu-pruefen.png" alt="Zu prüfen"><br><sub><b>Zu prüfen.</b> Alles, was noch zu tun ist, an einer Stelle.</sub></td>
+    <td><img src="docs/bilder/rechnung-mahnung.png" alt="Rechnung mit Zahlungen und Mahnungen"><br><sub><b>Rechnung</b> mit Anzahlung, Mahnung und Kundenlink.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/bilder/auswertung-euer.png" alt="Einnahmen-Überschuss-Rechnung"><br><sub><b>EÜR</b> mit den Zeilen der Anlage EÜR.</sub></td>
+    <td><img src="docs/bilder/drucklayout.png" alt="Drucklayout"><br><sub><b>Drucklayout</b> mit Logo, Farben und Live-Vorschau.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/bilder/rechnung-pdf-modern.png" alt="Rechnung als PDF"><br><sub><b>Die Rechnung als PDF</b> im Layout „Modern“, mit QR-Code.</sub></td>
+    <td><img src="docs/bilder/kundenportal.png" alt="Rechnung im Kundenportal"><br><sub><b>Rechnung im Kundenportal:</b> herunterladen und per QR-Code bezahlen.</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/bilder/angebote.png" alt="Angebote"><br><sub><b>Angebote</b> mit Status und Gültigkeit.</sub></td>
+    <td><img src="docs/bilder/rechnung-dunkel.png" alt="steuy im dunklen Modus"><br><sub><b>Dunkler Modus</b> für den Feierabend.</sub></td>
+  </tr>
+</table>
 
-steuy ist keine Steuerberatung, die Nutzung erfolgt auf eigene Gefahr. Für Datenverlust, steuerliche Nachteile, falsche Werte oder Sicherheitslücken wird keine Haftung übernommen. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner Steuerberatung, übertragen wird von Hand in ELSTER. Und sichere deine Daten regelmäßig (siehe [Betrieb](docs/betrieb.md)).
+## Für Einsteiger gemacht
 
-## Lizenz
+Du hast noch nie eine Buchhaltung geführt? Genau dafür ist steuy gebaut.
 
-steuy steht unter der [PolyForm Shield License 1.0.0](LICENSE). Du darfst die Software in deinem Gewerbe nutzen, den Code lesen und anpassen. Nicht erlaubt ist, steuy oder eine Abwandlung davon als konkurrierendes Produkt oder als Dienst anzubieten. Sicherheitslücken meldest du bitte vertraulich, siehe [SECURITY.md](SECURITY.md).
+- **Rundgang beim ersten Start.** steuy fragt nach deinen Vorkenntnissen und zeigt dir passend dazu Schritt für Schritt, was
+  wo ist und wofür du es brauchst. Im Profil startest du ihn jederzeit neu.
+- **Erklärungen direkt am Feld.** Ein kleines Fragezeichen erklärt Fachbegriffe wie EÜR, Zuflussprinzip oder Festschreiben in
+  einfachen Worten. Wer sie nicht braucht, blendet sie aus.
+- **Prüfungen, bevor etwas schiefgeht.** Vor dem Festschreiben prüft steuy die Pflichtangaben. Unplausibles wie ein Belegdatum
+  weit in der Zukunft oder eine falsch aufgebaute Steuernummer wird angemerkt.
+- **Kleinunternehmerregelung im Blick.** Der Hinweis nach § 19 UStG steht automatisch auf jeder Rechnung, das Dashboard zeigt,
+  wie nah du an der Umsatzgrenze bist.
+- **Wöchentliche Zusammenfassung** per E-Mail, damit nichts liegen bleibt.
+- **Installation ohne Vorkenntnisse** mit der [Schritt-für-Schritt-Anleitung](docs/thinclient.md), oder mit einem Befehl auf
+  deinem Proxmox-Server.
 
-## Screenshots
+## Kundenportal
 
-| | |
+Statt PDF-Anhang und „bitte überweisen Sie“ bekommt dein Kunde in jeder Mail zu Rechnung, Angebot, Lieferschein oder Mahnung
+einen persönlichen Link. Dort sieht er, ob der Beleg offen, bezahlt oder überfällig ist, lädt PDF und E-Rechnung herunter,
+bezahlt per QR-Code genau den offenen Betrag und nimmt ein Angebot mit Namen und Nachricht verbindlich an oder lehnt es ab. Du
+bekommst sofort eine Mail und siehst am Beleg, wann der Link geöffnet wurde.
+
+- Jeder Link ist ein langer Zufallsschlüssel. steuy speichert nur seinen Fingerabdruck, Links lassen sich einzeln sperren
+  und neu erzeugen.
+- Auf Wunsch fragt das Portal zusätzlich nach der Postleitzahl der Rechnungsadresse, nach fünf Fehlversuchen ist der Link für
+  15 Minuten gesperrt.
+- Die Seiten erscheinen in keiner Suchmaschine und geben beim Weiterklicken nichts preis.
+- Dafür braucht steuy eine öffentliche https-Adresse. Wie du **nur das Portal** nach außen freigibst und der Rest im Heimnetz
+  bleibt, steht in [docs/kundenportal.md](docs/kundenportal.md). Ohne Adresse verschickt steuy die Mails wie bisher ohne Link.
+
+## E-Rechnung
+
+Seit 2025 müssen Unternehmen E-Rechnungen empfangen können, das Ausstellen wird schrittweise Pflicht. Kleinunternehmer nach
+§ 19 UStG sind vom Ausstellen ausgenommen, viele Kunden wünschen sie trotzdem. steuy kann beides.
+
+| | Was steuy macht |
 |---|---|
-| ![Dashboard](docs/bilder/dashboard.png) | ![Rechnung erstellen](docs/bilder/rechnung-erstellen.png) |
-| Dashboard mit offenen Posten, Jahresziel und Rechnungsstatus | Rechnung erstellen |
-| ![Rechnung als PDF](docs/bilder/rechnung-pdf-modern.png) | ![Rechnung mit Mahnungen](docs/bilder/rechnung-mahnung.png) |
-| Rechnung als PDF im Layout „Modern“ | Rechnung mit Mahnungen und Zahlungen |
-| ![Zu prüfen](docs/bilder/zu-pruefen.png) | ![Einnahmen-Überschuss-Rechnung](docs/bilder/auswertung-euer.png) |
-| Was noch zu erledigen ist | Einnahmen-Überschuss-Rechnung |
-| ![Angebote](docs/bilder/angebote.png) | ![Drucklayout](docs/bilder/drucklayout.png) |
-| Angebote | Drucklayout |
+| **Ausstellen** | Jede Rechnung auf Wunsch als ZUGFeRD-PDF (Factur-X, Profil EN 16931): ein normales PDF mit den Daten maschinenlesbar darin. Bei Kunden mit Leitweg-ID als XRechnung, auch als reine XML-Datei. |
+| **Prüfen** | Vor dem Festschreiben gegen das Schema und die amtlichen Prüfregeln von EN 16931 und XRechnung 3.0.2, dieselben wie im KoSIT-Prüftool. Verstößt eine Rechnung gegen eine Regel, nennt steuy sie und schreibt nicht fest. |
+| **Empfangen** | Eingehende XRechnungen und ZUGFeRD-Rechnungen liest steuy ein und bewahrt sie im Originalformat auf. |
 
-## Mindestanforderungen
-
-steuy läuft auf jedem kleinen Linux-Rechner, der dauerhaft eingeschaltet bleibt: Mini-PC, gebrauchter Thin Client, Proxmox-Container oder Server.
-
-| | Minimum | Empfohlen |
-|---|---|---|
-| Prozessor | 1 Kern, 64 Bit (x86_64) | 2 bis 4 Kerne |
-| Arbeitsspeicher | 1 GB | 2 GB oder mehr |
-| Speicherplatz | 10 GB | 20 GB oder mehr auf einer SSD, dazu Platz für Sicherungen |
-| Betriebssystem | Debian 12 oder Ubuntu 24.04 | Debian 13 oder Ubuntu 24.04 und neuer |
-| Netzwerk | LAN mit fester IP-Adresse im Heimnetz | zusätzlich ein zweites Gerät für Sicherungen |
-
-Im Betrieb belegen App und Datenbank zusammen etwa 400 bis 700 MB Arbeitsspeicher. Am meisten Rechenleistung brauchen die PDF-Erzeugung und die Texterkennung, die sich abschalten lässt.
-
-Ein gebrauchter Dell Wyse 5070 mit 4 bis 8 GB RAM und SSD passt gut und braucht wenig Strom. Ein Wyse 3040 geht auch, ist aber knapp: Er hat nur 2 GB RAM und 8 oder 16 GB fest verbauten Speicher, Sicherungen müssen auf ein externes Laufwerk.
+Ablauf und Grenzen: [docs/e-rechnung.md](docs/e-rechnung.md).
 
 ## Installieren
 
-Wenn du noch nie einen Server eingerichtet hast, nimm die [Anleitung für Einsteiger](docs/thinclient.md). Sie führt Schritt für Schritt vom leeren Thin Client oder Mini-PC bis zum laufenden steuy.
+Was du brauchst: einen kleinen Linux-Rechner, der dauerhaft läuft, oder einen Proxmox-Server.
 
 | Weg | Passt, wenn | Anleitung |
 |---|---|---|
+| **Proxmox, ein Befehl** | du einen Proxmox-Server hast | [unten](#proxmox-ein-befehl) und [docs/lxc.md](docs/lxc.md) |
 | Thin Client oder Mini-PC | du bei null anfängst | [docs/thinclient.md](docs/thinclient.md) |
-| Proxmox-Container (LXC) | du schon einen Proxmox-Server hast | [docs/lxc.md](docs/lxc.md) |
-| Docker | du einen Linux-Rechner mit Docker hast | unten, Details in [docs/betrieb.md](docs/betrieb.md) |
+| Docker | du einen Linux-Rechner mit Docker hast | [unten](#docker) und [docs/betrieb.md](docs/betrieb.md) |
 | Ohne Docker | du Python und PostgreSQL selbst verwalten möchtest | [docs/betrieb.md](docs/betrieb.md), Abschnitt „Ohne Docker“ |
 
-Schnellstart mit Docker:
+### Proxmox, ein Befehl
+
+In der Shell des Proxmox-Hosts (Oberfläche → dein Server → *Shell*):
+
+```sh
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/faolan-exe/Steuy/main/scripts/proxmox-installieren.sh)"
+```
+
+Das Skript schlägt einen Container vor (2 Kerne, 2 GB RAM, 16 GB, DHCP, Ubuntu 24.04), den du übernimmst oder anpasst. Dann lädt
+es die Vorlage, legt den Container mit allen nötigen Einstellungen an (Nesting und keyctl für Docker, Start beim Booten),
+installiert Docker, Webserver und steuy und zeigt am Ende die Adresse an. Wer erst lesen will, was es tut: siehe
+[docs/lxc.md](docs/lxc.md).
+
+### Docker
 
 ```sh
 git clone https://github.com/faolan-exe/Steuy.git steuy && cd steuy
@@ -131,11 +187,75 @@ printf 'SECRET_KEY=%s\nPOSTGRES_PASSWORD=%s\n' "$(openssl rand -hex 32)" "$(open
 docker compose up -d --build   # http://127.0.0.1:8000
 ```
 
-HTTPS, Updates und Sicherungen beschreibt [docs/betrieb.md](docs/betrieb.md).
+Webserver, HTTPS, Updates und Sicherungen beschreibt [docs/betrieb.md](docs/betrieb.md). Der erste Bau dauert einige Minuten.
 
-## Entwicklung
+### Mindestanforderungen
 
-Voraussetzungen: [uv](https://docs.astral.sh/uv/), PostgreSQL 17 und Pango für die PDF-Erzeugung (ADR 0008). macOS: `brew install uv postgresql@17 pango tesseract`, Debian/Ubuntu: `apt install libpango-1.0-0 libpangoft2-1.0-0 tesseract-ocr tesseract-ocr-deu`. Tesseract ist optional und liest Belegfotos und Scans aus. PostgreSQL geht auch per Docker (siehe unten).
+| | Minimum | Empfohlen |
+|---|---|---|
+| Prozessor | 1 Kern, 64 Bit (x86_64) | 2 bis 4 Kerne |
+| Arbeitsspeicher | 1,5 GB | 2 GB oder mehr |
+| Speicherplatz | 10 GB | 20 GB oder mehr auf einer SSD, dazu Platz für Sicherungen |
+| Betriebssystem | Debian 12 oder Ubuntu 24.04 | Debian 13 oder Ubuntu 24.04 und neuer |
+| Netzwerk | LAN mit fester IP-Adresse im Heimnetz | zusätzlich ein zweites Gerät für Sicherungen |
+
+Im Betrieb belegen App und Datenbank zusammen etwa 400 bis 700 MB Arbeitsspeicher. Ein gebrauchter Dell Wyse 5070 mit 4 bis
+8 GB RAM und SSD passt gut und braucht wenig Strom.
+
+## Erste Schritte
+
+1. **Adresse öffnen,** die die Installation anzeigt. Der Einrichtungsassistent fragt nach deinen Firmendaten, prüft kurz, ob
+   die Kleinunternehmerregelung zu dir passt, und legt deinen Zugang an.
+2. **Bankverbindung und Steuernummer** unter *Einstellungen → Firmendaten* eintragen. Beides steht auf jeder Rechnung, die
+   Steuernummer braucht auch die E-Rechnung.
+3. **E-Mail einrichten** unter *Einstellungen → E-Mail* (Zugangsdaten deines Mailpostfachs), damit Rechnungen direkt aus
+   steuy rausgehen.
+4. **Drucklayout** wählen und dein Logo hochladen.
+5. **Erste Rechnung schreiben:** *Rechnungen → Neue Rechnung*. Der Rundgang begleitet dich dabei.
+6. **Sicherung einrichten,** am besten jede Nacht auf ein zweites Gerät, siehe [docs/betrieb.md](docs/betrieb.md).
+7. **Zwei-Faktor-Anmeldung oder Passkey** im Profil einschalten.
+
+Wer von Lexware kommt, startet unter *Einstellungen → Import/Export* mit dem [Umzug](docs/lexware-import.md).
+
+## Gut zu wissen
+
+- **Nur für Kleinunternehmer mit EÜR.** Keine Umsatzsteuer-Voranmeldung, keine doppelte Buchführung, kein Reverse Charge.
+  Die Werte der Anlage EÜR überträgst du selbst in ELSTER. Mehr in der [Roadmap](docs/roadmap.md#nicht-geplant).
+- **Ein Gewerbe pro Installation.** Für ein zweites Gewerbe läuft eine zweite Installation, zum Beispiel ein zweiter Container.
+- **Oberfläche und Dokumentation sind auf Deutsch.**
+- **Nur im eigenen Netz ohne Verschlüsselung.** Die Adresse nach der Installation ist `http://`. Für den Zugriff von
+  unterwegs: HTTPS mit eigener Domain oder ein VPN, siehe [docs/lxc.md](docs/lxc.md#von-unterwegs-erreichen-https-mit-eigener-domain).
+- **Sichern ist deine Aufgabe.** Die Daten gehören dir, und damit auch die Sicherung. Das Skript dafür ist dabei.
+- **Updates brauchen Internet.** Ohne Verbindung läuft steuy normal weiter, die Update-Suche meldet nur, dass GitHub nicht
+  erreichbar ist.
+
+## Warum es steuy gibt
+
+steuy ist von Philipp ([skyplayser](https://github.com/skyplayser)) und Tobi ([faolan-exe](https://github.com/faolan-exe))
+entstanden. Wir wollten nicht länger jedes Jahr rund 350 Euro für Buchhaltungssoftware ausgeben. Philipp ist technischer
+Betriebswirt, Tobi hat gerade sein Gewerbe eröffnet und bietet IT-Dienstleistungen und Online-Shops an. Wir haben gesammelt,
+was uns an anderer Software gefällt, was fehlt und was zu viel ist, und daraus steuy gebaut: ohne die Funktionen, die wir
+mitbezahlen mussten und nie brauchten, dafür mit WooCommerce-Anbindung, Scan-Eingang und Kundenportal. Die steuerlichen Regeln
+haben wir nach bestem Wissen geprüft. Das ist keine Steuerberatung.
+
+Wir freuen uns über jeden, der steuy ausprobiert und Rückmeldung gibt, damit wir es gemeinsam zu einer wirklich guten,
+kostenlosen Software machen.
+
+## Probleme und Wünsche
+
+Fehler und Wünsche bitte als [Issue](https://github.com/faolan-exe/Steuy/issues): Was hast du gemacht, was ist passiert, was
+hast du erwartet? Die Version steht unter *Einstellungen → Update*. Antworten auf die häufigsten Fragen stehen in den
+[FAQ](docs/faq.md), Hilfe bei der Installation in [docs/lxc.md](docs/lxc.md#wenn-etwas-nicht-klappt).
+
+Sicherheitslücken bitte **nicht** öffentlich, sondern vertraulich über *Security → Report a vulnerability* melden, siehe
+[SECURITY.md](SECURITY.md).
+
+<details>
+<summary><b>Entwicklung</b></summary>
+
+Voraussetzungen: [uv](https://docs.astral.sh/uv/), PostgreSQL 17 und Pango für die PDF-Erzeugung (ADR 0008).
+macOS: `brew install uv postgresql@17 pango tesseract`, Debian/Ubuntu: `apt install libpango-1.0-0 libpangoft2-1.0-0
+tesseract-ocr tesseract-ocr-deu`. Tesseract ist optional und liest Belegfotos und Scans aus.
 
 ```sh
 git config core.hooksPath .githooks
@@ -148,41 +268,63 @@ uv run flask db upgrade
 uv run flask run --debug      # http://127.0.0.1:5000
 ```
 
-Der Hook blockt direkte Pushes auf `main` lokal.
-
-PostgreSQL per Docker statt lokal:
-
-```sh
-docker compose -f docker-compose.dev.yml up -d
-```
-
-Dann die beiden Datenbank-URLs in der `.env` wie in `docker-compose.dev.yml` beschrieben setzen.
-
-Tests und Lint:
+PostgreSQL geht auch per Docker: `docker compose -f docker-compose.dev.yml up -d`, dann die beiden Datenbank-URLs in der
+`.env` wie in `docker-compose.dev.yml` beschrieben setzen.
 
 ```sh
-uv run pytest
-uv run ruff check . && uv run ruff format --check .
+uv run pytest                                            # Tests, inklusive Prüfung aller Seiten
+uv run ruff check . && uv run ruff format --check .      # Lint
 ```
 
-Beides läuft auch in der CI.
+Beides läuft auch in der CI. Regeln für Beiträge: [CONTRIBUTING.md](CONTRIBUTING.md). Aufbau und Datenmodell:
+[docs/architektur.md](docs/architektur.md), getroffene Entscheidungen: [docs/adr/](docs/adr/).
+
+</details>
 
 ## Dokumentation
 
-- [CONTRIBUTING.md](CONTRIBUTING.md): Regeln für die Mitarbeit
-- [docs/faq.md](docs/faq.md): Häufige Fragen und Antworten
-- [docs/roadmap.md](docs/roadmap.md): Was steuy kann und was als Nächstes kommt
-- [docs/thinclient.md](docs/thinclient.md): Installation für Einsteiger auf einem Thin Client
-- [docs/scanner.md](docs/scanner.md): Scanner anbinden (Brother ADS-1800W)
-- [docs/betrieb.md](docs/betrieb.md): Betrieb, Sicherung und Wiederherstellung
-- [docs/ziel.md](docs/ziel.md): Umfang und offene Fragen
-- [docs/architektur.md](docs/architektur.md): Aufbau und Datenmodell
-- [docs/domain/](docs/domain/): Fachregeln (GoBD, EÜR, Zahlungen, Rollen, WooCommerce)
-- [docs/adr/](docs/adr/): getroffene Entscheidungen
+| Installieren | Benutzen | Wissen |
+|---|---|---|
+| [Thin Client, ohne Vorkenntnisse](docs/thinclient.md) | [Häufige Fragen](docs/faq.md) | [Roadmap](docs/roadmap.md) |
+| [Proxmox-Container](docs/lxc.md) | [E-Rechnung](docs/e-rechnung.md) | [Umfang und Ziele](docs/ziel.md) |
+| [Betrieb, Sicherung, Wiederherstellung](docs/betrieb.md) | [Kundenportal](docs/kundenportal.md) | [Aufbau und Datenmodell](docs/architektur.md) |
+| | [Wiederkehrende Rechnungen](docs/wiederkehrend.md) | [Fachregeln: GoBD, EÜR, Mahnwesen …](docs/domain/) |
+| | [Drucklayout](docs/drucklayout.md) | [Entscheidungen (ADR)](docs/adr/) |
+| | [Scanner anbinden](docs/scanner.md) | [Neue Version veröffentlichen](docs/release.md) |
+| | [Umzug von Lexware](docs/lexware-import.md) | [Mitmachen](CONTRIBUTING.md) |
+| | [Passkeys](docs/passkeys.md) · [Rundgang](docs/rundgang.md) | |
+
+Die ganze Dokumentation mit Suche: [faolan-exe.github.io/Steuy/doku](https://faolan-exe.github.io/Steuy/doku/).
+
+## Haftung
+
+steuy ist keine Steuerberatung, die Nutzung erfolgt auf eigene Gefahr. Für Datenverlust, steuerliche Nachteile, falsche Werte
+oder Sicherheitslücken wird keine Haftung übernommen. Prüfe die Werte der Anlage EÜR vor der Abgabe selbst oder mit deiner
+Steuerberatung und sichere deine Daten regelmäßig (siehe [Betrieb](docs/betrieb.md)).
+
+## Lizenz
+
+steuy steht unter der [PolyForm Shield License 1.0.0](LICENSE) (quelloffen, aber keine Open-Source-Lizenz im Sinne der OSI).
+Du darfst steuy in deinem Gewerbe kostenlos nutzen, den Code lesen und anpassen. Nicht erlaubt ist, steuy oder eine Abwandlung
+davon als konkurrierendes Produkt oder als Dienst anzubieten.
+
+Die Prüfregeln für E-Rechnungen stammen von CEN (EN 16931) und KoSIT (XRechnung) und liegen mit ihren Lizenzen unter
+`app/domain/erechnung_regeln/`. steuy ist kein Produkt von Lexware, DATEV, WooCommerce oder Proxmox. Die Namen stehen hier
+nur, um zu beschreiben, womit steuy zusammenarbeitet.
+
 ## In English
 
-steuy is a free, self-hosted accounting and invoicing application for small businesses and sole proprietors in Germany who use the small-business scheme (*Kleinunternehmerregelung*, § 19 UStG) and report their profit by cash-basis accounting (*EÜR*). It covers quotes, invoices and delivery notes, payment tracking and dunning, receipt management (including scan-to-folder from a network scanner) and the figures for the annual tax form. It runs on your own hardware, for example a small thin client, and your data never leaves your server. The source code is available under the PolyForm Shield License 1.0.0 (source-available, not OSI open source). The user interface and documentation are in German. See the [live demo](https://steuy.philsit.de).
+steuy is a free, self-hosted accounting and invoicing application for small businesses and sole proprietors in Germany who use
+the small-business scheme (*Kleinunternehmerregelung*, § 19 UStG) and report their profit by cash-basis accounting (*EÜR*). It
+covers quotes, invoices and delivery notes, e-invoices (ZUGFeRD / XRechnung, validated against the official EN 16931 and
+XRechnung rules), a customer portal where clients download invoices, pay by QR code and accept quotes, payment tracking and
+dunning, receipts (including scan-to-folder from a network scanner) and the figures for the annual tax form. It runs on your own
+hardware, for example a thin client or a Proxmox container (one-command installer), and your data never leaves your server. The
+source code is available under the PolyForm Shield License 1.0.0 (source-available, not OSI open source). The user interface
+and documentation are in German. Try the [live demo](https://steuy.philsit.de).
 
----
+<br>
 
-Idee und Konzeption: [skyplayser](https://github.com/skyplayser). Umsetzung mit Claude AI.
+<p align="center">
+  <sub>Idee und Konzeption: <a href="https://github.com/skyplayser">skyplayser</a>. Umsetzung mit Claude AI.</sub>
+</p>

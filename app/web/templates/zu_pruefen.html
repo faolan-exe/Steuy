@@ -9,7 +9,7 @@
     <tr>
       <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.nummer }}</a></td>
       <td>{{ kunde(r) }}</td>
-      <td{% if ueberfaellig %} class="ueberfaellig"{% endif %}>{{ r.faellig_am | datum }}{% if ueberfaellig %} ({{ (heute - r.faellig_am).days }} Tage){% endif %}</td>
+      <td{% if ueberfaellig %} class="ueberfaellig"{% endif %}>{{ r.faellig_am | datum }}{% if ueberfaellig %} {% set tage = (heute - r.faellig_am).days %}({{ tage }} Tag{{ "e" if tage != 1 }}){% endif %}</td>
       <td>{% if r.status == "teilbezahlt" %}<span class="status status-blau">teilbezahlt</span>{% else %}<span class="status status-orange">offen</span>{% endif %}</td>
       <td class="rechts betrag">{{ r.offen_cent | euro }}</td>
     </tr>

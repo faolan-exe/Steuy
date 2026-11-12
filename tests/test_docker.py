@@ -12,6 +12,7 @@ def test_startskripte_ausfuehrbar():
         "docker-sicherung.sh",
         "docker-wiederherstellen.sh",
         "lxc-installieren.sh",
+        "proxmox-installieren.sh",
         "update-dienst-einrichten.sh",
     ):
         assert os.access(WURZEL / "scripts" / name, os.X_OK), name

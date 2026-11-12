@@ -156,6 +156,8 @@ def test_alle_seiten_ohne_still_falsche_ausgaben(app, session, client, musterfir
     try:
         # (Adresse, Herkunft): Herkunft None = selbst gebaut, sonst die Seite mit dem Link
         offen = [(a, None) for a in _adressen(app, session, musterfirma)]
+        # Fehlerseiten selbst: Ihr „Zurück“ war still kaputt (javascript:-Adresse gegen die CSP)
+        offen += [("/gibt-es-nicht", None), ("/rechnungen/neu", None)]
         seiten_ids: dict[str, set[str]] = {}
         anker: list[tuple[str, str, str]] = []
         abgeschickt: set[tuple[str, str]] = set()
@@ -175,6 +177,9 @@ def test_alle_seiten_ohne_still_falsche_ausgaben(app, session, client, musterfir
                 continue
             if antwort.status_code == 404 and herkunft:
                 funde.setdefault(herkunft, []).append(f"Toter Link: {adresse}")
+            if antwort.mimetype == "text/html" and antwort.status_code in (403, 404, 405):
+                for fund in pruefe_html(antwort.get_data(as_text=True), formulare):
+                    funde.setdefault(adresse, []).append(fund)
             if antwort.mimetype != "text/html" or antwort.status_code != 200:
                 continue
             html = antwort.get_data(as_text=True)

@@ -1,0 +1,42 @@
+{% extends "basis.html" %}
+{% from "einstellungen_reiter.html" import reiter with context %}
+{% from "icons.html" import icon %}
+{% block titel %}Darstellung – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf"><h1>Einstellungen</h1></div>
+{{ reiter("einstellungen.darstellung") }}
+
+<section class="karte">
+  <div class="karte-kopf"><h2>Hell oder dunkel</h2></div>
+  <form method="post" action="{{ url_for('einstellungen.farbschema') }}" class="karte-inhalt">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="hinweis">Gilt nur für dich und auf allen Geräten, auf denen du angemeldet bist. Rechnungen, PDFs und das Kundenportal bleiben immer hell.</p>
+    <fieldset class="layoutwahl schemawahl">
+      <legend class="unsichtbar">Farbschema</legend>
+      {% for wert, name, text in [
+        ("auto", "Automatisch", "Wie dein Betriebssystem, wechselt mit ihm am Abend"),
+        ("hell", "Hell", "Immer hell, gut bei Tageslicht"),
+        ("dunkel", "Dunkel", "Immer dunkel, schont die Augen am Abend"),
+      ] %}
+      <label class="layoutkarte">
+        <input type="radio" name="farbschema" value="{{ wert }}" {% if current_user.farbschema == wert %}checked{% endif %} data-sofort-senden>
+        <span class="layoutinhalt">
+          <span class="schema-vorschau schema-{{ wert }}" aria-hidden="true"><span></span><span></span><span></span></span>
+          <strong>{{ name }}</strong><small>{{ text }}</small>
+        </span>
+      </label>
+      {% endfor %}
+    </fieldset>
+    <p class="hinweis">Schneller geht es mit {{ icon("mond") }} oben rechts in der Leiste: Ein Klick wechselt zwischen hell und dunkel. Landest du dabei wieder bei der Einstellung deines Systems, folgt steuy ihm wieder automatisch.</p>
+    <noscript><div class="formular-fuss"><button class="knopf knopf-primaer" type="submit">Speichern</button></div></noscript>
+  </form>
+</section>
+
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Hilfe</h2></div>
+  <div class="karte-inhalt">
+    <p class="hinweis">Die Hilfe-Fragezeichen an Feldern und Begriffen schaltest du im <a href="{{ url_for('profil.profil') }}#darstellung">Profil</a> ein und aus.</p>
+  </div>
+</section>
+{% endblock %}

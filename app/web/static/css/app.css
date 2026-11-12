@@ -18,11 +18,135 @@
   --gelb: #e3a900;
   --blau: #2f6fb6;
   --schatten: 0 1px 2px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.06);
+  --leiste-aktiv: #182429;
+  --knopf-primaer: var(--gruen);
+  --knopf-primaer-hover: var(--gruen-dunkel);
+  --feld-rand: #c9c9c9;
+  --zeile-hover: #fafafa;
+  --flaeche-grau: #ececec;
+  --blau-hell: #e6eef8;
+  --orange-hell: #fdf0e3;
+  --orange-text: #b25600;
+  --gelb-hell: #fff6d6;
+  --gelb-text: #7a5a00;
+  --gelb-balken: #e0a800;
+  --schalter-aus: #c4c4c4;
+  --schalter-aus-stark: #9aa5aa;
+  --vorschau-grund: #d9d9d9;
+  --toast: #2f3437;
+  --rot-flaeche: #c62828;
   --radius: 4px;
+  color-scheme: light;
   font-family: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 15px;
   line-height: 1.45;
 }
+
+/* Dunkel: automatisch wie das System, außer jemand hat „hell“ gewählt, oder fest „dunkel“.
+   Die Werte stehen zweimal, weil CSS eine Media-Query nicht mit einem Attribut verodern kann. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-farbschema="hell"]) {
+    --leiste: #121b1f;
+    --leiste-hover: #23323a;
+    --leiste-text: #c3d0d5;
+    --leiste-aktiv: #0b1114;
+    --hintergrund: #0e1417;
+    --karte: #172126;
+    --text: #e2e9eb;
+    --text-leise: #93a3aa;
+    --linie: #2a3940;
+    --gruen: #3db4b9;
+    --gruen-dunkel: #7fd4d7;
+    --gruen-hell: #143438;
+    --knopf-primaer: #12858a;
+    --knopf-primaer-hover: #0f9da3;
+    --rot: #f07a7a;
+    --rot-hell: #3b1e1f;
+    --orange: #e47a1c;
+    --gelb: #e9b824;
+    --blau: #7fb0ea;
+    --schatten: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.35);
+    --feld-rand: #3a4b53;
+    --zeile-hover: #1d292f;
+    --flaeche-grau: #26333a;
+    --blau-hell: #1a2a3d;
+    --orange-hell: #3a2817;
+    --orange-text: #f3b27a;
+    --gelb-hell: #342c12;
+    --gelb-text: #ecd27c;
+    --gelb-balken: #d6a21c;
+    --schalter-aus: #4a5a62;
+    --schalter-aus-stark: #5d6e76;
+    --vorschau-grund: #0a0f11;
+    --toast: #3a454b;
+    --rot-flaeche: #b3261e;
+    color-scheme: dark;
+  }
+}
+:root[data-farbschema="dunkel"] {
+  --leiste: #121b1f;
+  --leiste-hover: #23323a;
+  --leiste-text: #c3d0d5;
+  --leiste-aktiv: #0b1114;
+  --hintergrund: #0e1417;
+  --karte: #172126;
+  --text: #e2e9eb;
+  --text-leise: #93a3aa;
+  --linie: #2a3940;
+  --gruen: #3db4b9;
+  --gruen-dunkel: #7fd4d7;
+  --gruen-hell: #143438;
+  --knopf-primaer: #12858a;
+  --knopf-primaer-hover: #0f9da3;
+  --rot: #f07a7a;
+  --rot-hell: #3b1e1f;
+  --orange: #e47a1c;
+  --gelb: #e9b824;
+  --blau: #7fb0ea;
+  --schatten: 0 1px 2px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.35);
+  --feld-rand: #3a4b53;
+  --zeile-hover: #1d292f;
+  --flaeche-grau: #26333a;
+  --blau-hell: #1a2a3d;
+  --orange-hell: #3a2817;
+  --orange-text: #f3b27a;
+  --gelb-hell: #342c12;
+  --gelb-text: #ecd27c;
+  --gelb-balken: #d6a21c;
+  --schalter-aus: #4a5a62;
+  --schalter-aus-stark: #5d6e76;
+  --vorschau-grund: #0a0f11;
+  --toast: #3a454b;
+  --rot-flaeche: #b3261e;
+  color-scheme: dark;
+}
+
+/* Sonne/Mond oben rechts: zeigt, wohin ein Klick wechselt */
+.farbschema-form { display: contents; }
+.nur-dunkel { display: none; }
+.nur-hell, .nur-dunkel { line-height: 0; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-farbschema="hell"]) .nur-hell { display: none; }
+  :root:not([data-farbschema="hell"]) .nur-dunkel { display: inline; }
+}
+:root[data-farbschema="dunkel"] .nur-hell { display: none; }
+:root[data-farbschema="dunkel"] .nur-dunkel { display: inline; }
+
+/* Vorschau in Einstellungen → Darstellung (feste Farben, sie zeigen ja das jeweilige Schema) */
+.schemawahl { border: 0; padding: 0; margin: 0 0 0.75rem; }
+.schema-vorschau { display: grid; grid-template-rows: 0.55rem 1fr; grid-template-columns: 1fr 1fr; gap: 0.2rem; width: 6.5rem; height: 4rem; padding: 0.25rem; border-radius: 3px; border: 1px solid var(--linie); }
+.schema-vorschau span:first-child { grid-column: 1 / -1; border-radius: 2px; }
+.schema-vorschau span { border-radius: 2px; }
+.schema-hell { background: #f2f5f6; }
+.schema-hell span:first-child { background: #22333b; }
+.schema-hell span { background: #ffffff; }
+.schema-dunkel { background: #0e1417; }
+.schema-dunkel span:first-child { background: #121b1f; }
+.schema-dunkel span { background: #172126; }
+.schema-auto { background: linear-gradient(110deg, #f2f5f6 50%, #0e1417 50%); }
+.schema-auto span:first-child { background: linear-gradient(110deg, #22333b 50%, #121b1f 50%); }
+.schema-auto span:nth-child(2) { background: #ffffff; }
+.schema-auto span:nth-child(3) { background: #172126; }
 
 * { box-sizing: border-box; }
 
@@ -86,7 +210,7 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 }
 
 .hauptnavi a:hover { background: var(--leiste-hover); color: #fff; }
-.hauptnavi a.aktiv { background: #182429; color: #fff; }
+.hauptnavi a.aktiv { background: var(--leiste-aktiv); color: #fff; }
 .hauptnavi .bald { opacity: 0.4; cursor: default; }
 /* Mittlere Breiten (Tablet, halbes Fenster): enger, damit alle Punkte sichtbar bleiben */
 @media (min-width: 48.01rem) and (max-width: 72rem) {
@@ -170,8 +294,8 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 
 .knopf:hover { background: var(--gruen-hell); }
 
-.knopf-primaer { background: var(--gruen); color: #fff; }
-.knopf-primaer:hover { background: var(--gruen-dunkel); }
+.knopf-primaer { background: var(--knopf-primaer); border-color: var(--knopf-primaer); color: #fff; }
+.knopf-primaer:hover { background: var(--knopf-primaer-hover); border-color: var(--knopf-primaer-hover); }
 
 .knopf[aria-disabled="true"] { opacity: 0.55; cursor: not-allowed; }
 
@@ -203,8 +327,10 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 
 .karte-kopf {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 0.25rem 1rem;
   padding: 1rem 1.1rem 0.5rem;
 }
 
@@ -325,7 +451,7 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 .feld {
   width: 100%;
   padding: 0.6rem 0.75rem;
-  border: 1px solid #c9c9c9;
+  border: 1px solid var(--feld-rand);
   border-radius: var(--radius);
   background: var(--karte);
   color: var(--text);
@@ -388,7 +514,7 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
   height: 1.6rem;
   margin-right: 0.4rem;
   border-radius: 50%;
-  background: var(--gruen);
+  background: var(--knopf-primaer);
   color: #fff;
   font-size: 0.85rem;
 }
@@ -490,7 +616,7 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 
 /* ---------- Nutzermenü ---------- */
 
-a.leiste-knopf.aktiv { background: #182429; color: #fff; }
+a.leiste-knopf.aktiv { background: var(--leiste-aktiv); color: #fff; }
 
 .nutzermenue { position: relative; }
 .nutzermenue summary { list-style: none; }
@@ -593,7 +719,7 @@ a.leiste-knopf.aktiv { background: #182429; color: #fff; }
 }
 
 .tabelle th { font-size: 0.85rem; font-weight: 600; }
-.tabelle tbody tr:hover { background: #fafafa; }
+.tabelle tbody tr:hover { background: var(--zeile-hover); }
 .tabelle .mitte { text-align: center; }
 .tabelle .rechts { text-align: right; }
 .tabelle input[type="checkbox"] { width: 1.1rem; height: 1.1rem; accent-color: var(--gruen); }
@@ -608,7 +734,7 @@ a.leiste-knopf.aktiv { background: #182429; color: #fff; }
 }
 
 .status-an { background: var(--gruen-hell); color: var(--gruen-dunkel); }
-.status-aus { background: #ececec; color: var(--text-leise); }
+.status-aus { background: var(--flaeche-grau); color: var(--text-leise); }
 
 .abstand-oben { margin-top: 1rem; }
 
@@ -645,7 +771,7 @@ select.feld { appearance: auto; }
 .zeilenlink { color: var(--text); font-weight: 600; text-decoration: none; }
 .zeilenlink:hover { color: var(--gruen); text-decoration: underline; }
 
-.status-blau { background: #e6eef8; color: var(--blau); }
+.status-blau { background: var(--blau-hell); color: var(--blau); }
 
 .zurueck { color: var(--text-leise); text-decoration: none; margin-right: 0.25rem; }
 
@@ -686,7 +812,7 @@ textarea.feld { min-height: 5rem; resize: vertical; }
 
 .inhalt.mittel { max-width: 64rem; }
 
-.status-orange { background: #fdf0e3; color: #b25600; }
+.status-orange { background: var(--orange-hell); color: var(--orange-text); }
 .status-rot { background: var(--rot-hell); color: var(--rot); }
 
 .editor-kopf {
@@ -716,7 +842,7 @@ textarea.feld { min-height: 5rem; resize: vertical; }
   height: 1.8rem;
   margin-top: 0.3rem;
   border-radius: 50%;
-  background: #ececec;
+  background: var(--flaeche-grau);
   font-size: 0.8rem;
   font-weight: 600;
 }
@@ -800,7 +926,7 @@ textarea.feld { min-height: 5rem; resize: vertical; }
   height: 1.3rem;
   margin-left: auto;
   border-radius: 999px;
-  background: #c4c4c4;
+  background: var(--schalter-aus);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -820,7 +946,7 @@ textarea.feld { min-height: 5rem; resize: vertical; }
 .schalter:checked { background: var(--gruen); }
 .schalter { flex: none; }
 .zahlungsart.schalterbox { max-width: none; }
-.zahlungsart .schalter:not(:checked) { background: #9aa5aa; }
+.zahlungsart .schalter:not(:checked) { background: var(--schalter-aus-stark); }
 .schalter:checked::after { left: 1.25rem; }
 
 .formular-fuss.zwischen { justify-content: space-between; }
@@ -866,7 +992,7 @@ textarea.feld { min-height: 5rem; resize: vertical; }
 .mahnaktionen { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; justify-content: space-between; border-top: 1px solid var(--linie); padding-top: 1rem; }
 .mahnsperre { display: flex; gap: 0.5rem; align-items: center; }
 .mahnsperre .feld { min-width: 14rem; }
-.meldung.warnung { background: #fdf0e3; color: #b25600; margin: 0; }
+.meldung.warnung { background: var(--orange-hell); color: var(--orange-text); margin: 0; }
 
 /* ---------- Belege ---------- */
 
@@ -927,7 +1053,7 @@ p.rechts { text-align: right; }
 .euerzeile { border-bottom: 1px solid var(--linie); }
 .euerzeile summary { cursor: pointer; list-style: none; }
 .euerzeile summary::-webkit-details-marker { display: none; }
-.euerzeile summary:hover { background: #fafafa; }
+.euerzeile summary:hover { background: var(--zeile-hover); }
 .euerzeile .zeilennr { font-weight: 700; }
 .euerzeile .kz { color: var(--text-leise); font-size: 0.85rem; }
 .euerzeile .posten { background: var(--hintergrund); }
@@ -948,8 +1074,8 @@ p.rechts { text-align: right; }
 .splitmenue .menue { z-index: 5; }
 
 /* Kleinunternehmergrenze: grün bis 25.000 €, gelb darüber */
-.fortschritt.warnung span { background: #e0a800; }
-.grenzwarnung { margin: 0.5rem 0 0; padding: 0.5rem 0.7rem; border-radius: var(--radius); background: #fff6d6; color: #7a5a00; font-size: 0.85rem; }
+.fortschritt.warnung span { background: var(--gelb-balken); }
+.grenzwarnung { margin: 0.5rem 0 0; padding: 0.5rem 0.7rem; border-radius: var(--radius); background: var(--gelb-hell); color: var(--gelb-text); font-size: 0.85rem; }
 /* ---------- Zwei-Faktor ---------- */
 .codefeld { font-size: 1.5rem; letter-spacing: 0.3em; text-align: center; }
 .einrichtung2fa { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 1.5rem; align-items: start; padding-top: 1rem; }
@@ -1000,7 +1126,7 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
   max-width: min(20rem, calc(100vw - 2rem));
   padding: 0.6rem 0.75rem;
   border-radius: var(--radius);
-  background: #2f3437;
+  background: var(--toast);
   color: #fff;
   font-size: 0.85rem;
   font-weight: 400;
@@ -1081,7 +1207,7 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
 .inhalt.breit-editor:has(> .reiter) { max-width: 96rem; }
 .layouteditor { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1rem; align-items: start; }
 .layouteditor .vorschau { position: sticky; top: 3.5rem; }
-.vorschaurahmen { overflow: hidden; margin: 0 1rem 1rem; border-radius: var(--radius); background: #d9d9d9; }
+.vorschaurahmen { overflow: hidden; margin: 0 1rem 1rem; border-radius: var(--radius); background: var(--vorschau-grund); }
 .vorschaurahmen iframe { width: 840px; height: 1180px; border: 0; transform-origin: top left; display: block; }
 .layoutwahl { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.6rem; }
 .layoutkarte { display: block; cursor: pointer; }
@@ -1093,7 +1219,7 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
 .farbfeld { width: 100%; height: 2.6rem; padding: 0.2rem; border: 1px solid var(--linie); border-radius: var(--radius); background: var(--karte); }
 .farbvorschlaege { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
 .farbpunkt { width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--linie); cursor: pointer; }
-.logoansicht { padding: 0.75rem; border: 1px solid var(--linie); border-radius: var(--radius); background: #fafafa; text-align: center; }
+.logoansicht { padding: 0.75rem; border: 1px solid var(--linie); border-radius: var(--radius); background: var(--zeile-hover); text-align: center; }
 .logoansicht img { max-width: 100%; max-height: 6rem; }
 .haken-liste { display: grid; gap: 0.5rem; }
 .haken-liste label { display: flex; gap: 0.5rem; align-items: center; }
@@ -1173,7 +1299,7 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
   transition: opacity 0.2s, transform 0.2s;
 }
 .toast.sichtbar { opacity: 1; transform: translate(-50%, 0); }
-.toast-fehler { background: var(--rot); }
+.toast-fehler { background: var(--rot-flaeche); }
 @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
 
 /* Schlichte Liste ohne Aufzählungszeichen (z. B. Verlauf des Scan-Eingangs) */
