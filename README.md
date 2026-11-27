@@ -24,7 +24,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/faolan-exe/Steuy/releases/latest"><img alt="Version 0.8.0" src="https://img.shields.io/badge/Version-0.8.0-0f7c80"></a>
+  <a href="https://github.com/faolan-exe/Steuy/releases/latest"><img alt="Version 0.9.0" src="https://img.shields.io/badge/Version-0.9.0-0f7c80"></a>
   <img alt="Status: Alpha" src="https://img.shields.io/badge/Status-Alpha-c62828">
   <a href="https://github.com/faolan-exe/Steuy/actions/workflows/ci.yml"><img alt="Tests" src="https://github.com/faolan-exe/Steuy/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="E-Rechnung: ZUGFeRD und XRechnung" src="https://img.shields.io/badge/E--Rechnung-ZUGFeRD%20%C2%B7%20XRechnung-2f6fb6">
