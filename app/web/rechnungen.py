@@ -32,6 +32,10 @@ from app.services.mahnwesen import (
     MahnungNichtMoeglich,
     entwurf,
     erstelle_mahnung,
+    ist_neueste,
+    ist_verschickt,
+    loeschbar,
+    loesche_mahnung,
     naechste_faellig_ab,
     naechste_fuer,
     pauschale_vorschlag,
@@ -39,6 +43,7 @@ from app.services.mahnwesen import (
     setze_mahnsperre,
     speichere_vorlage,
     stufentext,
+    ziehe_zurueck,
 )
 from app.services.mahnwesen import (
     stufen as mahnstufen,
@@ -525,7 +530,53 @@ def mahnung_detail(rechnung_id: int, mahnung_id: int):
     mahnung = db.session.get(Mahnung, mahnung_id)
     if not mahnung or mahnung.rechnung_id != rechnung_id:
         abort(404)
-    return render_template("mahnung.html", m=mahnung, r=mahnung.rechnung, kette=belegkette(mahnung))
+    return render_template(
+        "mahnung.html",
+        m=mahnung,
+        r=mahnung.rechnung,
+        kette=belegkette(mahnung),
+        neueste=ist_neueste(mahnung),
+        loeschbar=loeschbar(mahnung),
+        verschickt=ist_verschickt(mahnung),
+    )
+
+
+def _mahnung_von(rechnung_id: int, mahnung_id: int) -> Mahnung:
+    mahnung = db.session.get(Mahnung, mahnung_id)
+    if not mahnung or mahnung.rechnung_id != rechnung_id:
+        abort(404)
+    return mahnung
+
+
+@bp.post("/<int:rechnung_id>/mahnungen/<int:mahnung_id>/loeschen")
+@braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
+def mahnung_loeschen(rechnung_id: int, mahnung_id: int):
+    mahnung = _mahnung_von(rechnung_id, mahnung_id)
+    bezeichnung = mahnung.bezeichnung
+    try:
+        loesche_mahnung(mahnung, current_user.id)
+    except MahnungNichtMoeglich as fehler:
+        db.session.rollback()
+        flash(str(fehler))
+        return redirect(
+            url_for("rechnungen.mahnung_detail", rechnung_id=rechnung_id, mahnung_id=mahnung_id)
+        )
+    flash(f"{bezeichnung} gelöscht.")
+    return redirect(url_for("rechnungen.detail", rechnung_id=rechnung_id) + "#mahnungen")
+
+
+@bp.post("/<int:rechnung_id>/mahnungen/<int:mahnung_id>/zurueckziehen")
+@braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
+def mahnung_zurueckziehen(rechnung_id: int, mahnung_id: int):
+    mahnung = _mahnung_von(rechnung_id, mahnung_id)
+    try:
+        ziehe_zurueck(mahnung, request.form.get("grund"), current_user.id)
+    except MahnungNichtMoeglich as fehler:
+        db.session.rollback()
+        flash(str(fehler))
+    else:
+        flash(f"{mahnung.bezeichnung} zurückgezogen. Sie zählt nicht mehr als Mahnstufe.")
+    return redirect(url_for("rechnungen.detail", rechnung_id=rechnung_id) + "#mahnungen")
 
 
 @bp.post("/<int:rechnung_id>/lieferschein")
@@ -667,7 +718,10 @@ def senden(rechnung_id: int):
 @bp.route("/<int:rechnung_id>/mahnungen/<int:mahnung_id>/senden", methods=["GET", "POST"])
 @braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
 def mahnung_senden(rechnung_id: int, mahnung_id: int):
-    mahnung = db.session.get(Mahnung, mahnung_id)
-    if not mahnung or mahnung.rechnung_id != rechnung_id:
-        abort(404)
+    mahnung = _mahnung_von(rechnung_id, mahnung_id)
+    if not mahnung.aktiv:
+        flash("Diese Mahnung ist zurückgezogen und kann nicht mehr verschickt werden.")
+        return redirect(
+            url_for("rechnungen.mahnung_detail", rechnung_id=rechnung_id, mahnung_id=mahnung_id)
+        )
     return _senden(mahnung.rechnung, mahnung)

@@ -152,6 +152,11 @@ class Rechnung(db.Model):
     )
 
     @property
+    def aktive_mahnungen(self) -> list["Mahnung"]:  # noqa: F821
+        """Mahnungen ohne die zurückgezogenen: Nur sie zählen für die Mahnstufen."""
+        return [m for m in self.mahnungen if m.aktiv]
+
+    @property
     def gesperrt_fuer_mahnungen(self) -> bool:
         return self.mahnsperre or bool(self.kontakt and self.kontakt.mahnsperre)
 

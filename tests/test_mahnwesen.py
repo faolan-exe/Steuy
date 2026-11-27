@@ -142,10 +142,136 @@ def test_mahnsperre_aendert_rechnung_sonst_nicht(rechnung, admin, session):  # n
 
 
 def test_mahnung_unveraenderlich(rechnung, admin, app, session):  # noqa: F811
-    mahnen(rechnung, admin, app, nach_tagen(21))
-    for sql in ["UPDATE mahnung SET offen_cent = 1", "DELETE FROM mahnung"]:
+    mahnung = mahnen(rechnung, admin, app, nach_tagen(21))
+    with pytest.raises(DBAPIError, match="unveränderlich"), session.begin_nested():
+        session.execute(text("UPDATE mahnung SET offen_cent = 1"))
+    _versand(session, mahnung, admin)
+    with pytest.raises(DBAPIError, match="nicht löschbar"), session.begin_nested():
+        session.execute(text("DELETE FROM mahnung"))
+
+
+def _versand(session, mahnung, admin, erfolgreich=True):
+    from app.models import Versand
+
+    session.add(
+        Versand(
+            rechnung_id=mahnung.rechnung_id,
+            mahnung_id=mahnung.id,
+            an="kunde@example.org",
+            betreff="Mahnung",
+            text="Text",
+            anhang="mahnung.pdf",
+            erfolgreich=erfolgreich,
+            gesendet_von=admin.id,
+        )
+    )
+    session.commit()
+
+
+# ---------- Löschen und Zurückziehen ----------
+
+
+def test_nie_verschickte_mahnung_loeschen(angemeldet, rechnung, admin, app, session):  # noqa: F811
+    mahnung = mahnen(rechnung, admin, app, nach_tagen(21))
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}").get_data(
+        as_text=True
+    )
+    assert "Löschen" in seite
+    antwort = angemeldet.post(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/loeschen")
+    assert antwort.status_code == 302
+    assert session.execute(select(Mahnung)).first() is None
+    assert "mahnung_geloescht" in session.execute(select(Protokoll.aktion)).scalars().all()
+    # Die Stufe lässt sich danach neu erstellen
+    assert mahnen(rechnung, admin, app, nach_tagen(22)).stufe == 1
+
+
+def test_verschickte_mahnung_nicht_loeschen_aber_zurueckziehen(
+    angemeldet,
+    rechnung,  # noqa: F811
+    admin,
+    app,
+    session,
+):
+    mahnung = mahnen(rechnung, admin, app, nach_tagen(21))
+    _versand(session, mahnung, admin)
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}").get_data(
+        as_text=True
+    )
+    assert f"mahnungen/{mahnung.id}/loeschen" not in seite and "Zurückziehen" in seite
+    angemeldet.post(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/loeschen")
+    assert session.get(Mahnung, mahnung.id) is not None
+    angemeldet.post(
+        f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/zurueckziehen",
+        data={"grund": "Zahlung war schon da"},
+    )
+    session.refresh(mahnung)
+    assert mahnung.zurueckgezogen_am and mahnung.zurueckgezogen_grund == "Zahlung war schon da"
+    # Zählt nicht mehr: Stufe 1 ist wieder dran und lässt sich neu erstellen
+    neu = mahnen(rechnung, admin, app, nach_tagen(30))
+    assert neu.stufe == 1
+    assert [m.stufe for m in rechnung.aktive_mahnungen] == [1]
+    # Zurückgezogen ist endgültig, der Inhalt bleibt gesperrt
+    for sql in [
+        "UPDATE mahnung SET zurueckgezogen_am = NULL WHERE zurueckgezogen_am IS NOT NULL",
+        "UPDATE mahnung SET offen_cent = 1 WHERE zurueckgezogen_am IS NOT NULL",
+    ]:
         with pytest.raises(DBAPIError, match="unveränderlich"), session.begin_nested():
             session.execute(text(sql))
+
+
+def test_fehlgeschlagener_versand_verhindert_loeschen(rechnung, admin, app, session):  # noqa: F811
+    from app.services.mahnwesen import loesche_mahnung
+
+    mahnung = mahnen(rechnung, admin, app, nach_tagen(21))
+    _versand(session, mahnung, admin, erfolgreich=False)
+    with pytest.raises(MahnungNichtMoeglich, match="nur zurückziehen"):
+        loesche_mahnung(mahnung, admin.id)
+
+
+def test_nur_die_neueste_mahnung(rechnung, admin, app):  # noqa: F811
+    from app.services.mahnwesen import loesche_mahnung, ziehe_zurueck
+
+    erste = mahnen(rechnung, admin, app, nach_tagen(21))
+    zweite = mahnen(rechnung, admin, app, nach_tagen(35))
+    for aktion in (
+        lambda: loesche_mahnung(erste, admin.id),
+        lambda: ziehe_zurueck(erste, None, admin.id),
+    ):
+        with pytest.raises(MahnungNichtMoeglich, match="spätere Mahnstufe"):
+            aktion()
+    loesche_mahnung(zweite, admin.id)
+    loesche_mahnung(erste, admin.id)
+    assert rechnung.mahnungen == []
+
+
+def test_zurueckgezogene_nicht_im_portal_und_nicht_versendbar(
+    angemeldet,
+    rechnung,  # noqa: F811
+    admin,
+    app,
+    session,
+):
+    from app.services import kundenportal
+    from app.services.mahnwesen import ziehe_zurueck
+
+    mahnung = mahnen(rechnung, admin, app, nach_tagen(21))
+    _versand(session, mahnung, admin)
+    ziehe_zurueck(mahnung, None, admin.id)
+    assert kundenportal.mahnungen(rechnung) == []
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}").get_data(as_text=True)
+    assert "zurückgezogen" in seite
+    antwort = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/senden")
+    assert antwort.status_code == 302
+
+
+def test_mitarbeiter_darf_nicht_loeschen(client, rechnung, admin, app, session):  # noqa: F811
+    mahnung = mahnen(rechnung, admin, app, nach_tagen(21))
+    neuer_nutzer(session, "m3@x.example", "mitarbeiter")
+    client.post("/abmelden")
+    client.post("/anmelden", data={"email": "m3@x.example", "passwort": ADMIN_PASSWORT})
+    for aktion in ("loeschen", "zurueckziehen"):
+        url = f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/{aktion}"
+        assert client.post(url).status_code == 403
 
 
 def test_mahnung_pdf(rechnung, admin, app, angemeldet):  # noqa: F811

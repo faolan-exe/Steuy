@@ -6,10 +6,16 @@
 <div class="seitenkopf">
   <h1><a class="zurueck" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}#mahnungen" aria-label="Zurück zur Rechnung">‹</a> {{ m.bezeichnung }} <small>zu Rechnung {{ r.nummer }}</small></h1>
   <div class="aktionen">
-    {% if darf("rechnungen_versenden") %}<a class="knopf" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Per E-Mail senden</a>{% endif %}
+    {% if darf("rechnungen_versenden") and loeschbar %}
+    <form method="post" action="{{ url_for('rechnungen.mahnung_loeschen', rechnung_id=r.id, mahnung_id=m.id) }}" data-bestaetigen="{{ m.bezeichnung }} löschen? Sie wurde nie verschickt und verschwindet aus der Rechnung. Das Protokoll hält das Löschen fest." data-bestaetigen-knopf="Löschen"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text gefahr" type="submit">Löschen</button></form>
+    {% endif %}
+    {% if darf("rechnungen_versenden") and m.aktiv %}<a class="knopf" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Per E-Mail senden</a>{% endif %}
     <a class="knopf knopf-primaer" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF öffnen</a>
   </div>
 </div>
+{% if not m.aktiv %}
+<div class="meldung warnung abstand-unten">Zurückgezogen am {{ m.zurueckgezogen_am | datum }}{% if m.zurueckgezogen_grund %}: {{ m.zurueckgezogen_grund }}{% endif %}. Sie zählt nicht mehr als Mahnstufe und erscheint nicht mehr im Kundenportal.</div>
+{% endif %}
 <div class="raster-zwei">
   <section class="karte">
     <div class="karte-kopf"><h2>Details</h2></div>
@@ -24,6 +30,25 @@
       <dt>Zu zahlen</dt><dd><strong>{{ m.gesamt_cent | euro }}</strong></dd>{% endif %}
       <dt>Prüfsumme (SHA-256){{ hilfe("pruefsumme") }}</dt><dd class="pruefsumme">{{ m.pdf_sha256 }}</dd>
     </dl>
+    {% if darf("rechnungen_versenden") and m.aktiv and not loeschbar %}
+    <div class="karte-inhalt">
+      {% if neueste %}
+      <form method="post" action="{{ url_for('rechnungen.mahnung_zurueckziehen', rechnung_id=r.id, mahnung_id=m.id) }}" data-bestaetigen="{{ m.bezeichnung }} zurückziehen? Sie bleibt als Nachweis erhalten, zählt aber nicht mehr. Teile deinem Kunden am besten auch mit, dass sie gegenstandslos ist." data-bestaetigen-knopf="Zurückziehen">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <p class="hinweis">{{ "Diese Mahnung wurde schon verschickt" if verschickt else "Für diese Mahnung gab es schon einen Versandversuch" }}. Löschen geht deshalb nicht mehr, aber du kannst sie zurückziehen, wenn sie ein Irrtum war. Danach lässt sich die Stufe neu erstellen.</p>
+        <div class="feldraster">
+          <div class="feldgruppe ganz">
+            <input class="feld" id="grund" name="grund" maxlength="200" placeholder=" ">
+            <label class="feldlabel" for="grund">Grund (optional), z. B. Zahlung war schon da</label>
+          </div>
+        </div>
+        <div class="formular-fuss"><button class="knopf" type="submit">Zurückziehen</button></div>
+      </form>
+      {% else %}
+      <p class="hinweis">Löschen oder zurückziehen lässt sich nur die jüngste Mahnung. Nimm zuerst die spätere Stufe zurück.</p>
+      {% endif %}
+    </div>
+    {% endif %}
   </section>
   <div class="spalte">
     {{ belegkette(kette) }}

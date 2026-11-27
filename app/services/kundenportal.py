@@ -213,7 +213,7 @@ def status(rechnung: Rechnung, heute: date | None = None) -> Status:
 
 
 def mahnungen(rechnung: Rechnung) -> list[Mahnung]:
-    return [m for m in rechnung.mahnungen if m.pdf_sha256]
+    return [m for m in rechnung.aktive_mahnungen if m.pdf_sha256]
 
 
 def kann_entscheiden(rechnung: Rechnung, heute: date | None = None) -> bool:

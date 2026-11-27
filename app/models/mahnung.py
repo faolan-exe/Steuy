@@ -7,12 +7,13 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
-    UniqueConstraint,
     false,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -38,10 +39,21 @@ class Mahnstufe(db.Model):
 
 
 class Mahnung(db.Model):
-    """Erstellte Zahlungserinnerung oder Mahnung. Unveränderlich (Trigger)."""
+    """Erstellte Zahlungserinnerung oder Mahnung. Inhalt unveränderlich (Trigger).
+
+    Eine nie verschickte Mahnung darf gelöscht werden, eine verschickte nur zurückgezogen:
+    Sie bleibt mit PDF und Versand erhalten, zählt aber nicht mehr für die Mahnstufen."""
 
     __tablename__ = "mahnung"
-    __table_args__ = (UniqueConstraint("rechnung_id", "stufe", name="mahnung_stufe_einmal"),)
+    __table_args__ = (
+        Index(
+            "mahnung_stufe_einmal",
+            "rechnung_id",
+            "stufe",
+            unique=True,
+            postgresql_where=text("zurueckgezogen_am IS NULL"),
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     rechnung_id: Mapped[int] = mapped_column(ForeignKey("rechnung.id", ondelete="RESTRICT"))
@@ -54,12 +66,19 @@ class Mahnung(db.Model):
     pauschale_cent: Mapped[int] = mapped_column(BigInteger, server_default="0", default=0)
     pdf_sha256: Mapped[str] = mapped_column(String(64))
     automatisch: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
+    zurueckgezogen_am: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    zurueckgezogen_von: Mapped[int | None] = mapped_column(ForeignKey("nutzer.id"))
+    zurueckgezogen_grund: Mapped[str | None] = mapped_column(String(200))
     erstellt_von: Mapped[int] = mapped_column(ForeignKey("nutzer.id"))
     erstellt_am: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
 
     rechnung = relationship("Rechnung", back_populates="mahnungen")
+
+    @property
+    def aktiv(self) -> bool:
+        return self.zurueckgezogen_am is None
 
     @property
     def gesamt_cent(self) -> int:

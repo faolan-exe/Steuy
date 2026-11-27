@@ -36,9 +36,9 @@ def stufen() -> list[Stufe]:
 
 
 def _letzte(rechnung: Rechnung) -> LetzteMahnung | None:
-    if not rechnung.mahnungen:
+    if not rechnung.aktive_mahnungen:
         return None
-    letzte = max(rechnung.mahnungen, key=lambda m: m.stufe)
+    letzte = max(rechnung.aktive_mahnungen, key=lambda m: m.stufe)
     return LetzteMahnung(letzte.stufe, letzte.datum)
 
 
@@ -96,7 +96,7 @@ def stufentext(nummer: int) -> str:
 
 
 def pauschale_vorschlag(rechnung: Rechnung, stufe: int) -> bool:
-    frueher = [m for m in rechnung.mahnungen if m.stufe >= PAUSCHALE_AB_STUFE]
+    frueher = [m for m in rechnung.aktive_mahnungen if m.stufe >= PAUSCHALE_AB_STUFE]
     vorherige = max(frueher, key=lambda m: m.stufe).pauschale_cent > 0 if frueher else None
     return pauschale_vorschlagen(stufe, vorherige)
 
@@ -180,6 +180,83 @@ def erstelle_mahnung(
     db.session.commit()
     db.session.refresh(rechnung, ["mahnungen"])
     return mahnung
+
+
+def versandversuche(mahnung: Mahnung) -> list:
+    from app.models import Versand
+
+    return list(
+        db.session.execute(select(Versand).where(Versand.mahnung_id == mahnung.id)).scalars()
+    )
+
+
+def ist_verschickt(mahnung: Mahnung) -> bool:
+    return any(v.erfolgreich for v in versandversuche(mahnung))
+
+
+def ist_neueste(mahnung: Mahnung) -> bool:
+    """Nur die jüngste gültige Mahnung einer Rechnung lässt sich löschen oder zurückziehen,
+    sonst passt die Reihenfolge der Stufen nicht mehr."""
+    aktive = mahnung.rechnung.aktive_mahnungen
+    return mahnung.aktiv and bool(aktive) and max(aktive, key=lambda m: m.stufe) is mahnung
+
+
+def loeschbar(mahnung: Mahnung) -> bool:
+    """Löschen nur, solange sie nie verschickt wurde (auch kein Versuch)."""
+    return ist_neueste(mahnung) and not versandversuche(mahnung)
+
+
+def loesche_mahnung(mahnung: Mahnung, nutzer_id: int) -> None:
+    """Versehentlich erstellte Mahnung entfernen. Die PDF-Datei bleibt in der Ablage, das
+    Protokoll hält fest, was gelöscht wurde."""
+    if not mahnung.aktiv:
+        raise MahnungNichtMoeglich("Diese Mahnung ist schon zurückgezogen.")
+    if not ist_neueste(mahnung):
+        raise MahnungNichtMoeglich("Bitte zuerst die spätere Mahnstufe löschen oder zurückziehen.")
+    if versandversuche(mahnung):
+        raise MahnungNichtMoeglich(
+            "Diese Mahnung wurde schon per E-Mail verschickt (oder es wurde versucht). "
+            "Sie lässt sich nicht löschen, nur zurückziehen."
+        )
+    rechnung = mahnung.rechnung
+    protokolliere(
+        "mahnung_geloescht",
+        nutzer_id=nutzer_id,
+        objekt_typ="rechnung",
+        objekt_id=rechnung.id,
+        details={
+            "stufe": mahnung.stufe,
+            "datum": mahnung.datum.isoformat(),
+            "offen_cent": mahnung.offen_cent,
+            "pauschale_cent": mahnung.pauschale_cent,
+            "pdf_sha256": mahnung.pdf_sha256,
+        },
+    )
+    db.session.delete(mahnung)
+    db.session.commit()
+    db.session.refresh(rechnung, ["mahnungen"])
+
+
+def ziehe_zurueck(mahnung: Mahnung, grund: str | None, nutzer_id: int) -> None:
+    """Verschickte Mahnung zurückziehen, z. B. wenn sie ein Irrtum war. Sie bleibt als
+    Nachweis erhalten, zählt aber nicht mehr. Die Stufe lässt sich danach neu erstellen."""
+    if not mahnung.aktiv:
+        raise MahnungNichtMoeglich("Diese Mahnung ist schon zurückgezogen.")
+    if not ist_neueste(mahnung):
+        raise MahnungNichtMoeglich("Bitte zuerst die spätere Mahnstufe löschen oder zurückziehen.")
+    grund = (grund or "").strip()[:200] or None
+    mahnung.zurueckgezogen_am = _jetzt()
+    mahnung.zurueckgezogen_von = nutzer_id
+    mahnung.zurueckgezogen_grund = grund
+    protokolliere(
+        "mahnung_zurueckgezogen",
+        nutzer_id=nutzer_id,
+        objekt_typ="rechnung",
+        objekt_id=mahnung.rechnung_id,
+        details={"stufe": mahnung.stufe, "mahnung_id": mahnung.id, "grund": grund},
+    )
+    db.session.commit()
+    db.session.refresh(mahnung.rechnung, ["mahnungen"])
 
 
 def vorlagen() -> list[Mahnvorlage]:
@@ -298,7 +375,11 @@ def _unversendete_automatische(heute: date | None) -> list[Mahnung]:
     jetzt = _jetzt()
     heute = heute or date.today()
     kandidaten = db.session.execute(
-        select(Mahnung).where(Mahnung.automatisch.is_(True), Mahnung.frist_bis >= heute)
+        select(Mahnung).where(
+            Mahnung.automatisch.is_(True),
+            Mahnung.frist_bis >= heute,
+            Mahnung.zurueckgezogen_am.is_(None),
+        )
     ).scalars()
     offene = []
     for m in kandidaten:

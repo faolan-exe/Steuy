@@ -19,6 +19,10 @@ Die Standardabstände stammen aus Philipps Anforderungsliste (MA-02).
 - Die Mahnung nennt Rechnungsnummer und -datum, den **offenen Betrag** zum Erstellungszeitpunkt, die neue Frist und enthält einen QR-Code über den offenen Betrag.
 - Zahlungseingang stoppt den Mahnlauf automatisch: Bezahlte Rechnungen erscheinen nicht mehr.
 - Eine Mahnung wird beim Erstellen als PDF abgelegt und ist danach unveränderlich, wie Rechnungen.
+- Philipps Vorgabe (27.11.2026): Versehentlich erstellte Mahnungen müssen weg können.
+  - **Löschen**, solange sie nie verschickt wurde (auch kein fehlgeschlagener Versuch). Das Protokoll hält Stufe, Betrag und Prüfsumme fest, die PDF-Datei bleibt in der Ablage.
+  - **Zurückziehen**, wenn sie schon verschickt wurde: Sie bleibt mit PDF und Versandnachweis erhalten, ist als zurückgezogen markiert, zählt nicht mehr als Stufe, erscheint nicht mehr im Kundenportal und lässt sich nicht mehr senden. Die Stufe kann danach neu erstellt werden.
+  - Beides nur für die jüngste gültige Mahnung einer Rechnung, damit die Reihenfolge der Stufen stimmt. Die Datenbank erlaubt nur genau diese Änderungen.
 
 ## Text und Vorlagen
 

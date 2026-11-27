@@ -177,11 +177,11 @@
         <tbody>
           {% for m in r.mahnungen %}
           <tr>
-            <td><a href="{{ url_for('rechnungen.mahnung_detail', rechnung_id=r.id, mahnung_id=m.id) }}">{{ m.bezeichnung }}</a></td>
+            <td><a href="{{ url_for('rechnungen.mahnung_detail', rechnung_id=r.id, mahnung_id=m.id) }}">{{ m.bezeichnung }}</a>{% if not m.aktiv %} <span class="status status-aus">zurückgezogen</span>{% endif %}</td>
             <td>{{ m.datum | datum }}</td>
             <td>{{ m.frist_bis | datum }}</td>
             <td class="rechts betrag">{{ m.offen_cent | euro }}{% if m.pauschale_cent %}<br><small>+ {{ m.pauschale_cent | euro }} Pauschale</small>{% endif %}</td>
-            <td class="rechts"><a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF</a>{% if darf("rechnungen_versenden") %} <a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Senden</a>{% endif %}</td>
+            <td class="rechts"><a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF</a>{% if darf("rechnungen_versenden") and m.aktiv %} <a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Senden</a>{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>
