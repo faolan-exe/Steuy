@@ -278,7 +278,17 @@ def test_hinweis_wenn_noch_nicht_faellig(angemeldet, rechnung, admin, app):  # n
 
 
 def _pdf_text(daten: bytes) -> str:
-    return "\n".join(s.extract_text() for s in PdfReader(io.BytesIO(daten)).pages)
+    """Text aller Seiten, Zeilenumbrüche des Satzes als Leerzeichen."""
+    return " ".join(" ".join(s.extract_text() for s in PdfReader(io.BytesIO(daten)).pages).split())
+
+
+def test_mahnung_passt_auf_eine_seite(rechnung, admin, app, angemeldet):  # noqa: F811
+    """Auch die längste Stufe mit Pauschale bleibt ein einseitiger Brief."""
+    for tage in (21, 35):
+        mahnen(rechnung, admin, app, nach_tagen(tage))
+    dritte = mahnen(rechnung, admin, app, nach_tagen(49))
+    daten = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{dritte.id}/pdf").data
+    assert len(PdfReader(io.BytesIO(daten)).pages) == 1
 
 
 def test_platzhalter():
@@ -289,19 +299,19 @@ def test_platzhalter():
 
 
 @pytest.mark.parametrize(
-    ("stufe", "art", "vorher", "erwartet"),
-    [
-        (1, "firma", None, False),
-        (2, "firma", None, True),
-        (2, "person", None, False),
-        (3, "firma", False, False),
-        (3, "person", True, True),
-    ],
+    ("stufe", "vorher", "erwartet"),
+    [(1, None, False), (2, None, True), (3, True, True), (3, False, False)],
 )
-def test_pauschale_vorschlag(stufe, art, vorher, erwartet):
+def test_pauschale_vorschlag(stufe, vorher, erwartet):
     from app.domain.mahnung import pauschale_vorschlagen
 
-    assert pauschale_vorschlagen(stufe, art, vorher) is erwartet
+    assert pauschale_vorschlagen(stufe, vorher) is erwartet
+
+
+def test_leerer_pauschalensatz_hinterlaesst_keine_luecke():
+    from app.domain.mahnung import fuelle_platzhalter
+
+    assert fuelle_platzhalter("A\n\n{pauschale}\n\nB", {}) == "A\n\nB"
 
 
 def test_standardtexte_mit_platzhaltern(rechnung, admin, app, angemeldet):  # noqa: F811
@@ -309,6 +319,8 @@ def test_standardtexte_mit_platzhaltern(rechnung, admin, app, angemeldet):  # no
     inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/pdf").data)
     assert "Guten Tag," in inhalt and "{" not in inhalt
     assert f"Rechnung {rechnung.nummer} vom" in inhalt
+    # Schon die erste Stufe warnt vor den Verzugskosten
+    assert "Verzugspauschale von 40,00 € und Verzugszinsen" in inhalt
     assert nach_tagen(28).strftime("%d.%m.%Y") in inhalt
 
 
@@ -362,11 +374,53 @@ def test_pauschale_ab_stufe_zwei(angemeldet, rechnung, admin, app, session):  # 
     assert rechnung.offen_cent == 15220
 
 
-def test_pauschale_nicht_bei_privatkunden_vorgeschlagen(rechnung, admin, app, kunde, session):  # noqa: F811
+def test_pauschale_ab_stufe_zwei_standard_auch_automatisch(rechnung, admin, app, kunde, session):  # noqa: F811
     kunde.art, kunde.nachname = "person", "Muster"
     session.commit()
     mahnen(rechnung, admin, app, nach_tagen(21))
-    assert mahnen(rechnung, admin, app, nach_tagen(35)).pauschale_cent == 0
+    zweite = mahnen(rechnung, admin, app, nach_tagen(35))
+    assert zweite.pauschale_cent == 4000
+
+
+def test_privatkunde_bekommt_warnung(angemeldet, rechnung, admin, app, kunde, session):  # noqa: F811
+    kunde.art, kunde.nachname = "person", "Muster"
+    session.commit()
+    mahnen(rechnung, admin, app, nach_tagen(21))
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/neu").get_data(as_text=True)
+    assert 'name="pauschale" value="y" checked' in seite
+    assert "Dieser Kontakt ist als Person angelegt" in seite
+
+
+def test_texte_ab_stufe_zwei_mit_pauschale_und_drohung(rechnung, admin, app, angemeldet):  # noqa: F811
+    mahnen(rechnung, admin, app, nach_tagen(21))
+    zweite = mahnen(rechnung, admin, app, nach_tagen(35))
+    inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{zweite.id}/pdf").data)
+    assert "gesetzliche Verzugspauschale von 40,00 €" in inhalt
+    assert "Gesamtbetrag von 192,20 €" in inhalt and "weitere Kosten" in inhalt
+    dritte = mahnen(rechnung, admin, app, nach_tagen(49))
+    inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{dritte.id}/pdf").data)
+    assert "gerichtliches Mahnverfahren" in inhalt and "192,20 €" in inhalt
+
+
+def test_ohne_pauschale_kein_pauschalensatz(rechnung, admin, app, angemeldet):  # noqa: F811
+    mahnen(rechnung, admin, app, nach_tagen(21))
+    with app.app_context():
+        zweite = erstelle_mahnung(rechnung, admin.id, heute=nach_tagen(35), pauschale=False)
+    inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{zweite.id}/pdf").data)
+    assert "Verzugspauschale" not in inhalt and "Gesamtbetrag von 152,20 €" in inhalt
+
+
+def test_qr_code_mit_gesamtbetrag(rechnung, admin, app, monkeypatch):  # noqa: F811
+    from app.services import pdf
+
+    betraege = []
+    echt = pdf.epc_payload
+    monkeypatch.setattr(
+        pdf, "epc_payload", lambda **k: betraege.append(k["betrag_cent"]) or echt(**k)
+    )
+    mahnen(rechnung, admin, app, nach_tagen(21))
+    mahnen(rechnung, admin, app, nach_tagen(35))
+    assert betraege == [15220, 19220]
 
 
 def test_eigene_vorlage_loeschen(angemeldet, session, admin):

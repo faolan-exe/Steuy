@@ -22,7 +22,7 @@
 </section>
 
 <p class="hinweis">Eine Stufe wird fällig, wenn die Rechnung noch offen ist und seit der Fälligkeit (Stufe 1) bzw. seit der vorherigen Mahnung so viele Tage vergangen sind. Fällige Stufen erscheinen unter „Zu prüfen“.</p>
-<p class="hinweis">Der Brieftext ist die Vorlage der Stufe, du kannst ihn beim Erstellen jeder Mahnung noch ändern. Grußformel, Beträge und Bankdaten setzt steuy selbst darunter. Platzhalter: {% for name, erklaerung in platzhalter.items() %}<code>{{ "{" ~ name ~ "}" }}</code> {{ erklaerung }}{{ ", " if not loop.last else "." }}{% endfor %} Ab der zweiten Stufe kann die Verzugspauschale von 40,00 € dazukommen. Bei Firmen ist sie vorausgewählt, auch beim automatischen Mahnen.</p>
+<p class="hinweis">Der Brieftext ist die Vorlage der Stufe, du kannst ihn beim Erstellen jeder Mahnung noch ändern. Grußformel, Beträge und Bankdaten setzt steuy selbst darunter. Platzhalter: {% for name, erklaerung in platzhalter.items() %}<code>{{ "{" ~ name ~ "}" }}</code> {{ erklaerung }}{{ ", " if not loop.last else "." }}{% endfor %} Ab der zweiten Stufe kommt die Verzugspauschale von 40,00 € standardmäßig dazu, auch beim automatischen Mahnen. Beim Erstellen von Hand kannst du sie abwählen.</p>
 <form method="post" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% for stufe in stufen %}

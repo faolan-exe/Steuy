@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.domain.geld import cent_zu_euro
 from app.domain.mahnung import (
     PAUSCHALE_AB_STUFE,
+    PAUSCHALE_SATZ,
     TEXT_MAX,
     VERZUGSPAUSCHALE_CENT,
     LetzteMahnung,
@@ -97,8 +98,7 @@ def stufentext(nummer: int) -> str:
 def pauschale_vorschlag(rechnung: Rechnung, stufe: int) -> bool:
     frueher = [m for m in rechnung.mahnungen if m.stufe >= PAUSCHALE_AB_STUFE]
     vorherige = max(frueher, key=lambda m: m.stufe).pauschale_cent > 0 if frueher else None
-    art = rechnung.kontakt.art if rechnung.kontakt else None
-    return pauschale_vorschlagen(stufe, art, vorherige)
+    return pauschale_vorschlagen(stufe, vorherige)
 
 
 def _pruefe_text(text: str) -> str:
@@ -142,6 +142,7 @@ def entwurf(
         "frist": f"{mahnung.frist_bis:%d.%m.%Y}",
         "betrag": cent_zu_euro(mahnung.offen_cent),
         "gesamt": cent_zu_euro(mahnung.gesamt_cent),
+        "pauschale": PAUSCHALE_SATZ if mahnung.pauschale_cent else "",
     }
     return mahnung, fuelle_platzhalter(text, werte)
 

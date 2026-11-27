@@ -30,28 +30,30 @@
       </tbody>
     </table>
 
-    <div class="summe">
-      <table>
-        {% if m.pauschale_cent %}
-        <tr><td>Offener Betrag</td><td>{{ m.offen_cent | euro }}</td></tr>
-        <tr><td>Verzugspauschale (§ 288 Abs. 5 BGB)</td><td>{{ m.pauschale_cent | euro }}</td></tr>
-        <tr class="gesamt"><td>Zu zahlen</td><td>{{ m.gesamt_cent | euro }}</td></tr>
-        {% else %}
-        <tr class="gesamt"><td>Offener Betrag</td><td>{{ m.offen_cent | euro }}</td></tr>
-        {% endif %}
-      </table>
+    {# QR-Code und Zahlungsdaten links neben der Summe, damit auch lange Texte auf eine Seite passen.
+       Die Bitte um Zahlung steht im Brieftext. #}
+    <div class="zahlung" style="justify-content: space-between; gap: 8mm; margin-top: 3mm;">
+      <div style="display: flex; gap: 4mm; align-items: flex-start; max-width: 90mm;">
+        {% if qr %}<div class="qr">{{ qr | safe }}Mit Banking-App scannen</div>{% endif %}
+        <p class="text" style="margin: 0; font-size: 8pt;">Zahlbar bis <strong>{{ m.frist_bis | datum }}</strong>:<br><strong>{{ m.gesamt_cent | euro }}</strong>{% if iban %}<br>{{ a.kontoinhaber or a.name }}<br><span style="white-space: nowrap;">IBAN {{ iban }}</span>{% endif %}<br>Verwendungszweck {{ r.nummer }}</p>
+      </div>
+      <div class="summe" style="margin-top: 0;">
+        <table>
+          {% if m.pauschale_cent %}
+          <tr><td>Offener Betrag</td><td>{{ m.offen_cent | euro }}</td></tr>
+          <tr><td>Verzugspauschale (§ 288 Abs. 5 BGB)</td><td>{{ m.pauschale_cent | euro }}</td></tr>
+          <tr class="gesamt"><td>Zu zahlen</td><td>{{ m.gesamt_cent | euro }}</td></tr>
+          {% else %}
+          <tr class="gesamt"><td>Offener Betrag</td><td>{{ m.offen_cent | euro }}</td></tr>
+          {% endif %}
+        </table>
+      </div>
     </div>
 
-    <div class="zahlung">
-      {% if qr %}
-      <div class="qr">{{ qr | safe }}Mit Banking-App scannen</div>
-      {% endif %}
-      <div>
-        <p class="text">Bitte überweisen Sie {{ "den Gesamtbetrag" if m.pauschale_cent else "den offenen Betrag" }} von <strong>{{ m.gesamt_cent | euro }}</strong> bis zum <strong>{{ m.frist_bis | datum }}</strong>{% if iban %} auf das Konto {{ a.kontoinhaber or a.name }}, IBAN {{ iban }}{% endif %}. Verwendungszweck: {{ r.nummer }}.</p>
-        <p class="text">Falls Sie inzwischen bezahlt haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.</p>
-        <p class="text">Mit freundlichen Grüßen<br>{{ a.inhaber }}</p>
-        {% if m.automatisch %}<p class="text" style="font-size: 8pt; color: #666;">Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig.</p>{% endif %}
-      </div>
+    <div class="hinweis">
+      <p class="text">Falls Sie inzwischen bezahlt haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.</p>
+      <p class="text">Mit freundlichen Grüßen<br>{{ a.inhaber }}</p>
+      {% if m.automatisch %}<p class="text" style="font-size: 8pt; color: #666;">Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig.</p>{% endif %}
     </div>
   </div>
 {% endblock %}

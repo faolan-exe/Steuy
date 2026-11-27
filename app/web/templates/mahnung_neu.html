@@ -51,7 +51,8 @@
       <p>Offener Rechnungsbetrag: <strong>{{ r.offen_cent | euro }}</strong></p>
       {% if pauschale_moeglich %}
       <label class="haken"><input type="checkbox" name="pauschale" value="y"{% if pauschale %} checked{% endif %}> Verzugspauschale von {{ pauschale_cent | euro }} dazurechnen (zusammen {{ (r.offen_cent + pauschale_cent) | euro }})</label>
-      <p class="hinweis">Nach § 288 Abs. 5 BGB nur, wenn dein Kunde in Verzug und kein Verbraucher ist, also zum Beispiel eine Firma oder ein anderer Unternehmer. Von Privatkunden darfst du sie nicht verlangen.{% if r.kontakt and r.kontakt.art == "person" %} Dieser Kontakt ist als Person angelegt.{% endif %} Im Zweifel frag deine Steuer- oder Rechtsberatung.</p>
+      {% if r.kontakt and r.kontakt.art == "person" %}<div class="meldung warnung">Dieser Kontakt ist als Person angelegt. Ist er Privatkunde (Verbraucher), schuldet er die Pauschale nach § 288 Abs. 5 BGB nicht. Dann nimm den Haken heraus.</div>{% endif %}
+      <p class="hinweis">Die Pauschale steht ab der zweiten Stufe standardmäßig auf dem Schreiben, im Text an der Stelle <code>{pauschale}</code>, und der QR-Code enthält den Gesamtbetrag. Gesetzlich gilt sie nur gegenüber Unternehmern, nicht gegenüber Verbrauchern. Im Zweifel frag deine Rechtsberatung.</p>
       {% else %}
       <p class="hinweis">Die Verzugspauschale kannst du ab der zweiten Stufe dazurechnen.</p>
       {% endif %}

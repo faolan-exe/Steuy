@@ -25,13 +25,14 @@ Die Standardabstände stammen aus Philipps Anforderungsliste (MA-02).
 - Jede Stufe hat einen vorgefertigten Brieftext mit Anrede (Einstellungen → Mahnwesen, änderbar).
 - Beim Erstellen öffnet sich eine eigene Seite: Dort wählst du einen der drei Stufentexte, eine eigene Vorlage oder „Eigenen Text schreiben“ und kannst den Text frei ändern. Eine PDF-Vorschau zeigt das Schreiben, bevor es unveränderlich abgelegt wird.
 - Einen geänderten Text kannst du als eigene Vorlage unter einem Namen speichern. Löschen geht in den Einstellungen.
-- Platzhalter: `{nummer}`, `{rechnungsdatum}`, `{faellig}`, `{frist}`, `{betrag}` (offener Rechnungsbetrag), `{gesamt}` (mit Verzugspauschale).
+- Platzhalter: `{nummer}`, `{rechnungsdatum}`, `{faellig}`, `{frist}`, `{betrag}` (offener Rechnungsbetrag), `{gesamt}` (mit Verzugspauschale), `{pauschale}` (Satz zur Pauschale, leer ohne Pauschale).
 - Ist die Stufe laut Zeitplan noch nicht dran, zeigt die Seite, ab wann sie fällig wäre. Erstellen geht trotzdem.
 
 ## Verzugspauschale (40 €)
 
 - Ab der zweiten Stufe kann die Pauschale von 40 € nach § 288 Abs. 5 BGB dazukommen. Sie steht als eigene Zeile unter dem offenen Betrag, der QR-Code und der Überweisungstext nennen den Gesamtbetrag.
-- Vorausgewählt ist sie bei Kontakten vom Typ Firma, bei Personen nicht, weil Verbraucher sie nicht schulden. Bei der nächsten Stufe gilt die Wahl der vorherigen. Das automatische Mahnen folgt demselben Vorschlag.
+- Philipps Vorgabe (27.11.2026): Ab Stufe 2 ist sie standardmäßig dabei, auch beim automatischen Mahnen. Wer sie bei Stufe 2 abwählt, hat sie auch bei Stufe 3 abgewählt. Verbraucher schulden sie nach § 288 Abs. 5 BGB nicht, deshalb warnt die Seite bei Kontakten vom Typ Person.
+- Stufe 1 droht die Verzugskosten (Pauschale und Zinsen) schon an, Stufe 2 und 3 kündigen weitere Kosten an.
 - Die Pauschale verändert die Rechnung nicht. Zahlt der Kunde sie, wird sie als eigene Einnahme erfasst.
 
 ## Mahnsperre

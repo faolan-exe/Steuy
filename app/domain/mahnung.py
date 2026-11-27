@@ -1,5 +1,6 @@
 """Wann ist welche Mahnstufe fällig? (docs/domain/mahnwesen.md)"""
 
+import re
 from dataclasses import dataclass
 from datetime import date, timedelta
 
@@ -9,33 +10,45 @@ PAUSCHALE_AB_STUFE = 2
 TEXT_MAX = 3000
 
 # Vorgefertigte Brieftexte je Stufe. Dieselben Texte setzt die Migration als Startwert.
+# {pauschale} wird zum Satz über die Verzugspauschale oder bleibt leer, wenn sie nicht dabei ist.
 STANDARDTEXTE = {
     1: (
         "Guten Tag,\n\n"
         "sicher ist es Ihnen im Alltag nur entgangen: Für die Rechnung {nummer} vom "
-        "{rechnungsdatum} habe ich noch keinen Zahlungseingang festgestellt.\n\n"
-        "Bitte überweisen Sie den offenen Betrag bis zum {frist}. Vielen Dank!"
+        "{rechnungsdatum} habe ich noch keinen Zahlungseingang festgestellt. Sie war am "
+        "{faellig} fällig.\n\n"
+        "Bitte überweisen Sie den offenen Betrag von {betrag} bis zum {frist}.\n\n"
+        "Bitte beachten Sie: Geht die Zahlung bis dahin nicht ein, muss ich Ihnen mit der "
+        "nächsten Mahnung Verzugskosten in Rechnung stellen, also die gesetzliche "
+        "Verzugspauschale von 40,00 € und Verzugszinsen."
     ),
     2: (
         "Guten Tag,\n\n"
         "trotz meiner Zahlungserinnerung ist die Rechnung {nummer} vom {rechnungsdatum} noch "
-        "offen. Sie war am {faellig} fällig.\n\n"
-        "Bitte überweisen Sie den unten genannten Betrag bis spätestens {frist}. Geht bis dahin "
-        "keine Zahlung ein, mahne ich erneut und behalte mir vor, Verzugszinsen zu berechnen."
+        "offen. Sie war am {faellig} fällig, Sie befinden sich damit in Zahlungsverzug.\n\n"
+        "{pauschale}\n\n"
+        "Bitte überweisen Sie den Gesamtbetrag von {gesamt} bis spätestens {frist}. Geht bis "
+        "dahin keine Zahlung ein, entstehen Ihnen weitere Kosten: Ich berechne Verzugszinsen "
+        "und mahne erneut."
     ),
     3: (
         "Guten Tag,\n\n"
         "trotz Zahlungserinnerung und Mahnung habe ich zur Rechnung {nummer} vom "
         "{rechnungsdatum} noch keine vollständige Zahlung erhalten. Dies ist meine letzte "
         "Mahnung.\n\n"
-        "Bitte überweisen Sie den unten genannten Betrag bis spätestens {frist}. Geht das Geld "
-        "bis dahin nicht ein, behalte ich mir ohne weitere Ankündigung rechtliche Schritte vor, "
-        "zum Beispiel ein gerichtliches Mahnverfahren. Dadurch können weitere Kosten für Sie "
-        "entstehen.\n\n"
+        "{pauschale}\n\n"
+        "Bitte überweisen Sie den Gesamtbetrag von {gesamt} bis spätestens {frist}. Geht das "
+        "Geld bis dahin nicht ein, leite ich ohne weitere Ankündigung ein gerichtliches "
+        "Mahnverfahren ein. Die Kosten dafür und die Verzugszinsen gehen zu Ihren Lasten.\n\n"
         "Gibt es einen Grund, warum Sie noch nicht zahlen konnten, melden Sie sich bitte "
         "vorher bei mir."
     ),
 }
+
+PAUSCHALE_SATZ = (
+    "Da Sie sich in Zahlungsverzug befinden, berechne ich Ihnen zusätzlich die gesetzliche "
+    "Verzugspauschale von 40,00 € (§ 288 Abs. 5 BGB)."
+)
 
 PLATZHALTER = {
     "nummer": "Rechnungsnummer",
@@ -44,6 +57,7 @@ PLATZHALTER = {
     "frist": "neue Zahlungsfrist",
     "betrag": "offener Rechnungsbetrag",
     "gesamt": "zu zahlender Betrag mit Verzugspauschale",
+    "pauschale": "Satz zur Verzugspauschale (leer, wenn sie nicht dabei ist)",
 }
 
 
@@ -51,16 +65,16 @@ def fuelle_platzhalter(text: str, werte: dict[str, str]) -> str:
     """Ersetzt nur bekannte Platzhalter. Andere geschweifte Klammern bleiben, wie sie sind."""
     for name in PLATZHALTER:
         text = text.replace("{" + name + "}", werte.get(name, ""))
-    return text
+    # Ein leerer Platzhalter in eigener Zeile soll keine Lücke im Brief hinterlassen
+    return re.sub(r"\n[ \t]*\n(?:[ \t]*\n)+", "\n\n", text).strip()
 
 
-def pauschale_vorschlagen(stufe: int, kontakt_art: str | None, vorherige: bool | None) -> bool:
-    """Ob die Verzugspauschale vorausgewählt ist. `vorherige`: Wahl bei der letzten Mahnung ab
-    Stufe 2 (None, wenn es keine gibt). Sonst nur bei Firmen, weil Verbraucher sie nicht
-    schulden."""
+def pauschale_vorschlagen(stufe: int, vorherige: bool | None) -> bool:
+    """Ob die Verzugspauschale vorausgewählt ist: ab Stufe 2 immer, außer sie wurde bei der
+    vorherigen Mahnung (ab Stufe 2) abgewählt. `vorherige` ist dann deren Wahl."""
     if stufe < PAUSCHALE_AB_STUFE:
         return False
-    return vorherige if vorherige is not None else kontakt_art == "firma"
+    return True if vorherige is None else vorherige
 
 
 @dataclass(frozen=True)
