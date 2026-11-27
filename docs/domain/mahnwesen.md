@@ -4,7 +4,7 @@ Fachliche Vorgabe von Philipp: Das Mahnwesen gehört in Version 1. Keine Rechnun
 
 ## Stufen
 
-Drei Stufen, Bezeichnung, Abstände und Texte sind in den Einstellungen änderbar:
+Drei Stufen. Bezeichnung, Abstände und Texte sind in den Einstellungen änderbar:
 
 | Stufe | Standard-Bezeichnung | Fällig (Standard) | Neue Zahlungsfrist (Standard) |
 |---|---|---|---|
@@ -20,6 +20,20 @@ Die Standardabstände stammen aus Philipps Anforderungsliste (MA-02).
 - Zahlungseingang stoppt den Mahnlauf automatisch: Bezahlte Rechnungen erscheinen nicht mehr.
 - Eine Mahnung wird beim Erstellen als PDF abgelegt und ist danach unveränderlich, wie Rechnungen.
 
+## Text und Vorlagen
+
+- Jede Stufe hat einen vorgefertigten Brieftext mit Anrede (Einstellungen → Mahnwesen, änderbar).
+- Beim Erstellen öffnet sich eine eigene Seite: Dort wählst du einen der drei Stufentexte, eine eigene Vorlage oder „Eigenen Text schreiben“ und kannst den Text frei ändern. Eine PDF-Vorschau zeigt das Schreiben, bevor es unveränderlich abgelegt wird.
+- Einen geänderten Text kannst du als eigene Vorlage unter einem Namen speichern. Löschen geht in den Einstellungen.
+- Platzhalter: `{nummer}`, `{rechnungsdatum}`, `{faellig}`, `{frist}`, `{betrag}` (offener Rechnungsbetrag), `{gesamt}` (mit Verzugspauschale).
+- Ist die Stufe laut Zeitplan noch nicht dran, zeigt die Seite, ab wann sie fällig wäre. Erstellen geht trotzdem.
+
+## Verzugspauschale (40 €)
+
+- Ab der zweiten Stufe kann die Pauschale von 40 € nach § 288 Abs. 5 BGB dazukommen. Sie steht als eigene Zeile unter dem offenen Betrag, der QR-Code und der Überweisungstext nennen den Gesamtbetrag.
+- Vorausgewählt ist sie bei Kontakten vom Typ Firma, bei Personen nicht, weil Verbraucher sie nicht schulden. Bei der nächsten Stufe gilt die Wahl der vorherigen. Das automatische Mahnen folgt demselben Vorschlag.
+- Die Pauschale verändert die Rechnung nicht. Zahlt der Kunde sie, wird sie als eigene Einnahme erfasst.
+
 ## Mahnsperre
 
 - Je Rechnung oder je Kontakt, z. B. bei vereinbarter Ratenzahlung oder Stammkunden. Mit optionalem Grund.
@@ -32,9 +46,8 @@ Die Standardabstände stammen aus Philipps Anforderungsliste (MA-02).
 
 ## Bewusst noch nicht (Version 1.x)
 
-- Verzugszinsen (Basiszinssatz + 5 bzw. 9 Prozentpunkte, § 288 BGB) und 40-€-Pauschale bei Firmenkunden
+- Verzugszinsen (Basiszinssatz + 5 bzw. 9 Prozentpunkte, § 288 BGB)
 - Mahngebühren als eigene Position
-- Automatischer Versand
 
 ## Offen / zu prüfen
 

@@ -38,6 +38,45 @@
   });
 })();
 
+// Textvorlage wählen: setzt den Text ins Feld, danach darf man ihn frei ändern.
+(function () {
+  "use strict";
+
+  document.addEventListener("change", function (e) {
+    const auswahl = e.target.closest ? e.target.closest("[data-vorlage-ziel]") : null;
+    if (!auswahl) return;
+    const ziel = document.getElementById(auswahl.dataset.vorlageZiel);
+    const wahl = auswahl.options[auswahl.selectedIndex];
+    if (ziel && wahl && wahl.dataset.text !== undefined) ziel.value = wahl.dataset.text;
+  });
+})();
+
+// Belegerfassung: Kategorien passend zu Einnahme oder Ausgabe zeigen
+(function () {
+  "use strict";
+
+  function filtere(formular) {
+    const art = formular.querySelector('input[name="art"]:checked');
+    const auswahl = formular.querySelector('select[name="kategorie_id"]');
+    if (!art || !auswahl) return;
+    Array.prototype.forEach.call(auswahl.options, function (option) {
+      if (!option.dataset.art) return;
+      const passt = option.dataset.art === art.value;
+      option.hidden = !passt;
+      option.disabled = !passt;
+    });
+    const gewaehlt = auswahl.options[auswahl.selectedIndex];
+    if (gewaehlt && gewaehlt.disabled) auswahl.value = "";
+  }
+
+  document.addEventListener("change", function (e) {
+    if (e.target.name === "art" && e.target.form) filtere(e.target.form);
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll("form.buchungsformular").forEach(filtere);
+  });
+})();
+
 // Hilfe-Fragezeichen: Erklärung als Sprechblase bei Hover, Fokus oder Antippen.
 (function () {
   "use strict";

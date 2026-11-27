@@ -11,7 +11,7 @@ from app.models.jahreszuordnung import Jahreszuordnung
 from app.models.kleinunternehmergrenze import Kleinunternehmergrenze
 from app.models.kontakt import Kontakt
 from app.models.kundenlink import Kundenlink
-from app.models.mahnung import Mahnstufe, Mahnung
+from app.models.mahnung import Mahnstufe, Mahnung, Mahnvorlage
 from app.models.nutzer import Nutzer, Wiederherstellungscode
 from app.models.passkey import Passkey
 from app.models.protokoll import Protokoll
@@ -51,6 +51,7 @@ __all__ = [
     "Kontakt",
     "Mahnstufe",
     "Mahnung",
+    "Mahnvorlage",
     "Nutzer",
     "Nummernkreis",
     "Passkey",

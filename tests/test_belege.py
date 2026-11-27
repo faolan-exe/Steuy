@@ -472,3 +472,24 @@ def test_belegdatum_weit_in_der_zukunft_abgelehnt(angemeldet, session):
         angemeldet.post("/buchungen/neu", data=formular(session, belegdatum=bald)).status_code
         == 302
     )
+
+
+def test_kategorien_passend_zur_art(angemeldet, session):
+    """Bei Ausgaben sind nur Ausgabe-Kategorien wählbar, bei Einnahmen nur Einnahme-Kategorien.
+    Die anderen stehen versteckt im Menü, damit der Wechsel ohne Neuladen geht."""
+    import re
+
+    def sichtbare(seite):
+        auswahl = re.search(r'<select[^>]*name="kategorie_id".*?</select>', seite, re.S).group(0)
+        return {
+            int(m.group(1))
+            for m in re.finditer(r'<option(?![^>]*hidden)[^>]*value="(\d+)"', auswahl)
+        }
+
+    arten = dict(session.execute(select(Kategorie.id, Kategorie.art)).all())
+    ausgabe = sichtbare(angemeldet.get("/buchungen/neu").get_data(as_text=True))
+    assert ausgabe and {arten[i] for i in ausgabe} == {"ausgabe"}
+    seite = angemeldet.post("/buchungen/neu", data={"art": "einnahme"}).get_data(as_text=True)
+    einnahme = sichtbare(seite)
+    assert einnahme and {arten[i] for i in einnahme} == {"einnahme"}
+    assert 'data-art="ausgabe"' in seite

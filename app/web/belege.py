@@ -75,8 +75,15 @@ def _formular(**vorbelegung) -> BuchungFormular:
     formular.kontakt_id.choices = [("", "– kein Kontakt –")] + [
         (str(k.id), k.name) for k in sorted(kontakte, key=lambda k: k.name.lower())
     ]
-    formular.kategorie_id.choices = [("", "– bitte wählen –")] + [
-        (str(k.id), f"{'Einnahme' if k.art == 'einnahme' else 'Ausgabe'}: {k.name}")
+    # Alle Kategorien stehen im Menü, damit der Wechsel zwischen Einnahme und Ausgabe ohne
+    # Neuladen geht. Sichtbar sind nur die zur gewählten Art (app.js blendet beim Wechsel um).
+    art = formular.art.data or "ausgabe"
+    formular.kategorie_id.choices = [("", "– bitte wählen –", {})] + [
+        (
+            str(k.id),
+            k.name,
+            {"data-art": k.art} | ({} if k.art == art else {"hidden": True, "disabled": True}),
+        )
         for k in kategorien()
     ]
     return formular

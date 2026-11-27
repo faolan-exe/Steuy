@@ -22,6 +22,7 @@
 </section>
 
 <p class="hinweis">Eine Stufe wird fällig, wenn die Rechnung noch offen ist und seit der Fälligkeit (Stufe 1) bzw. seit der vorherigen Mahnung so viele Tage vergangen sind. Fällige Stufen erscheinen unter „Zu prüfen“.</p>
+<p class="hinweis">Der Brieftext ist die Vorlage der Stufe, du kannst ihn beim Erstellen jeder Mahnung noch ändern. Grußformel, Beträge und Bankdaten setzt steuy selbst darunter. Platzhalter: {% for name, erklaerung in platzhalter.items() %}<code>{{ "{" ~ name ~ "}" }}</code> {{ erklaerung }}{{ ", " if not loop.last else "." }}{% endfor %} Ab der zweiten Stufe kann die Verzugspauschale von 40,00 € dazukommen. Bei Firmen ist sie vorausgewählt, auch beim automatischen Mahnen.</p>
 <form method="post" novalidate>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   {% for stufe in stufen %}
@@ -43,8 +44,8 @@
           <label class="feldlabel" for="{{ pre }}frist_tage">Neue Zahlungsfrist in Tagen</label>{{ fehler_von(pre ~ "frist_tage") }}
         </div>
         <div class="feldgruppe ganz{% if fehler.get(pre ~ 'text') %} hat-fehler{% endif %}">
-          <textarea class="feld" id="{{ pre }}text" name="{{ pre }}text" rows="3" placeholder=" ">{{ wert(stufe, 'text') }}</textarea>
-          <label class="feldlabel" for="{{ pre }}text">Text nach „Guten Tag,“</label>{{ fehler_von(pre ~ "text") }}
+          <textarea class="feld" id="{{ pre }}text" name="{{ pre }}text" rows="9" placeholder=" ">{{ wert(stufe, 'text') }}</textarea>
+          <label class="feldlabel" for="{{ pre }}text">Brieftext mit Anrede</label>{{ fehler_von(pre ~ "text") }}
         </div>
       </div>
     </div>
@@ -54,4 +55,23 @@
     <button type="submit" class="knopf knopf-primaer">Speichern</button>
   </div>
 </form>
+{% if eigene %}
+<section class="karte abstand-oben">
+  <div class="karte-kopf"><h2>Eigene Textvorlagen</h2></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Name</th><th>Text</th><th></th></tr></thead>
+      <tbody>
+        {% for v in eigene %}
+        <tr>
+          <td>{{ v.name }}</td>
+          <td>{{ v.text | truncate(90) }}</td>
+          <td class="rechts"><form method="post" action="{{ url_for('einstellungen.mahnvorlage_loeschen', vorlage_id=v.id) }}" data-bestaetigen="Vorlage „{{ v.name }}“ löschen? Erstellte Mahnungen bleiben unverändert."><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text gefahr" type="submit">Löschen</button></form></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
 {% endblock %}

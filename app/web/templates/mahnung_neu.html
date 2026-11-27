@@ -1,0 +1,66 @@
+{% extends "basis.html" %}
+{% from "teile.html" import kunde %}
+{% set nav_aktiv = "rechnungen" %}
+{% block titel %}{{ stufe.bezeichnung }} erstellen – steuy{% endblock %}
+{% block inhalt_klasse %}schmal{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1><a class="zurueck" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}#mahnungen" aria-label="Zurück zur Rechnung">‹</a> {{ stufe.bezeichnung }} erstellen <small>zu Rechnung {{ r.nummer }}, {{ kunde(r) }}</small></h1>
+</div>
+{% if fehler %}<div class="meldung warnung abstand-unten" role="alert">{{ fehler }}</div>{% endif %}
+{% if ab and ab > heute %}
+<div class="meldung warnung abstand-unten">Die {{ stufe.bezeichnung }} ist laut Zeitplan erst ab dem {{ ab | datum }} fällig ({{ stufe.tage_nach }} Tage nach {{ "der Fälligkeit am " ~ (r.faellig_am | datum) if not r.mahnungen else "der letzten Mahnung" }}). Du kannst sie trotzdem jetzt erstellen.{% if darf("einstellungen") %} Den Abstand änderst du unter <a href="{{ url_for('einstellungen.mahnwesen') }}">Einstellungen → Mahnwesen</a>.{% endif %}</div>
+{% endif %}
+<form method="post" action="{{ url_for('rechnungen.mahnung_erstellen', rechnung_id=r.id) }}" novalidate>
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <section class="karte abstand-unten">
+    <div class="karte-kopf"><h2>Text</h2></div>
+    <div class="karte-inhalt">
+      <div class="feldraster">
+        <div class="feldgruppe ganz">
+          <select class="feld" id="vorlage" data-vorlage-ziel="text" autocomplete="off">
+            <optgroup label="Vorgefertigte Texte">
+              {% for s, inhalt in stufentexte %}
+              <option data-text="{{ inhalt }}"{% if s.nummer == stufe.nummer %} selected{% endif %}>Stufe {{ s.nummer }}: {{ s.bezeichnung }}</option>
+              {% endfor %}
+            </optgroup>
+            {% if eigene %}
+            <optgroup label="Eigene Vorlagen">
+              {% for v in eigene %}<option data-text="{{ v.text }}">{{ v.name }}</option>{% endfor %}
+            </optgroup>
+            {% endif %}
+            <option data-text="Guten Tag,&#10;&#10;">Eigenen Text schreiben</option>
+          </select>
+          <label class="feldlabel" for="vorlage">Textvorlage</label>
+        </div>
+        <div class="feldgruppe ganz">
+          <textarea class="feld" id="text" name="text" rows="14" maxlength="{{ text_max }}" placeholder=" ">{{ text }}</textarea>
+          <label class="feldlabel" for="text">Brieftext (frei änderbar)</label>
+        </div>
+        <div class="feldgruppe ganz">
+          <input class="feld" id="vorlage_name" name="vorlage_name" maxlength="60" placeholder=" " value="{{ request.form.get('vorlage_name', '') }}">
+          <label class="feldlabel" for="vorlage_name">Text als eigene Vorlage speichern unter (optional)</label>
+        </div>
+      </div>
+      <p class="hinweis">Beträge, Bankdaten und Grußformel setzt steuy selbst darunter. Platzhalter: {% for name, erklaerung in platzhalter.items() %}<code>{{ "{" ~ name ~ "}" }}</code> {{ erklaerung }}{{ ", " if not loop.last else "." }}{% endfor %}</p>
+    </div>
+  </section>
+  <section class="karte abstand-unten">
+    <div class="karte-kopf"><h2>Betrag</h2></div>
+    <div class="karte-inhalt">
+      <p>Offener Rechnungsbetrag: <strong>{{ r.offen_cent | euro }}</strong></p>
+      {% if pauschale_moeglich %}
+      <label class="haken"><input type="checkbox" name="pauschale" value="y"{% if pauschale %} checked{% endif %}> Verzugspauschale von {{ pauschale_cent | euro }} dazurechnen (zusammen {{ (r.offen_cent + pauschale_cent) | euro }})</label>
+      <p class="hinweis">Nach § 288 Abs. 5 BGB nur, wenn dein Kunde in Verzug und kein Verbraucher ist, also zum Beispiel eine Firma oder ein anderer Unternehmer. Von Privatkunden darfst du sie nicht verlangen.{% if r.kontakt and r.kontakt.art == "person" %} Dieser Kontakt ist als Person angelegt.{% endif %} Im Zweifel frag deine Steuer- oder Rechtsberatung.</p>
+      {% else %}
+      <p class="hinweis">Die Verzugspauschale kannst du ab der zweiten Stufe dazurechnen.</p>
+      {% endif %}
+    </div>
+  </section>
+  <div class="formular-fuss">
+    <button type="submit" class="knopf" formaction="{{ url_for('rechnungen.mahnung_vorschau', rechnung_id=r.id) }}" formtarget="_blank">Vorschau als PDF</button>
+    <button type="submit" class="knopf knopf-primaer">{{ "Trotzdem erstellen" if ab and ab > heute else stufe.bezeichnung ~ " erstellen" }}</button>
+  </div>
+  <p class="hinweis">Eine erstellte Mahnung lässt sich nicht mehr ändern. Sieh dir deshalb vorher die Vorschau an. Verschickt wird noch nichts.</p>
+</form>
+{% endblock %}

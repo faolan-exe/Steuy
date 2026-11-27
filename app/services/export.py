@@ -32,6 +32,7 @@ TABELLEN = (
     "rechnung",
     "rechnungsposition",
     "mahnung",
+    "mahnvorlage",
     "zahlung",
     "beleg",
     "buchung",

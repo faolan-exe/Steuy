@@ -35,7 +35,7 @@ def vorschlag(rechnung: Rechnung, mahnung: Mahnung | None = None) -> dict[str, s
         "nummer": rechnung.anzeige_nummer,
         "firma": gewerbe.name,
         "inhaber": gewerbe.inhaber,
-        "betrag": cent_zu_euro(mahnung.offen_cent if mahnung else rechnung.summe_cent),
+        "betrag": cent_zu_euro(mahnung.gesamt_cent if mahnung else rechnung.summe_cent),
         "faellig": _datum(rechnung.faellig_am),
         "gueltig": _datum(rechnung.gueltig_bis),
         "bezeichnung": mahnung.bezeichnung if mahnung else "",

@@ -50,6 +50,8 @@ class Mahnung(db.Model):
     datum: Mapped[date] = mapped_column(Date)
     offen_cent: Mapped[int] = mapped_column(BigInteger)
     frist_bis: Mapped[date] = mapped_column(Date)
+    # Verzugspauschale auf dem Schreiben, kommt zum offenen Rechnungsbetrag dazu
+    pauschale_cent: Mapped[int] = mapped_column(BigInteger, server_default="0", default=0)
     pdf_sha256: Mapped[str] = mapped_column(String(64))
     automatisch: Mapped[bool] = mapped_column(Boolean, server_default=false(), default=False)
     erstellt_von: Mapped[int] = mapped_column(ForeignKey("nutzer.id"))
@@ -58,3 +60,17 @@ class Mahnung(db.Model):
     )
 
     rechnung = relationship("Rechnung", back_populates="mahnungen")
+
+    @property
+    def gesamt_cent(self) -> int:
+        return self.offen_cent + self.pauschale_cent
+
+
+class Mahnvorlage(db.Model):
+    """Selbst gespeicherter Brieftext für Mahnungen, mit Platzhaltern."""
+
+    __tablename__ = "mahnvorlage"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(60), unique=True)
+    text: Mapped[str] = mapped_column(Text)

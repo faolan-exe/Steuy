@@ -61,7 +61,9 @@ def _als_pdf(html: str) -> bytes:
     ).write_pdf(pdf_variant="pdf/a-3b")
 
 
-def rendere_mahnung(rechnung: Rechnung, mahnung, text: str) -> bytes:
+def rendere_mahnung(
+    rechnung: Rechnung, mahnung, text: str, *, vorschau_entwurf: bool = False
+) -> bytes:
     """Mahnung mit QR-Code über den offenen Betrag. Absender wie auf der Rechnung."""
     absender = rechnung.absender
     html = render_template(
@@ -71,8 +73,10 @@ def rendere_mahnung(rechnung: Rechnung, mahnung, text: str) -> bytes:
         text=text,
         a=absender,
         iban=formatiere_iban(absender["iban"]) if absender.get("iban") else None,
-        qr=_qr_fuer(absender, mahnung.offen_cent, f"{rechnung.nummer} {mahnung.bezeichnung}"),
-        entwurf=False,
+        qr=None
+        if vorschau_entwurf
+        else _qr_fuer(absender, mahnung.gesamt_cent, f"{rechnung.nummer} {mahnung.bezeichnung}"),
+        entwurf=vorschau_entwurf,
         **layout_kontext(),
     )
     return _als_pdf(html)

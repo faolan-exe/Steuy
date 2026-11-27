@@ -5,9 +5,21 @@ from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 
-from app.domain.mahnung import LetzteMahnung, Stufe, faellig_ab, faellige_stufe, naechste_stufe
+from app.domain.geld import cent_zu_euro
+from app.domain.mahnung import (
+    PAUSCHALE_AB_STUFE,
+    TEXT_MAX,
+    VERZUGSPAUSCHALE_CENT,
+    LetzteMahnung,
+    Stufe,
+    faellig_ab,
+    faellige_stufe,
+    fuelle_platzhalter,
+    naechste_stufe,
+    pauschale_vorschlagen,
+)
 from app.extensions import db
-from app.models import Mahnstufe, Mahnung, Rechnung
+from app.models import Mahnstufe, Mahnung, Mahnvorlage, Rechnung
 from app.services import ablage
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.protokoll import protokolliere
@@ -61,13 +73,11 @@ def faellige_mahnungen(heute: date | None = None) -> list[tuple[Rechnung, Stufe]
     return ergebnis
 
 
-def erstelle_mahnung(
-    rechnung: Rechnung, nutzer_id: int, heute: date | None = None, automatisch: bool = False
-) -> Mahnung:
-    """Erstellt die nächste Stufe, auch wenn sie laut Zeitplan noch nicht fällig ist."""
-    from app.services.pdf import rendere_mahnung
+MAX_VORLAGEN = 30
 
-    heute = heute or date.today()
+
+def pruefe_mahnbar(rechnung: Rechnung) -> Stufe:
+    """Die nächste Stufe, wenn die Rechnung gerade gemahnt werden darf."""
     if not rechnung.ist_rechnung or rechnung.ist_entwurf or rechnung.status == "storniert":
         raise MahnungNichtMoeglich("Nur offene, finalisierte Rechnungen können gemahnt werden.")
     if rechnung.offen_cent <= 0:
@@ -77,8 +87,45 @@ def erstelle_mahnung(
     stufe = naechste_fuer(rechnung)
     if stufe is None:
         raise MahnungNichtMoeglich("Alle Mahnstufen sind bereits erstellt.")
+    return stufe
 
-    text = db.session.get(Mahnstufe, stufe.nummer).text
+
+def stufentext(nummer: int) -> str:
+    return db.session.get(Mahnstufe, nummer).text
+
+
+def pauschale_vorschlag(rechnung: Rechnung, stufe: int) -> bool:
+    frueher = [m for m in rechnung.mahnungen if m.stufe >= PAUSCHALE_AB_STUFE]
+    vorherige = max(frueher, key=lambda m: m.stufe).pauschale_cent > 0 if frueher else None
+    art = rechnung.kontakt.art if rechnung.kontakt else None
+    return pauschale_vorschlagen(stufe, art, vorherige)
+
+
+def _pruefe_text(text: str) -> str:
+    text = (text or "").replace("\r\n", "\n").strip()
+    if not text:
+        raise MahnungNichtMoeglich("Bitte gib einen Text für die Mahnung ein.")
+    if len(text) > TEXT_MAX:
+        raise MahnungNichtMoeglich(f"Der Text darf höchstens {TEXT_MAX} Zeichen lang sein.")
+    return text
+
+
+def entwurf(
+    rechnung: Rechnung,
+    *,
+    text: str | None = None,
+    pauschale: bool | None = None,
+    heute: date | None = None,
+) -> tuple[Mahnung, str]:
+    """Die nächste Mahnung samt fertigem Brieftext, noch nicht gespeichert (auch für die
+    Vorschau). Ohne `text` gilt der Text der Stufe, ohne `pauschale` der Vorschlag."""
+    heute = heute or date.today()
+    stufe = pruefe_mahnbar(rechnung)
+    if pauschale is None:
+        pauschale = pauschale_vorschlag(rechnung, stufe.nummer)
+    elif pauschale and stufe.nummer < PAUSCHALE_AB_STUFE:
+        raise MahnungNichtMoeglich("Die Verzugspauschale gibt es erst ab der zweiten Stufe.")
+    text = _pruefe_text(stufentext(stufe.nummer) if text is None else text)
     mahnung = Mahnung(
         rechnung_id=rechnung.id,
         stufe=stufe.nummer,
@@ -86,10 +133,34 @@ def erstelle_mahnung(
         datum=heute,
         offen_cent=rechnung.offen_cent,
         frist_bis=heute + timedelta(days=stufe.frist_tage),
-        erstellt_von=nutzer_id,
-        automatisch=automatisch,
+        pauschale_cent=VERZUGSPAUSCHALE_CENT if pauschale else 0,
     )
-    mahnung.pdf_sha256 = ablage.speichere(rendere_mahnung(rechnung, mahnung, text))
+    werte = {
+        "nummer": rechnung.nummer,
+        "rechnungsdatum": f"{rechnung.rechnungsdatum:%d.%m.%Y}",
+        "faellig": f"{rechnung.faellig_am:%d.%m.%Y}" if rechnung.faellig_am else "",
+        "frist": f"{mahnung.frist_bis:%d.%m.%Y}",
+        "betrag": cent_zu_euro(mahnung.offen_cent),
+        "gesamt": cent_zu_euro(mahnung.gesamt_cent),
+    }
+    return mahnung, fuelle_platzhalter(text, werte)
+
+
+def erstelle_mahnung(
+    rechnung: Rechnung,
+    nutzer_id: int,
+    heute: date | None = None,
+    automatisch: bool = False,
+    text: str | None = None,
+    pauschale: bool | None = None,
+) -> Mahnung:
+    """Erstellt die nächste Stufe, auch wenn sie laut Zeitplan noch nicht fällig ist."""
+    from app.services.pdf import rendere_mahnung
+
+    mahnung, brieftext = entwurf(rechnung, text=text, pauschale=pauschale, heute=heute)
+    mahnung.erstellt_von = nutzer_id
+    mahnung.automatisch = automatisch
+    mahnung.pdf_sha256 = ablage.speichere(rendere_mahnung(rechnung, mahnung, brieftext))
     db.session.add(mahnung)
     db.session.flush()
     protokolliere(
@@ -98,8 +169,9 @@ def erstelle_mahnung(
         objekt_typ="rechnung",
         objekt_id=rechnung.id,
         details={
-            "stufe": stufe.nummer,
+            "stufe": mahnung.stufe,
             "offen_cent": mahnung.offen_cent,
+            "pauschale_cent": mahnung.pauschale_cent,
             "pdf_sha256": mahnung.pdf_sha256,
             "automatisch": automatisch,
         },
@@ -107,6 +179,39 @@ def erstelle_mahnung(
     db.session.commit()
     db.session.refresh(rechnung, ["mahnungen"])
     return mahnung
+
+
+def vorlagen() -> list[Mahnvorlage]:
+    return list(db.session.execute(select(Mahnvorlage).order_by(Mahnvorlage.name)).scalars())
+
+
+def speichere_vorlage(name: str, text: str, nutzer_id: int) -> Mahnvorlage:
+    """Legt eine eigene Textvorlage an oder ersetzt die gleichnamige."""
+    name = (name or "").strip()[:60]
+    if not name:
+        raise MahnungNichtMoeglich("Bitte gib der Vorlage einen Namen.")
+    text = _pruefe_text(text)
+    vorlage = db.session.execute(
+        select(Mahnvorlage).where(Mahnvorlage.name == name)
+    ).scalar_one_or_none()
+    if vorlage is None:
+        if len(vorlagen()) >= MAX_VORLAGEN:
+            raise MahnungNichtMoeglich(f"Mehr als {MAX_VORLAGEN} Vorlagen sind nicht möglich.")
+        vorlage = Mahnvorlage(name=name)
+        db.session.add(vorlage)
+    vorlage.text = text
+    protokolliere("mahnvorlage_gespeichert", nutzer_id=nutzer_id, details={"name": name})
+    db.session.commit()
+    return vorlage
+
+
+def loesche_vorlage(vorlage_id: int, nutzer_id: int) -> None:
+    vorlage = db.session.get(Mahnvorlage, vorlage_id)
+    if vorlage is None:
+        return
+    protokolliere("mahnvorlage_geloescht", nutzer_id=nutzer_id, details={"name": vorlage.name})
+    db.session.delete(vorlage)
+    db.session.commit()
 
 
 def setze_mahnsperre(rechnung: Rechnung, sperre: bool, grund: str | None, nutzer_id: int) -> None:

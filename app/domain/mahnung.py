@@ -3,6 +3,65 @@
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+# Verzugspauschale nach § 288 Abs. 5 BGB, nur gegenüber Schuldnern, die keine Verbraucher sind
+VERZUGSPAUSCHALE_CENT = 4000
+PAUSCHALE_AB_STUFE = 2
+TEXT_MAX = 3000
+
+# Vorgefertigte Brieftexte je Stufe. Dieselben Texte setzt die Migration als Startwert.
+STANDARDTEXTE = {
+    1: (
+        "Guten Tag,\n\n"
+        "sicher ist es Ihnen im Alltag nur entgangen: Für die Rechnung {nummer} vom "
+        "{rechnungsdatum} habe ich noch keinen Zahlungseingang festgestellt.\n\n"
+        "Bitte überweisen Sie den offenen Betrag bis zum {frist}. Vielen Dank!"
+    ),
+    2: (
+        "Guten Tag,\n\n"
+        "trotz meiner Zahlungserinnerung ist die Rechnung {nummer} vom {rechnungsdatum} noch "
+        "offen. Sie war am {faellig} fällig.\n\n"
+        "Bitte überweisen Sie den unten genannten Betrag bis spätestens {frist}. Geht bis dahin "
+        "keine Zahlung ein, mahne ich erneut und behalte mir vor, Verzugszinsen zu berechnen."
+    ),
+    3: (
+        "Guten Tag,\n\n"
+        "trotz Zahlungserinnerung und Mahnung habe ich zur Rechnung {nummer} vom "
+        "{rechnungsdatum} noch keine vollständige Zahlung erhalten. Dies ist meine letzte "
+        "Mahnung.\n\n"
+        "Bitte überweisen Sie den unten genannten Betrag bis spätestens {frist}. Geht das Geld "
+        "bis dahin nicht ein, behalte ich mir ohne weitere Ankündigung rechtliche Schritte vor, "
+        "zum Beispiel ein gerichtliches Mahnverfahren. Dadurch können weitere Kosten für Sie "
+        "entstehen.\n\n"
+        "Gibt es einen Grund, warum Sie noch nicht zahlen konnten, melden Sie sich bitte "
+        "vorher bei mir."
+    ),
+}
+
+PLATZHALTER = {
+    "nummer": "Rechnungsnummer",
+    "rechnungsdatum": "Rechnungsdatum",
+    "faellig": "Fälligkeit der Rechnung",
+    "frist": "neue Zahlungsfrist",
+    "betrag": "offener Rechnungsbetrag",
+    "gesamt": "zu zahlender Betrag mit Verzugspauschale",
+}
+
+
+def fuelle_platzhalter(text: str, werte: dict[str, str]) -> str:
+    """Ersetzt nur bekannte Platzhalter. Andere geschweifte Klammern bleiben, wie sie sind."""
+    for name in PLATZHALTER:
+        text = text.replace("{" + name + "}", werte.get(name, ""))
+    return text
+
+
+def pauschale_vorschlagen(stufe: int, kontakt_art: str | None, vorherige: bool | None) -> bool:
+    """Ob die Verzugspauschale vorausgewählt ist. `vorherige`: Wahl bei der letzten Mahnung ab
+    Stufe 2 (None, wenn es keine gibt). Sonst nur bei Firmen, weil Verbraucher sie nicht
+    schulden."""
+    if stufe < PAUSCHALE_AB_STUFE:
+        return False
+    return vorherige if vorherige is not None else kontakt_art == "firma"
+
 
 @dataclass(frozen=True)
 class Stufe:

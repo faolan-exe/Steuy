@@ -20,6 +20,8 @@
       <dt>Datum</dt><dd>{{ m.datum | datum }}</dd>
       <dt>Frist bis</dt><dd>{{ m.frist_bis | datum }}</dd>
       <dt>Offen</dt><dd><strong>{{ m.offen_cent | euro }}</strong></dd>
+      {% if m.pauschale_cent %}<dt>Verzugspauschale</dt><dd>{{ m.pauschale_cent | euro }}</dd>
+      <dt>Zu zahlen</dt><dd><strong>{{ m.gesamt_cent | euro }}</strong></dd>{% endif %}
       <dt>Prüfsumme (SHA-256){{ hilfe("pruefsumme") }}</dt><dd class="pruefsumme">{{ m.pdf_sha256 }}</dd>
     </dl>
   </section>

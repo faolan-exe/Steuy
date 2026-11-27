@@ -15,6 +15,12 @@ from flask_login import current_user
 from sqlalchemy import select
 
 from app.domain.geld import cent_zu_euro
+from app.domain.mahnung import (
+    PAUSCHALE_AB_STUFE,
+    PLATZHALTER,
+    TEXT_MAX,
+    VERZUGSPAUSCHALE_CENT,
+)
 from app.domain.rollen import Recht
 from app.domain.zahlung import ZAHLUNGSARTEN, ZahlungUngueltig, offene_gebuehr
 from app.extensions import db
@@ -24,13 +30,25 @@ from app.services.ablage import AblageBeschaedigt
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.mahnwesen import (
     MahnungNichtMoeglich,
+    entwurf,
     erstelle_mahnung,
     naechste_faellig_ab,
     naechste_fuer,
+    pauschale_vorschlag,
+    pruefe_mahnbar,
     setze_mahnsperre,
+    speichere_vorlage,
+    stufentext,
+)
+from app.services.mahnwesen import (
+    stufen as mahnstufen,
+)
+from app.services.mahnwesen import (
+    vorlagen as mahnvorlagen,
 )
 from app.services.mail import MailFehler
 from app.services.mail import eingerichtet as mail_eingerichtet
+from app.services.pdf import rendere_mahnung
 from app.services.rechnungen import (
     AktionNichtMoeglich,
     NichtBearbeitbar,
@@ -421,14 +439,80 @@ def loeschen(rechnung_id: int):
     return redirect(url_for("rechnungen.liste"))
 
 
+def _mahnangaben() -> dict:
+    """Text und Pauschale aus dem Formular. Ohne Textfeld gelten die Vorschläge."""
+    if "text" not in request.form:
+        return {"text": None, "pauschale": None}
+    return {"text": request.form["text"], "pauschale": request.form.get("pauschale") == "y"}
+
+
+def _mahnseite(rechnung: Rechnung, fehler: str | None = None):
+    stufe = pruefe_mahnbar(rechnung)
+    gesendet = request.method == "POST"
+    return render_template(
+        "mahnung_neu.html",
+        r=rechnung,
+        stufe=stufe,
+        fehler=fehler,
+        ab=naechste_faellig_ab(rechnung),
+        heute=date.today(),
+        text=request.form.get("text", "") if gesendet else stufentext(stufe.nummer),
+        pauschale=request.form.get("pauschale") == "y"
+        if gesendet
+        else pauschale_vorschlag(rechnung, stufe.nummer),
+        pauschale_moeglich=stufe.nummer >= PAUSCHALE_AB_STUFE,
+        pauschale_cent=VERZUGSPAUSCHALE_CENT,
+        stufentexte=[(s, stufentext(s.nummer)) for s in mahnstufen()],
+        eigene=mahnvorlagen(),
+        platzhalter=PLATZHALTER,
+        text_max=TEXT_MAX,
+    ), (422 if fehler else 200)
+
+
+@bp.get("/<int:rechnung_id>/mahnungen/neu")
+@braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
+def mahnung_neu(rechnung_id: int):
+    try:
+        return _mahnseite(_rechnung(rechnung_id))
+    except MahnungNichtMoeglich as fehler:
+        flash(str(fehler))
+        return redirect(url_for("rechnungen.detail", rechnung_id=rechnung_id) + "#mahnungen")
+
+
+@bp.post("/<int:rechnung_id>/mahnungen/vorschau")
+@braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
+def mahnung_vorschau(rechnung_id: int):
+    rechnung = _rechnung(rechnung_id)
+    try:
+        mahnung, text = entwurf(rechnung, **_mahnangaben())
+    except MahnungNichtMoeglich as fehler:
+        flash(str(fehler))
+        return redirect(url_for("rechnungen.mahnung_neu", rechnung_id=rechnung_id))
+    return Response(
+        rendere_mahnung(rechnung, mahnung, text, vorschau_entwurf=True),
+        mimetype="application/pdf",
+        headers={"Content-Disposition": 'inline; filename="Mahnung-Vorschau.pdf"'},
+    )
+
+
 @bp.post("/<int:rechnung_id>/mahnungen")
 @braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
 def mahnung_erstellen(rechnung_id: int):
     rechnung = _rechnung(rechnung_id)
+    angaben = _mahnangaben()
+    vorlagenname = (request.form.get("vorlage_name") or "").strip()
     try:
-        mahnung = erstelle_mahnung(rechnung, current_user.id)
+        pruefe_mahnbar(rechnung)
+        if vorlagenname:
+            speichere_vorlage(vorlagenname, angaben["text"], current_user.id)
+        mahnung = erstelle_mahnung(rechnung, current_user.id, **angaben)
     except MahnungNichtMoeglich as fehler:
         db.session.rollback()
+        if angaben["text"] is not None:
+            try:
+                return _mahnseite(rechnung, str(fehler))
+            except MahnungNichtMoeglich:
+                pass
         flash(str(fehler))
     else:
         flash(f"{mahnung.bezeichnung} erstellt. Bitte PDF herunterladen und verschicken.")

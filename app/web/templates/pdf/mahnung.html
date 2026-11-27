@@ -13,7 +13,6 @@
 {% block inhalt %}
   <div class="inhalt">
     <h1>{{ m.bezeichnung }}</h1>
-    <p class="text">Guten Tag,</p>
     <p class="text">{{ text }}</p>
 
     <table class="posten">
@@ -33,7 +32,13 @@
 
     <div class="summe">
       <table>
+        {% if m.pauschale_cent %}
+        <tr><td>Offener Betrag</td><td>{{ m.offen_cent | euro }}</td></tr>
+        <tr><td>Verzugspauschale (§ 288 Abs. 5 BGB)</td><td>{{ m.pauschale_cent | euro }}</td></tr>
+        <tr class="gesamt"><td>Zu zahlen</td><td>{{ m.gesamt_cent | euro }}</td></tr>
+        {% else %}
         <tr class="gesamt"><td>Offener Betrag</td><td>{{ m.offen_cent | euro }}</td></tr>
+        {% endif %}
       </table>
     </div>
 
@@ -42,7 +47,7 @@
       <div class="qr">{{ qr | safe }}Mit Banking-App scannen</div>
       {% endif %}
       <div>
-        <p class="text">Bitte überweisen Sie den offenen Betrag von <strong>{{ m.offen_cent | euro }}</strong> bis zum <strong>{{ m.frist_bis | datum }}</strong>{% if iban %} auf das Konto {{ a.kontoinhaber or a.name }}, IBAN {{ iban }}{% endif %}. Verwendungszweck: {{ r.nummer }}.</p>
+        <p class="text">Bitte überweisen Sie {{ "den Gesamtbetrag" if m.pauschale_cent else "den offenen Betrag" }} von <strong>{{ m.gesamt_cent | euro }}</strong> bis zum <strong>{{ m.frist_bis | datum }}</strong>{% if iban %} auf das Konto {{ a.kontoinhaber or a.name }}, IBAN {{ iban }}{% endif %}. Verwendungszweck: {{ r.nummer }}.</p>
         <p class="text">Falls Sie inzwischen bezahlt haben, betrachten Sie dieses Schreiben bitte als gegenstandslos.</p>
         <p class="text">Mit freundlichen Grüßen<br>{{ a.inhaber }}</p>
         {% if m.automatisch %}<p class="text" style="font-size: 8pt; color: #666;">Dieses Schreiben wurde maschinell erstellt und ist ohne Unterschrift gültig.</p>{% endif %}

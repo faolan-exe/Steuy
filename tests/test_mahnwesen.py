@@ -261,14 +261,127 @@ def test_faellig_ab_datum():
     assert faellig_ab(faellig_am=None, letzte=None, stufe=stufen[0]) is None
 
 
-def test_button_fragt_zurueck_wenn_noch_nicht_faellig(angemeldet, rechnung, admin, app):  # noqa: F811
-    """Eine Mahnung vor Ablauf des Abstands ist erlaubt, aber nur nach Rückfrage."""
-    seite = angemeldet.get(f"/rechnungen/{rechnung.id}").get_data(as_text=True)
-    assert "erst ab dem" in seite and "Trotzdem erstellen?" in seite
-    # Ist sie fällig, kommt keine Rückfrage
+def test_hinweis_wenn_noch_nicht_faellig(angemeldet, rechnung, admin, app):  # noqa: F811
+    """Eine Mahnung vor Ablauf des Abstands ist erlaubt, die Seite sagt aber, ab wann sie dran
+    wäre."""
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/neu").get_data(as_text=True)
+    ab = (rechnung.faellig_am + timedelta(days=7)).strftime("%d.%m.%Y")
+    assert f"erst ab dem {ab} fällig" in seite and "Trotzdem erstellen" in seite
     spaeter = rechnung.faellig_am + timedelta(days=30)
     with app.app_context():
-        erstelle_mahnung(rechnung, admin.id, heute=spaeter)  # Zahlungserinnerung am Tag X
-    # Die nächste Stufe ist erst 14 Tage danach dran, also wieder mit Rückfrage
-    seite = angemeldet.get(f"/rechnungen/{rechnung.id}").get_data(as_text=True)
+        erstelle_mahnung(rechnung, admin.id, heute=spaeter)
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/neu").get_data(as_text=True)
     assert "1. Mahnung ist laut Zeitplan erst ab dem" in seite
+
+
+# ---------- Texte, Vorlagen und Verzugspauschale ----------
+
+
+def _pdf_text(daten: bytes) -> str:
+    return "\n".join(s.extract_text() for s in PdfReader(io.BytesIO(daten)).pages)
+
+
+def test_platzhalter():
+    from app.domain.mahnung import fuelle_platzhalter
+
+    text = fuelle_platzhalter("Rechnung {nummer} bis {frist}, {unbekannt}", {"nummer": "RE1"})
+    assert text == "Rechnung RE1 bis , {unbekannt}"
+
+
+@pytest.mark.parametrize(
+    ("stufe", "art", "vorher", "erwartet"),
+    [
+        (1, "firma", None, False),
+        (2, "firma", None, True),
+        (2, "person", None, False),
+        (3, "firma", False, False),
+        (3, "person", True, True),
+    ],
+)
+def test_pauschale_vorschlag(stufe, art, vorher, erwartet):
+    from app.domain.mahnung import pauschale_vorschlagen
+
+    assert pauschale_vorschlagen(stufe, art, vorher) is erwartet
+
+
+def test_standardtexte_mit_platzhaltern(rechnung, admin, app, angemeldet):  # noqa: F811
+    mahnung = mahnen(rechnung, admin, app, nach_tagen(21))
+    inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/pdf").data)
+    assert "Guten Tag," in inhalt and "{" not in inhalt
+    assert f"Rechnung {rechnung.nummer} vom" in inhalt
+    assert nach_tagen(28).strftime("%d.%m.%Y") in inhalt
+
+
+def test_eigener_text_und_vorlage(angemeldet, rechnung, session):  # noqa: F811
+    from app.models import Mahnvorlage
+
+    antwort = angemeldet.post(
+        f"/rechnungen/{rechnung.id}/mahnungen",
+        data={"text": "Hallo Frau Muster,\n\nbitte {betrag} bis {frist}.", "vorlage_name": "Nett"},
+    )
+    assert antwort.status_code == 302
+    mahnung = session.execute(select(Mahnung)).scalar_one()
+    inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{mahnung.id}/pdf").data)
+    assert "Hallo Frau Muster," in inhalt and "bitte 152,20 € bis" in inhalt
+    assert session.execute(select(Mahnvorlage.name)).scalar_one() == "Nett"
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/neu").get_data(as_text=True)
+    assert "Eigene Vorlagen" in seite and "Nett" in seite and "Eigenen Text schreiben" in seite
+
+
+def test_leerer_text_wird_abgelehnt(angemeldet, rechnung, session):  # noqa: F811
+    antwort = angemeldet.post(f"/rechnungen/{rechnung.id}/mahnungen", data={"text": "  "})
+    assert antwort.status_code == 422
+    assert "Bitte gib einen Text" in antwort.get_data(as_text=True)
+    assert session.execute(select(Mahnung)).first() is None
+
+
+def test_vorschau_speichert_nichts(angemeldet, rechnung, session):  # noqa: F811
+    antwort = angemeldet.post(
+        f"/rechnungen/{rechnung.id}/mahnungen/vorschau", data={"text": "Probe {nummer}"}
+    )
+    assert antwort.mimetype == "application/pdf"
+    inhalt = _pdf_text(antwort.data)
+    assert f"Probe {rechnung.nummer}" in inhalt and "ENTWURF" in inhalt
+    assert session.execute(select(Mahnung)).first() is None
+
+
+def test_pauschale_ab_stufe_zwei(angemeldet, rechnung, admin, app, session):  # noqa: F811
+    with pytest.raises(MahnungNichtMoeglich, match="zweiten Stufe"), app.app_context():
+        erstelle_mahnung(rechnung, admin.id, heute=nach_tagen(21), pauschale=True)
+    erste = mahnen(rechnung, admin, app, nach_tagen(21))
+    assert erste.pauschale_cent == 0
+    # Kunde der Tests ist eine Firma: Pauschale ist vorausgewählt
+    seite = angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/neu").get_data(as_text=True)
+    assert 'name="pauschale" value="y" checked' in seite
+    angemeldet.post(f"/rechnungen/{rechnung.id}/mahnungen", data={"text": "Text", "pauschale": "y"})
+    zweite = session.execute(select(Mahnung).where(Mahnung.stufe == 2)).scalar_one()
+    assert (zweite.offen_cent, zweite.pauschale_cent, zweite.gesamt_cent) == (15220, 4000, 19220)
+    inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{zweite.id}/pdf").data)
+    assert "Verzugspauschale" in inhalt and "192,20 €" in inhalt
+    # Die Rechnung selbst bleibt beim offenen Rechnungsbetrag
+    assert rechnung.offen_cent == 15220
+
+
+def test_pauschale_nicht_bei_privatkunden_vorgeschlagen(rechnung, admin, app, kunde, session):  # noqa: F811
+    kunde.art, kunde.nachname = "person", "Muster"
+    session.commit()
+    mahnen(rechnung, admin, app, nach_tagen(21))
+    assert mahnen(rechnung, admin, app, nach_tagen(35)).pauschale_cent == 0
+
+
+def test_eigene_vorlage_loeschen(angemeldet, session, admin):
+    from app.models import Mahnvorlage
+    from app.services.mahnwesen import speichere_vorlage
+
+    vorlage = speichere_vorlage("Kurz", "Bitte zahlen.", admin.id)
+    assert "Kurz" in angemeldet.get("/einstellungen/mahnwesen").get_data(as_text=True)
+    angemeldet.post(f"/einstellungen/mahnwesen/vorlagen/{vorlage.id}/loeschen")
+    assert session.execute(select(Mahnvorlage)).first() is None
+
+
+def test_mitarbeiter_sieht_mahnseite_nicht(client, rechnung, session):  # noqa: F811
+    neuer_nutzer(session, "m2@x.example", "mitarbeiter")
+    client.post("/abmelden")
+    client.post("/anmelden", data={"email": "m2@x.example", "passwort": ADMIN_PASSWORT})
+    assert client.get(f"/rechnungen/{rechnung.id}/mahnungen/neu").status_code == 403
+    assert client.post(f"/rechnungen/{rechnung.id}/mahnungen/vorschau").status_code == 403

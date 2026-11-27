@@ -22,6 +22,7 @@ from app.domain.drucklayout import (
     LayoutUngueltig,
     pruefe,
 )
+from app.domain.mahnung import PLATZHALTER
 from app.domain.passwort import PasswortZuKurz
 from app.domain.rollen import (
     EINSTELLBAR,
@@ -39,7 +40,12 @@ from app.services import scaneingang
 from app.services.drucklayout_vorschau import vorschau_html
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.firmendaten import aendere_firmendaten
-from app.services.mahnwesen import aendere_stufen, setze_automatik
+from app.services.mahnwesen import (
+    aendere_stufen,
+    loesche_vorlage,
+    setze_automatik,
+    vorlagen,
+)
 from app.services.mail import MailFehler, eingerichtet, sende
 from app.services.nutzerverwaltung import (
     EmailVergeben,
@@ -462,6 +468,14 @@ def mahnautomatik():
     )
 
 
+@bp.post("/mahnwesen/vorlagen/<int:vorlage_id>/loeschen")
+@braucht_recht(Recht.EINSTELLUNGEN)
+def mahnvorlage_loeschen(vorlage_id: int):
+    loesche_vorlage(vorlage_id, current_user.id)
+    flash("Vorlage gelöscht.")
+    return redirect(url_for("einstellungen.mahnwesen"))
+
+
 @bp.route("/mahnwesen", methods=["GET", "POST"])
 @braucht_recht(Recht.EINSTELLUNGEN)
 def mahnwesen():
@@ -481,6 +495,7 @@ def mahnwesen():
                     fehler[pre + feld] = "Bitte Tage zwischen 0 und 365."
                 else:
                     werte[feld] = int(roh)
+            werte["text"] = werte["text"].replace("\r\n", "\n")
             for feld in ("bezeichnung", "text"):
                 if not werte[feld]:
                     fehler[pre + feld] = "Pflichtfeld"
@@ -490,9 +505,21 @@ def mahnwesen():
             flash("Gespeichert." if geaendert else "Keine Änderungen.")
             return redirect(url_for("einstellungen.mahnwesen"))
         return render_template(
-            "mahnwesen.html", stufen=stufen, fehler=fehler, form=request.form
+            "mahnwesen.html",
+            stufen=stufen,
+            fehler=fehler,
+            form=request.form,
+            eigene=vorlagen(),
+            platzhalter=PLATZHALTER,
         ), 422
-    return render_template("mahnwesen.html", stufen=stufen, fehler=fehler, form=None)
+    return render_template(
+        "mahnwesen.html",
+        stufen=stufen,
+        fehler=fehler,
+        form=None,
+        eigene=vorlagen(),
+        platzhalter=PLATZHALTER,
+    )
 
 
 @bp.post("/zwei-faktor-pflicht")
