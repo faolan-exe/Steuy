@@ -370,6 +370,7 @@ def test_pauschale_ab_stufe_zwei(angemeldet, rechnung, admin, app, session):  # 
     assert (zweite.offen_cent, zweite.pauschale_cent, zweite.gesamt_cent) == (15220, 4000, 19220)
     inhalt = _pdf_text(angemeldet.get(f"/rechnungen/{rechnung.id}/mahnungen/{zweite.id}/pdf").data)
     assert "Verzugspauschale" in inhalt and "192,20 €" in inhalt
+    assert f"Zu zahlen bis {zweite.frist_bis:%d.%m.%Y}: 192,20 €" in inhalt
     # Die Rechnung selbst bleibt beim offenen Rechnungsbetrag
     assert rechnung.offen_cent == 15220
 

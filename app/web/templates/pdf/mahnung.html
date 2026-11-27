@@ -35,7 +35,7 @@
     <div class="zahlung" style="justify-content: space-between; gap: 8mm; margin-top: 3mm;">
       <div style="display: flex; gap: 4mm; align-items: flex-start; max-width: 90mm;">
         {% if qr %}<div class="qr">{{ qr | safe }}Mit Banking-App scannen</div>{% endif %}
-        <p class="text" style="margin: 0; font-size: 8pt;">Zahlbar bis <strong>{{ m.frist_bis | datum }}</strong>:<br><strong>{{ m.gesamt_cent | euro }}</strong>{% if iban %}<br>{{ a.kontoinhaber or a.name }}<br><span style="white-space: nowrap;">IBAN {{ iban }}</span>{% endif %}<br>Verwendungszweck {{ r.nummer }}</p>
+        <p class="text" style="margin: 0; font-size: 8pt;">Zu zahlen bis <strong>{{ m.frist_bis | datum }}</strong>:<br><strong>{{ m.gesamt_cent | euro }}</strong>{% if iban %}<br>{{ a.kontoinhaber or a.name }}<br><span style="white-space: nowrap;">IBAN {{ iban }}</span>{% endif %}<br>Verwendungszweck {{ r.nummer }}</p>
       </div>
       <div class="summe" style="margin-top: 0;">
         <table>
