@@ -30,3 +30,5 @@ class Versand(db.Model):
     )
 
     absender = relationship("Nutzer", viewonly=True)
+    rechnung = relationship("Rechnung", viewonly=True)
+    mahnung = relationship("Mahnung", viewonly=True)

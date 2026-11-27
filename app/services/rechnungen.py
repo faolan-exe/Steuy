@@ -5,6 +5,8 @@ from datetime import UTC, date, datetime
 
 from sqlalchemy import select
 
+from app.domain.eu import REVERSE_CHARGE_TEXT, ist_eu_ausland
+from app.domain.geld import cent_zu_euro
 from app.domain.iban import IbanFehler, pruefe_iban
 from app.domain.rechnung import (
     Position,
@@ -25,7 +27,7 @@ from app.models import (
     Rechnungsposition,
 )
 from app.services import ablage
-from app.services.einrichtung import aktuelles_gewerbe
+from app.services.einrichtung import aktuelles_gewerbe, grenze
 from app.services.protokoll import protokolliere
 
 
@@ -73,6 +75,13 @@ class Positionsdaten:
     extra: dict = field(default_factory=dict)
 
 
+def sperre(beleg: Rechnung) -> None:
+    """Sperrt den Beleg bis zum Ende der Transaktion und liest ihn neu. So wirkt ein Doppelklick
+    nur einmal: Die zweite Anfrage wartet und sieht dann den Stand nach der ersten."""
+    db.session.execute(select(Rechnung.id).where(Rechnung.id == beleg.id).with_for_update())
+    db.session.expire(beleg)
+
+
 def _pruefe_entwurf(rechnung: Rechnung) -> None:
     if not rechnung.ist_entwurf:
         raise NichtBearbeitbar("Finalisierte Rechnungen können nicht mehr geändert werden.")
@@ -115,7 +124,7 @@ def neuer_entwurf(
 
 def empfaenger_aus_kontakt(kontakt: Kontakt) -> dict:
     return {
-        "empfaenger_name": kontakt.name,
+        "empfaenger_name": kontakt.briefname,
         "empfaenger_zusatz": kontakt.adresszusatz,
         "empfaenger_strasse": kontakt.strasse,
         "empfaenger_plz": kontakt.plz,
@@ -135,6 +144,14 @@ def speichere_entwurf(
         kontakt = db.session.get(Kontakt, kopf.kontakt_id)
         if kontakt:
             daten.update(empfaenger_aus_kontakt(kontakt))
+    elif not kopf.kontakt_id and rechnung.kontakt_id is None and kopf.empfaenger_name:
+        # Kunde eingetippt statt ausgewählt: Gibt es genau diesen Kunden schon, verbinden.
+        # Die eingetippte Anschrift bleibt.
+        from app.services.kontakte import gleichnamige_kontakte
+
+        treffer = [k for k in gleichnamige_kontakte(kopf.empfaenger_name) if k.ist_kunde]
+        if len(treffer) == 1:
+            daten["kontakt_id"] = treffer[0].id
     for feld, wert in daten.items():
         setattr(rechnung, feld, wert)
 
@@ -217,6 +234,14 @@ def finalisierungsfehler(rechnung: Rechnung, gewerbe: Gewerbe, regeln: bool = Tr
             1 for p in rechnung.positionen if p.typ == "artikel" and p.bezeichnung
         ),
     )
+    # § 34a Nr. 2 UStDV: Steuernummer oder USt-IdNr. des Ausstellers gehört auf die Rechnung
+    if rechnung.ist_rechnung and not (
+        (gewerbe.steuernummer or "").strip() or (gewerbe.ust_idnr or "").strip()
+    ):
+        fehler.append(
+            "Deine Steuernummer fehlt (Einstellungen → Firmendaten). Sie ist Pflichtangabe auf "
+            "jeder Rechnung (§ 34a UStDV). Hast du noch keine, frag beim Finanzamt nach."
+        )
     if rechnung.leistung_art == "leistungszeitraum" and not rechnung.leistung_bis:
         fehler.append("Ende des Leistungszeitraums fehlt.")
     if (
@@ -231,7 +256,9 @@ def finalisierungsfehler(rechnung: Rechnung, gewerbe: Gewerbe, regeln: bool = Tr
         fehler.append(
             "Der Gesamtbetrag darf nicht negativ sein. Dafür gibt es Rechnungskorrekturen."
         )
-    if gewerbe.e_rechnung and rechnung.belegart in ("rechnung", "korrektur"):
+    # Die amtlichen E-Rechnungsregeln erst prüfen, wenn sonst alles stimmt. Sonst stünde jeder
+    # Fehler doppelt da, einmal verständlich und einmal als englische Regel (z. B. BR-29).
+    if not fehler and gewerbe.e_rechnung and rechnung.belegart in ("rechnung", "korrektur"):
         from app.services import erechnung_erzeugen
 
         fehler += erechnung_erzeugen.fehler(rechnung, absender_daten(gewerbe), regeln=regeln)
@@ -244,7 +271,166 @@ def finalisierungsfehler(rechnung: Rechnung, gewerbe: Gewerbe, regeln: bool = Tr
             )
         if rechnung.summe_cent <= 0:
             fehler.append("Ein QR-Code ist nur bei einem Betrag über 0 € möglich.")
+    # Genauer sagen, welcher Teil der Anschrift fehlt
+    if "Anschrift des Empfängers fehlt." in fehler:
+        teile = [
+            name
+            for name, wert in (
+                ("Straße", rechnung.empfaenger_strasse),
+                ("PLZ", rechnung.empfaenger_plz),
+                ("Ort", rechnung.empfaenger_ort),
+            )
+            if not (wert or "").strip()
+        ]
+        if teile:
+            text = " und ".join([", ".join(teile[:-1]), teile[-1]] if len(teile) > 1 else teile)
+            fehler[fehler.index("Anschrift des Empfängers fehlt.")] = (
+                f"Anschrift des Empfängers: {text} {'fehlen' if len(teile) > 1 else 'fehlt'}."
+            )
     return fehler
+
+
+TAGE_BIS_HINWEIS = 60
+
+
+def pruefhinweise(rechnung: Rechnung, gewerbe: Gewerbe, heute: date | None = None) -> list[str]:
+    """Was vor dem Festschreiben auffällt, aber erlaubt ist: typische Tippfehler und
+    Vergessenes. Anders als finalisierungsfehler() hält das nicht auf, es fragt nur nach."""
+    heute = heute or date.today()
+    hinweise = []
+    if rechnung.belegart not in ("rechnung", "angebot"):
+        return hinweise
+    wort = "Angebotsdatum" if rechnung.belegart == "angebot" else "Rechnungsdatum"
+    datum = rechnung.rechnungsdatum
+    if datum and abs((datum - heute).days) > TAGE_BIS_HINWEIS:
+        richtung = "zurück" if datum < heute else "in der Zukunft"
+        hinweise.append(
+            f"Das {wort} {datum:%d.%m.%Y} liegt mehr als zwei Monate {richtung}. "
+            "Ist das Jahr richtig?"
+        )
+    if datum:
+        spaeter = db.session.execute(
+            select(Rechnung)
+            .where(
+                Rechnung.belegart == rechnung.belegart,
+                Rechnung.finalisiert_am.is_not(None),
+                Rechnung.rechnungsdatum > datum,
+            )
+            .order_by(Rechnung.rechnungsdatum.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+        if spaeter is not None:
+            hinweise.append(
+                f"{rechnung.belegname} {spaeter.nummer} ist schon vom "
+                f"{spaeter.rechnungsdatum:%d.%m.%Y}. Diese bekäme eine höhere Nummer, "
+                f"aber ein früheres Datum ({datum:%d.%m.%Y})."
+            )
+    if (
+        rechnung.ist_rechnung
+        and datum
+        and rechnung.leistung_von
+        and abs((rechnung.leistung_von - datum).days) > 365
+    ):
+        hinweise.append(
+            f"Leistungsdatum ({rechnung.leistung_von:%d.%m.%Y}) und Rechnungsdatum "
+            f"({datum:%d.%m.%Y}) liegen über ein Jahr auseinander."
+        )
+    hinweise += _grenzhinweise(rechnung)
+    zeilen = anschriftzeilen(rechnung)
+    if zeilen > MAX_ANSCHRIFTZEILEN:
+        hinweise.append(
+            f"Die Anschrift braucht etwa {zeilen} Zeilen. Ins Sichtfenster eines "
+            f"Fensterumschlags passen {MAX_ANSCHRIFTZEILEN}, sonst ist z. B. der Ort verdeckt. "
+            "Name oder Adresszusatz kürzen, falls du die Rechnung per Post schickst."
+        )
+    if reverse_charge_vorschlag(rechnung):
+        land = rechnung.empfaenger_land
+        hinweise.append(
+            f"Kunde in {land}: Ist das ein Unternehmen und berechnest du eine Dienstleistung, "
+            "schuldet dein Kunde die Umsatzsteuer in seinem Land (Reverse Charge). Dann muss "
+            "„Steuerschuldnerschaft des Leistungsempfängers“ auf die Rechnung, und sie ist bis "
+            "zum 15. des Folgemonats auszustellen. Am besten auch seine USt-IdNr. in die "
+            "Anschrift schreiben. Bei Privatkunden und Warenlieferungen bleibt es beim "
+            "Kleinunternehmer-Hinweis. Eine Zusammenfassende Meldung brauchst du als "
+            "Kleinunternehmer nicht."
+        )
+    if rechnung.ist_rechnung and rechnung.summe_cent > 0 and not (gewerbe.iban or "").strip():
+        hinweise.append(
+            "Es ist keine Bankverbindung hinterlegt. Auf der Rechnung steht dann kein Konto, "
+            "auf das dein Kunde überweisen kann (Einstellungen → Rechnungen)."
+        )
+    return hinweise
+
+
+MAX_ANSCHRIFTZEILEN = 6  # DIN 5008: Anschriftzone im Sichtfenster
+ZEICHEN_JE_ZEILE = 40  # 85 mm breit, 10 pt
+
+
+def anschriftzeilen(rechnung: Rechnung) -> int:
+    """Geschätzte Zeilen im Anschriftfeld des Briefs, lange Zeilen brechen um."""
+    teile = [
+        rechnung.empfaenger_name,
+        rechnung.empfaenger_zusatz,
+        rechnung.empfaenger_strasse,
+        f"{rechnung.empfaenger_plz or ''} {rechnung.empfaenger_ort or ''}",
+    ]
+    if rechnung.empfaenger_land and rechnung.empfaenger_land != "Deutschland":
+        teile.append(rechnung.empfaenger_land)
+    return sum(max(1, -(-len(t.strip()) // ZEICHEN_JE_ZEILE)) for t in teile if t and t.strip())
+
+
+def reverse_charge_vorschlag(rechnung: Rechnung) -> bool:
+    """Rechnung an jemanden im EU-Ausland, ohne Hinweis auf Reverse Charge."""
+    k = rechnung.kontakt
+    if k is not None and k.art == "person" and not k.ust_idnr:
+        return False  # Privatkunde: Kleinunternehmer-Hinweis passt
+    return (
+        rechnung.belegart == "rechnung"
+        and ist_eu_ausland(rechnung.empfaenger_land)
+        and "steuerschuldnerschaft" not in (rechnung.hinweis_steuerbefreiung or "").lower()
+    )
+
+
+def ergaenze_reverse_charge(rechnung: Rechnung, nutzer_id: int) -> None:
+    _pruefe_entwurf(rechnung)
+    alt = (rechnung.hinweis_steuerbefreiung or "").strip()
+    rechnung.hinweis_steuerbefreiung = f"{REVERSE_CHARGE_TEXT}\n{alt}".strip()
+    protokolliere(
+        "rechnung_reverse_charge", nutzer_id=nutzer_id, objekt_typ="rechnung", objekt_id=rechnung.id
+    )
+    db.session.commit()
+
+
+def _grenzhinweise(rechnung: Rechnung) -> list[str]:
+    """Kleinunternehmergrenze (§ 19 UStG): Umsatz dieses Jahres (eingegangen und noch offen)
+    plus diese Rechnung. Die 25.000 € meldet steuy nur bei der Rechnung, die sie überschreitet."""
+    from app.services.zahlungen import kennzahlen
+
+    if rechnung.belegart != "rechnung" or rechnung.summe_cent <= 0 or not rechnung.rechnungsdatum:
+        return []
+    jahr = rechnung.rechnungsdatum.year
+    try:
+        g = grenze(jahr)
+    except LookupError:
+        return []
+    werte = kennzahlen(jahr)
+    vorher = werte["einnahmen_cent"] + werte["offen_cent"]
+    nachher = vorher + rechnung.summe_cent
+    if nachher > g.laufendes_jahr_cent:
+        return [
+            f"Mit dieser Rechnung liegt dein Umsatz {jahr} bei etwa {cent_zu_euro(nachher)} "
+            f"und damit über {cent_zu_euro(g.laufendes_jahr_cent)}. Ab dem Umsatz, der diese "
+            "Grenze überschreitet, giltst du nicht mehr als Kleinunternehmer und musst "
+            "Umsatzsteuer ausweisen. Bitte vor dem Finalisieren mit der Steuerberatung klären."
+        ]
+    if vorher <= g.vorjahr_cent < nachher:
+        return [
+            f"Mit dieser Rechnung liegt dein Umsatz {jahr} bei etwa {cent_zu_euro(nachher)} "
+            f"und damit über {cent_zu_euro(g.vorjahr_cent)}. Diese Rechnung bleibt ohne "
+            f"Umsatzsteuer, aber ab {jahr + 1} gilt die Kleinunternehmerregelung voraussichtlich "
+            "nicht mehr. Am besten mit der Steuerberatung besprechen."
+        ]
+    return []
 
 
 def _naechste_nummer(belegart: str) -> str:
@@ -260,6 +446,7 @@ def finalisiere(rechnung: Rechnung, nutzer_id: int) -> Rechnung:
     """Vergibt die Nummer, erzeugt das PDF/A, legt es ab und schreibt die Rechnung fest."""
     from app.services.pdf import rendere_rechnung
 
+    sperre(rechnung)
     _pruefe_entwurf(rechnung)
     gewerbe = aktuelles_gewerbe()
     fehler = finalisierungsfehler(rechnung, gewerbe, regeln=False)
@@ -343,6 +530,23 @@ class AktionNichtMoeglich(ValueError):
     pass
 
 
+def oeffne_angebot(angebot: Rechnung, nutzer_id: int) -> None:
+    """Angenommen oder abgelehnt zurücknehmen, z. B. nach einem Fehlklick oder wenn der Kunde
+    es sich anders überlegt."""
+    if angebot.belegart != "angebot" or angebot.ist_entwurf or angebot.status == "offen":
+        raise AktionNichtMoeglich("Dieses Angebot ist schon offen.")
+    vorher = angebot.status
+    angebot.status = "offen"
+    protokolliere(
+        "angebot_wieder_offen",
+        nutzer_id=nutzer_id,
+        objekt_typ="rechnung",
+        objekt_id=angebot.id,
+        details={"vorher": vorher},
+    )
+    db.session.commit()
+
+
 def entscheide_angebot(angebot: Rechnung, angenommen: bool, nutzer_id: int) -> None:
     if angebot.belegart != "angebot" or angebot.ist_entwurf:
         raise AktionNichtMoeglich(
@@ -373,6 +577,7 @@ def rechnungen_zum_angebot(angebot: Rechnung) -> list[Rechnung]:
 
 def rechnung_aus_angebot(angebot: Rechnung, nutzer_id: int) -> Rechnung:
     """Neuer Rechnungsentwurf mit Kunde und Positionen des Angebots."""
+    sperre(angebot)
     if angebot.belegart != "angebot" or angebot.ist_entwurf:
         raise AktionNichtMoeglich("Nur aus finalisierten Angeboten kann eine Rechnung entstehen.")
     if rechnungen_zum_angebot(angebot):
@@ -430,9 +635,15 @@ def _kopie(p: Rechnungsposition, faktor: int = 1) -> Rechnungsposition:
 
 def storniere_rechnung(rechnung: Rechnung, nutzer_id: int) -> Rechnung:
     """Vollstorno per Rechnungskorrektur. Die Originalrechnung bleibt unverändert erhalten."""
+    sperre(rechnung)
     if not rechnung.ist_rechnung or rechnung.ist_entwurf:
         raise AktionNichtMoeglich("Nur finalisierte Rechnungen können storniert werden.")
-    if rechnung.status == "storniert":
+    vorhanden = db.session.execute(
+        select(Rechnung.id).where(
+            Rechnung.bezug_id == rechnung.id, Rechnung.belegart == "korrektur"
+        )
+    ).first()
+    if rechnung.status == "storniert" or vorhanden:
         raise AktionNichtMoeglich("Diese Rechnung ist bereits storniert.")
     if rechnung.bezahlt_cent != 0:
         raise AktionNichtMoeglich(
@@ -494,6 +705,7 @@ def lieferscheine_zu(rechnung: Rechnung) -> list[Rechnung]:
 
 def lieferschein_aus_rechnung(rechnung: Rechnung, nutzer_id: int) -> Rechnung:
     """Lieferschein mit den Positionen der Rechnung, ohne Preise. Wird sofort finalisiert."""
+    sperre(rechnung)
     if not rechnung.ist_rechnung or rechnung.ist_entwurf:
         raise AktionNichtMoeglich(
             "Nur aus finalisierten Rechnungen kann ein Lieferschein entstehen."

@@ -21,12 +21,14 @@ def _hash(wert: str) -> str:
     return hmac.new(schluessel, wert.encode(), hashlib.sha256).hexdigest()
 
 
-def _fehlversuche(spalte, wert: str, jetzt: datetime) -> list[datetime]:
+def _fehlversuche(jetzt: datetime, **gleich: str) -> list[datetime]:
+    """Fehlversuche, deren Spalten (email_hash, ip_hash) den Werten entsprechen."""
+    bedingung = [getattr(Anmeldeversuch, spalte) == wert for spalte, wert in gleich.items()]
     letzter_erfolg = db.session.execute(
-        select(func.max(Anmeldeversuch.zeitpunkt)).where(spalte == wert, Anmeldeversuch.erfolgreich)
+        select(func.max(Anmeldeversuch.zeitpunkt)).where(*bedingung, Anmeldeversuch.erfolgreich)
     ).scalar()
     abfrage = select(Anmeldeversuch.zeitpunkt).where(
-        spalte == wert,
+        *bedingung,
         Anmeldeversuch.erfolgreich.is_(False),
         Anmeldeversuch.zeitpunkt >= jetzt - FENSTER,
     )
@@ -49,7 +51,7 @@ def _merke(email_hash: str, ip_hash: str, erfolgreich: bool, jetzt: datetime) ->
 def pruefe_anmeldung(email: str, passwort: str, ip: str = "unbekannt") -> Nutzer | None:
     """Gibt den Nutzer zurück, wenn E-Mail und Passwort stimmen und das Konto aktiv ist.
 
-    Nach zu vielen Fehlversuchen je Konto oder je Adresse wird für 15 Minuten gesperrt
+    Nach zu vielen Fehlversuchen (siehe app/domain/sperre.py) wird für 15 Minuten gesperrt
     (ZuVieleVersuche), ohne zu verraten, ob es das Konto gibt. Erfolg und Fehlschlag werden
     protokolliert, bei Fehlschlag ohne die eingegebene E-Mail.
     """
@@ -82,9 +84,10 @@ def pruefe_anmeldung(email: str, passwort: str, ip: str = "unbekannt") -> Nutzer
 
 def _pruefe_sperre(email_hash: str, ip_hash: str, jetzt: datetime) -> None:
     if gesperrt(
-        _fehlversuche(Anmeldeversuch.email_hash, email_hash, jetzt),
-        _fehlversuche(Anmeldeversuch.ip_hash, ip_hash, jetzt),
+        _fehlversuche(jetzt, email_hash=email_hash, ip_hash=ip_hash),
+        _fehlversuche(jetzt, ip_hash=ip_hash),
         jetzt,
+        _fehlversuche(jetzt, email_hash=email_hash),
     ):
         raise ZuVieleVersuche("Zu viele Anmeldeversuche. Bitte in 15 Minuten erneut versuchen.")
 

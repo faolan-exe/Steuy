@@ -20,6 +20,10 @@ class Config:
     REMEMBER_COOKIE_SECURE = SESSION_COOKIE_SECURE
     # Nach so vielen Stunden ohne Aktivität ist man abgemeldet (0 = nie)
     LEERLAUF_STUNDEN = float(os.environ.get("LEERLAUF_STUNDEN", "8"))
+    # Das Formular-Sicherheitszeichen gilt so lange wie die Anmeldung. Sonst wären nach einer
+    # Stunde (Standard von Flask-WTF) alle Eingaben weg, obwohl man noch angemeldet ist.
+    WTF_CSRF_TIME_LIMIT = None
+    WTF_I18N_ENABLED = False  # Übersetzungen kommen direkt aus WTForms (app/extensions.py)
     # Anzahl vorgeschalteter Reverse Proxys (z. B. 1 für Caddy/nginx), sonst 0
     PROXY_ANZAHL = int(os.environ.get("PROXY_ANZAHL", "0"))
     # Aus dem Internet nur über HTTPS, im eigenen Netz auch ohne (app/web/nur_https.py)

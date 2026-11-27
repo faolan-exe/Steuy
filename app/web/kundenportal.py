@@ -63,7 +63,9 @@ def beleg(schluessel: str):
         fehler = None
         if request.method == "POST":
             try:
-                richtig = portal.pruefe_plz(link, request.form.get("plz", ""))
+                richtig = portal.pruefe_plz(
+                    link, request.form.get("plz", ""), request.remote_addr or "unbekannt"
+                )
             except portal.PortalFehler as f:
                 fehler, richtig = str(f), False
             if richtig:
@@ -84,11 +86,15 @@ def beleg(schluessel: str):
     if request.method == "GET":
         portal.merke_abruf(link)
     r = link.rechnung
-    absender = r.absender or {}
+    absender = dict(r.absender or {})
+    gewerbe = aktuelles_gewerbe()
+    if not absender.get("iban") and gewerbe and gewerbe.iban:
+        # Rechnung wurde ohne Bankverbindung festgeschrieben: die heutige Verbindung nennen
+        absender.update(iban=gewerbe.iban, bic=gewerbe.bic, kontoinhaber=gewerbe.kontoinhaber)
     from app.services.drucklayout import logo_daten_uri
     from app.services.pdf import _qr_fuer
 
-    offen = r.offen_cent if r.belegart == "rechnung" and r.status != "storniert" else 0
+    offen = portal.zu_zahlen_cent(r) if r.belegart == "rechnung" and r.status != "storniert" else 0
     return _seite(
         "kunde/beleg.html",
         link=link,
@@ -100,6 +106,7 @@ def beleg(schluessel: str):
         offen=offen,
         qr=_qr_fuer(absender, offen, r.nummer) if offen > 0 and r.qr_ueberweisung else None,
         mahnungen=portal.mahnungen(r),
+        pauschale=portal.pauschale_cent(r) if offen else 0,
         kann_entscheiden=portal.kann_entscheiden(r),
         logo=logo_daten_uri(),
         gewerbe=aktuelles_gewerbe(),

@@ -7,7 +7,7 @@ from app.domain.afa import ARTEN, SOFORT, AfaUngueltig, plan
 from app.domain.rollen import Recht
 from app.extensions import db
 from app.models import Buchung, Nutzungsdauer
-from app.services.anlagen import kann_anlagegut_werden, lege_an, verzeichnis
+from app.services.anlagen import kann_anlagegut_werden, korrigiere, lege_an, verzeichnis
 from app.web.formulare import AnlagegutFormular
 from app.web.rechte import braucht_recht
 
@@ -55,7 +55,23 @@ def anlegen(buchung_id: int):
     ).scalars()
     return render_template(
         "anlagegut.html", b=buchung, formular=formular, vorschau=vorschau, dauern=list(dauern)
+    ), (422 if formular.errors else 200)
+
+
+@bp.post("/buchungen/<int:buchung_id>/anlagegut/korrigieren")
+@braucht_recht(Recht.BUCHEN)
+def korrigieren(buchung_id: int):
+    buchung = db.session.get(Buchung, buchung_id) or abort(404)
+    try:
+        neu = korrigiere(buchung, current_user.id)
+    except AfaUngueltig as fehler:
+        flash(str(fehler))
+        return redirect(url_for("belege.buchung", buchung_id=buchung.id))
+    flash(
+        "Die Ausgabe wurde storniert und mit denselben Angaben neu gebucht. "
+        "Lege jetzt das Anlagegut richtig an."
     )
+    return redirect(url_for("anlagen.anlegen", buchung_id=neu.id))
 
 
 @bp.get("/auswertung/anlagen")

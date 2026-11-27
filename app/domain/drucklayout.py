@@ -82,6 +82,21 @@ class Layout:
         return mische(self.akzent, 0.88)
 
 
+MIN_KONTRAST = 2.5  # knapp unter WCAG 3:1, damit kräftige Markenfarben (Hellblau) gehen
+
+
+def kontrast_zu_weiss(hexfarbe: str) -> float:
+    """Kontrastverhältnis zu Weiß nach WCAG 2.1 (1 bis 21)."""
+
+    def linear(c: int) -> float:
+        c = c / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    r, g, b = (linear(int(hexfarbe[i : i + 2], 16)) for i in (1, 3, 5))
+    helligkeit = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return 1.05 / (helligkeit + 0.05)
+
+
 def kontrastfarbe(hexfarbe: str) -> str:
     r, g, b = (int(hexfarbe[i : i + 2], 16) for i in (1, 3, 5))
     # Wahrgenommene Helligkeit (ITU-R BT.601)
@@ -111,6 +126,11 @@ def pruefe(werte: dict) -> Layout:
     akzent = str(werte.get("akzent", standard.akzent)).strip().lower()
     if not FARBE.match(akzent):
         raise LayoutUngueltig("Akzentfarbe: Bitte eine Farbe wie #0f7c80 wählen.")
+    if kontrast_zu_weiss(akzent) < MIN_KONTRAST:
+        raise LayoutUngueltig(
+            "Akzentfarbe: Zu hell, Überschriften wären auf weißem Papier kaum lesbar. "
+            "Bitte eine dunklere Farbe wählen."
+        )
     schrift = werte.get("schrift", standard.schrift)
     if schrift not in SCHRIFTEN:
         raise LayoutUngueltig("Schriftart: Bitte aus der Liste wählen.")

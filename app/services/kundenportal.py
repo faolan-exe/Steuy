@@ -10,7 +10,7 @@ import hashlib
 import hmac
 import secrets
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, date, datetime
 
 from flask import current_app, request
 from sqlalchemy import select
@@ -22,8 +22,6 @@ from app.services.geheimnis import entschluessele, verschluessele
 from app.services.protokoll import protokolliere
 
 PORTAL_BELEGARTEN = ("rechnung", "angebot", "korrektur", "lieferschein")
-MAX_PLZ_VERSUCHE = 5
-PLZ_SPERRE = timedelta(minutes=15)
 
 
 class PortalFehler(ValueError):
@@ -151,23 +149,26 @@ def _plz(text: str | None) -> str:
     return "".join((text or "").split()).upper()
 
 
-def pruefe_plz(link: Kundenlink, eingabe: str) -> bool:
-    """Vergleicht in konstanter Zeit, sperrt nach zu vielen Fehlversuchen für 15 Minuten."""
+def pruefe_plz(link: Kundenlink, eingabe: str, ip: str = "unbekannt") -> bool:
+    """Vergleicht in konstanter Zeit. Sperrt nach zu vielen Fehlversuchen für 15 Minuten, und
+    zwar je Link und Adresse wie bei der Anmeldung (app/domain/sperre.py): Wer fremd rät,
+    sperrt nicht den echten Kunden aus."""
+    from app.domain.sperre import gesperrt
+    from app.services.anmeldung import _fehlversuche, _hash, _merke
+
     jetzt = datetime.now(UTC)
-    if link.gesperrt_bis and link.gesperrt_bis > jetzt:
+    link_hash, ip_hash = _hash(f"kundenlink:{link.id}"), _hash(ip)
+    if gesperrt(
+        _fehlversuche(jetzt, email_hash=link_hash, ip_hash=ip_hash),
+        _fehlversuche(jetzt, ip_hash=ip_hash),
+        jetzt,
+        _fehlversuche(jetzt, email_hash=link_hash),
+    ):
         raise PortalFehler("Zu viele Versuche. Bitte in 15 Minuten erneut versuchen.")
     richtig = hmac.compare_digest(_plz(eingabe), _plz(link.rechnung.empfaenger_plz))
-    if richtig:
-        link.fehlversuche = 0
-        link.gesperrt_bis = None
-    else:
-        link.fehlversuche += 1
-        if link.fehlversuche >= MAX_PLZ_VERSUCHE:
-            link.fehlversuche = 0
-            link.gesperrt_bis = jetzt + PLZ_SPERRE
-            protokolliere(
-                "kundenlink_plz_gesperrt", objekt_typ="rechnung", objekt_id=link.rechnung_id
-            )
+    _merke(link_hash, ip_hash, richtig, jetzt)
+    if not richtig and len(_fehlversuche(jetzt, email_hash=link_hash, ip_hash=ip_hash)) == 5:
+        protokolliere("kundenlink_plz_gesperrt", objekt_typ="rechnung", objekt_id=link.rechnung_id)
     db.session.commit()
     return richtig
 
@@ -213,7 +214,22 @@ def status(rechnung: Rechnung, heute: date | None = None) -> Status:
 
 
 def mahnungen(rechnung: Rechnung) -> list[Mahnung]:
+    """Mahnungen, die der Kunde sehen soll. Nach einem Storno keine mehr: Sie gelten nicht."""
+    if rechnung.status == "storniert":
+        return []
     return [m for m in rechnung.aktive_mahnungen if m.pdf_sha256]
+
+
+def pauschale_cent(rechnung: Rechnung) -> int:
+    """Verzugspauschale aus der jüngsten gültigen Mahnung, solange noch etwas offen ist."""
+    if rechnung.offen_cent <= 0 or not rechnung.aktive_mahnungen:
+        return 0
+    return max(rechnung.aktive_mahnungen, key=lambda m: m.stufe).pauschale_cent
+
+
+def zu_zahlen_cent(rechnung: Rechnung) -> int:
+    """Was der Kunde laut letzter Mahnung zahlen soll: offener Rest plus Pauschale."""
+    return rechnung.offen_cent + pauschale_cent(rechnung)
 
 
 def kann_entscheiden(rechnung: Rechnung, heute: date | None = None) -> bool:

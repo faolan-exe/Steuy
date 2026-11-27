@@ -14,6 +14,7 @@ from app.domain.buchung import betrieblicher_anteil
 from app.domain.datev import Kopf, buchungsstapel, pruefe_kopf
 from app.domain.datev import Posten as DatevPosten
 from app.domain.geld import cent_zu_euro
+from app.domain.zahlung import ZAHLUNGSARTEN
 from app.extensions import db
 from app.models import Artikel, Beleg, Buchung, Kontakt, Rechnung, Zahlung
 from app.services import ablage
@@ -31,12 +32,19 @@ TABELLEN = (
     "kategorie",
     "rechnung",
     "rechnungsposition",
+    "mahnstufe",
     "mahnung",
     "mahnvorlage",
+    "versand",
     "zahlung",
     "beleg",
     "buchung",
     "buchung_gebuehr",
+    "anlagegut",
+    "jahreszuordnung",
+    "wiederkehrende_rechnung",
+    "wiederkehrende_position",
+    "shop_bestellung",
     "euer_zeile",
     "euer_zuordnung",
     "nummernkreis",
@@ -172,6 +180,40 @@ def steuerberater_zip(jahr: int, nutzer_id: int) -> tempfile.SpooledTemporaryFil
         ]
         zip_.writestr(f"EUER-{jahr}.csv", _csv(zeilen))
 
+        # Anlagenverzeichnis (Anlage AVEÜR): ohne es fehlt der Steuerberatung die Grundlage der AfA
+        from app.domain.afa import ARTEN
+        from app.services.anlagen import verzeichnis
+
+        anlagen = verzeichnis(jahr)
+        if anlagen:
+            zeilen = [
+                [
+                    "Anlagegut",
+                    "Art",
+                    "Angeschafft",
+                    "Anschaffungskosten EUR",
+                    "Nutzungsdauer Jahre",
+                    f"AfA {jahr} EUR",
+                    f"Restbuchwert 31.12.{jahr} EUR",
+                    "Kennzahl",
+                ]
+            ]
+            for z in anlagen:
+                a = z.anlagegut
+                zeilen.append(
+                    [
+                        a.bezeichnung,
+                        ARTEN.get(a.art, (a.art,))[0],
+                        a.anschaffungsdatum.strftime("%d.%m.%Y"),
+                        _betrag(a.anschaffungskosten_cent),
+                        str(a.nutzungsdauer_jahre),
+                        _betrag(z.afa_cent),
+                        _betrag(z.restbuchwert_cent),
+                        z.kennzahl,
+                    ]
+                )
+            zip_.writestr(f"Anlagenverzeichnis-{jahr}.csv", _csv(zeilen))
+
         # Alle Zahlungen des Jahres (Zufluss/Abfluss) mit Bezug
         zahlungen = db.session.execute(
             select(Zahlung).where(extract("year", Zahlung.datum) == jahr).order_by(Zahlung.datum)
@@ -204,7 +246,7 @@ def steuerberater_zip(jahr: int, nutzer_id: int) -> tempfile.SpooledTemporaryFil
                         _betrag(z.betrag_cent),
                         "100",
                         _betrag(z.betrag_cent),
-                        z.zahlungsart,
+                        ZAHLUNGSARTEN.get(z.zahlungsart, z.zahlungsart),
                         f"rechnungen/{r.nummer}.pdf",
                     ]
                 )
@@ -224,7 +266,7 @@ def steuerberater_zip(jahr: int, nutzer_id: int) -> tempfile.SpooledTemporaryFil
                     _betrag(z.betrag_cent),
                     str(b.betrieblich_prozent),
                     _betrag(betrieblicher_anteil(z.betrag_cent, b.betrieblich_prozent)),
-                    z.zahlungsart,
+                    ZAHLUNGSARTEN.get(z.zahlungsart, z.zahlungsart),
                     datei_name,
                 ]
             )

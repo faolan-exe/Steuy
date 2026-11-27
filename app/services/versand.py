@@ -43,6 +43,14 @@ def vorschlag(rechnung: Rechnung, mahnung: Mahnung | None = None) -> dict[str, s
         "link": portal_link(rechnung) or "",
     }
     art = "mahnung" if mahnung else rechnung.belegart
+    if art == "rechnung":
+        if rechnung.status == "bezahlt":
+            art = "rechnung_bezahlt"
+        elif rechnung.status == "teilbezahlt":
+            art = "rechnung_teilbezahlt"
+            werte["offen"] = cent_zu_euro(rechnung.offen_cent)
+        elif not rechnung.qr_ueberweisung:
+            art = "rechnung_ohne_qr"
     betreff, text = vorlage(art, werte)
     an = rechnung.kontakt.email if rechnung.kontakt and rechnung.kontakt.email else ""
     return {"an": an, "betreff": betreff, "text": text}
@@ -105,3 +113,49 @@ def sende_beleg(
     )
     db.session.commit()
     return versand
+
+
+def nicht_verschickt(tage: int = 30) -> list[dict]:
+    """Was steuy von selbst verschicken wollte und nicht konnte, damit es nicht untergeht:
+    gescheiterte Versuche ohne späteren Erfolg und automatische Mahnungen ohne Versand."""
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+
+    from app.extensions import db
+
+    seit = datetime.now(UTC) - timedelta(days=tage)
+    versuche = list(
+        db.session.execute(
+            select(Versand).where(Versand.gesendet_am >= seit).order_by(Versand.gesendet_am)
+        ).scalars()
+    )
+    erfolgreich = {(v.rechnung_id, v.mahnung_id) for v in versuche if v.erfolgreich}
+    offen: dict[tuple, dict] = {}
+    for v in versuche:
+        schluessel = (v.rechnung_id, v.mahnung_id)
+        if v.erfolgreich or schluessel in erfolgreich:
+            continue
+        offen[schluessel] = {"rechnung": v.rechnung, "mahnung": v.mahnung, "grund": v.fehler}
+    automatisch = db.session.execute(
+        select(Mahnung).where(
+            Mahnung.automatisch.is_(True),
+            Mahnung.zurueckgezogen_am.is_(None),
+            Mahnung.erstellt_am >= seit,
+        )
+    ).scalars()
+    for m in automatisch:
+        schluessel = (m.rechnung_id, m.id)
+        if schluessel in erfolgreich or schluessel in offen or m.rechnung.offen_cent <= 0:
+            continue
+        if not any(v.mahnung_id == m.id for v in versuche):
+            offen[schluessel] = {
+                "rechnung": m.rechnung,
+                "mahnung": m,
+                "grund": "Keine E-Mail-Adresse beim Kunden oder E-Mail nicht eingerichtet.",
+            }
+    return [
+        eintrag
+        for eintrag in offen.values()
+        if eintrag["rechnung"] and eintrag["rechnung"].status != "storniert"
+    ]

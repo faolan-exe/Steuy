@@ -72,6 +72,26 @@ def _als_json(vorschlag: Vorschlag | None) -> dict | None:
     return daten
 
 
+def _lesbar(mime: str, inhalt: bytes) -> bool:
+    """Kaputte Dateien gar nicht erst ablegen: Sie ließen sich später nur verwerfen."""
+    if mime == "application/pdf":
+        try:
+            reader = PdfReader(io.BytesIO(inhalt))
+            return reader.is_encrypted or len(reader.pages) > 0
+        except (PdfReadError, ValueError, OSError, KeyError, TypeError):
+            return False
+    if mime in ("image/jpeg", "image/png"):
+        try:
+            from PIL import Image
+
+            with Image.open(io.BytesIO(inhalt)) as bild:
+                bild.verify()
+            return True
+        except Exception:  # noqa: BLE001 - jede Art von kaputtem Bild
+            return False
+    return True
+
+
 def lade_hoch(dateiname: str, inhalt: bytes, nutzer_id: int) -> Beleg:
     if not inhalt:
         raise BelegUngueltig(f"{dateiname}: Die Datei ist leer.")
@@ -80,6 +100,11 @@ def lade_hoch(dateiname: str, inhalt: bytes, nutzer_id: int) -> Beleg:
     mime = erkenne_typ(inhalt)
     if mime not in TYPEN:
         raise BelegUngueltig(f"{dateiname}: Nur PDF, JPG, PNG und XML (E-Rechnung) sind erlaubt.")
+    if not _lesbar(mime, inhalt):
+        raise BelegUngueltig(
+            f"{dateiname}: Die Datei ist beschädigt oder unvollständig und lässt sich nicht "
+            "öffnen. Bitte noch einmal scannen oder herunterladen."
+        )
 
     sha256 = ablage.speichere(inhalt)
     vorhanden = db.session.execute(select(Beleg).where(Beleg.sha256 == sha256)).scalar_one_or_none()
@@ -134,6 +159,7 @@ def vorschlag_fuer_formular(beleg: Beleg) -> dict:
         "betrag_cent": v.get("betrag_cent"),
         "hinweis": v.get("hinweis"),
         "quelle": v.get("quelle"),
+        "zahlungsart": v.get("zahlungsart"),
     }
     if daten["partner"]:
         kontakt = db.session.execute(

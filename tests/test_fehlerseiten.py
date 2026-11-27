@@ -58,7 +58,7 @@ def test_abgelaufenes_formular_erklaert_sich(app, client, admin):
     finally:
         app.config["WTF_CSRF_ENABLED"] = False
     assert antwort.status_code == 400
-    assert "Die Seite war zu lange geöffnet" in text(antwort)
+    assert "Das Formular ist nicht mehr gültig" in text(antwort)
     assert "CSRF" not in text(antwort)
 
 

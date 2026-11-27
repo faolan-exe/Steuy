@@ -134,6 +134,15 @@ def test_plz_sperre_nach_fuenf_fehlversuchen(app, gast, rechnung):
     assert antwort.status_code == 401 and "Zu viele Versuche" in antwort.get_data(as_text=True)
 
 
+def test_plz_sperre_trifft_nicht_den_echten_kunden(app, gast, rechnung):
+    """Wer von einer anderen Adresse rät, sperrt den Kunden nicht aus."""
+    s = schluessel(app, rechnung)
+    for _ in range(5):
+        gast.post(f"/k/{s}", data={"plz": "00000"}, environ_base={"REMOTE_ADDR": "203.0.113.7"})
+    antwort = gast.post(f"/k/{s}", data={"plz": "50667"}, environ_base={"REMOTE_ADDR": "10.0.0.9"})
+    assert antwort.status_code == 302
+
+
 def test_ohne_plz_abfrage_direkt_sichtbar(app, gast, rechnung, portal, session):
     portal.kundenportal_plz = False
     session.commit()

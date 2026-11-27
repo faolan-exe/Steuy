@@ -19,6 +19,36 @@ VORLAGEN = {
         "Vielen Dank für Ihren Auftrag!\n\n"
         "Viele Grüße\n{inhaber}\n{firma}",
     ),
+    # Ohne QR-Code auf der Rechnung kein Satz über den QR-Code
+    "rechnung_ohne_qr": (
+        "Rechnung {nummer} von {firma}",
+        "Guten Tag,\n\n"
+        "anbei erhalten Sie die Rechnung {nummer} über {betrag}.\n"
+        "Bitte überweisen Sie den Betrag bis zum {faellig}.\n\n"
+        "{link}"
+        "Vielen Dank für Ihren Auftrag!\n\n"
+        "Viele Grüße\n{inhaber}\n{firma}",
+    ),
+    # Schon bezahlt (z. B. bar beim Termin): Rechnung für die Unterlagen, keine Zahlungsbitte
+    "rechnung_bezahlt": (
+        "Rechnung {nummer} von {firma}",
+        "Guten Tag,\n\n"
+        "anbei erhalten Sie die Rechnung {nummer} über {betrag} für Ihre Unterlagen. "
+        "Der Betrag ist bereits bezahlt, vielen Dank!\n\n"
+        "{link}"
+        "Vielen Dank für Ihren Auftrag!\n\n"
+        "Viele Grüße\n{inhaber}\n{firma}",
+    ),
+    "rechnung_teilbezahlt": (
+        "Rechnung {nummer} von {firma}",
+        "Guten Tag,\n\n"
+        "anbei erhalten Sie die Rechnung {nummer} über {betrag}. Vielen Dank für Ihre "
+        "Zahlung. Offen sind noch {offen}, bitte überweisen Sie diesen Betrag bis zum "
+        "{faellig}.\n\n"
+        "{link}"
+        "Vielen Dank für Ihren Auftrag!\n\n"
+        "Viele Grüße\n{inhaber}\n{firma}",
+    ),
     "korrektur": (
         "Rechnungskorrektur {nummer} von {firma}",
         "Guten Tag,\n\n"
@@ -96,7 +126,8 @@ KNOPF_TEXTE = {
 def vorlage(art: str, werte: dict[str, str]) -> tuple[str, str]:
     betreff, text = VORLAGEN[art]
     link = werte.get("link")
-    werte = {**werte, "link": f"{LINK_TEXTE[art]}\n{link}\n\n" if link else ""}
+    grundart = art.split("_")[0]
+    werte = {**werte, "link": f"{LINK_TEXTE[grundart]}\n{link}\n\n" if link else ""}
     return betreff.format(**werte), text.format(**werte)
 
 

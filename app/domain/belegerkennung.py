@@ -15,6 +15,7 @@ class Vorschlag:
     belegnummer: str | None = None
     betrag_cent: int | None = None
     hinweis: str | None = None
+    zahlungsart: str | None = None  # „karte“ oder „bar“, wenn der Bon schon bezahlt ist
 
 
 _BETRAG = (
@@ -130,6 +131,27 @@ def finde_lieferant(text: str) -> str | None:
     return None
 
 
+_KARTE = re.compile(
+    r"\b(ec[- ]?karte|girocard|kartenzahlung|kreditkarte|visa|mastercard|maestro|v pay|"
+    r"kontaktlos|apple pay|google pay)\b",
+    re.IGNORECASE,
+)
+_BAR = re.compile(r"\b(bar bezahlt|barzahlung|bar\b|gegeben|r(ü|ue)ckgeld)", re.IGNORECASE)
+_SPAETER = re.compile(r"lastschrift|überweisen|ueberweisen|zahlbar bis|fällig", re.IGNORECASE)
+
+
+def finde_zahlungsart(text: str) -> str | None:
+    """Kassenbons nennen, wie bezahlt wurde. Rechnungen zum Überweisen oder per Lastschrift
+    sind dagegen noch offen."""
+    if _SPAETER.search(text):
+        return None
+    if _KARTE.search(text):
+        return "karte"
+    if _BAR.search(text):
+        return "bar"
+    return None
+
+
 def aus_text(text: str, quelle: str = "text") -> Vorschlag:
     return Vorschlag(
         quelle=quelle,
@@ -137,4 +159,5 @@ def aus_text(text: str, quelle: str = "text") -> Vorschlag:
         datum=finde_datum(text),
         belegnummer=finde_nummer(text),
         betrag_cent=finde_betrag(text),
+        zahlungsart=finde_zahlungsart(text),
     )

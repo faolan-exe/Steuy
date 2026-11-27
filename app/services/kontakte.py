@@ -1,3 +1,4 @@
+import re
 from datetime import date
 
 from sqlalchemy import String, cast, func, or_, select
@@ -6,6 +7,7 @@ from app.domain.stammdaten import KUNDENNUMMER_START, LIEFERANTENNUMMER_START, n
 from app.extensions import db
 from app.models import Kontakt
 from app.services.protokoll import protokolliere
+from app.services.suchnorm import enthaelt
 
 TYPEN = {"kunde": (True, False), "lieferant": (False, True), "beides": (True, True)}
 
@@ -96,6 +98,30 @@ def setze_archiviert(kontakt: Kontakt, archiviert: bool, nutzer_id: int) -> None
     db.session.commit()
 
 
+_ANREDEN = {"herr", "frau", "dr", "prof", "familie", "fam", "divers"}
+
+
+def namensschluessel(text: str | None) -> frozenset[str]:
+    """„Mustermann, Max“, „Herr Dr. Max Mustermann“ und „max  mustermann“ ergeben denselben
+    Schlüssel: Wörter ohne Satzzeichen, Groß/Klein und Anrede, Reihenfolge egal."""
+    woerter = re.findall(r"[\wäöüß]+", (text or "").casefold())
+    return frozenset(w for w in woerter if w not in _ANREDEN)
+
+
+def gleichnamige_kontakte(name: str | None, ausser_id: int | None = None) -> list[Kontakt]:
+    """Aktive Kontakte mit gleichem Namen (für Dubletten-Hinweis und Zuordnung)."""
+    schluessel = namensschluessel(name)
+    if not schluessel:
+        return []
+    kandidaten = db.session.execute(select(Kontakt).where(Kontakt.archiviert.is_(False))).scalars()
+    return [
+        k
+        for k in kandidaten
+        if k.id != ausser_id
+        and schluessel in (namensschluessel(k.name), namensschluessel(k.briefname))
+    ]
+
+
 def suche_kontakte(text: str, filter: str = "alle", archiv: bool = False) -> list[Kontakt]:
     abfrage = select(Kontakt).where(Kontakt.archiviert.is_(archiv))
     if filter == "kunden":
@@ -109,7 +135,7 @@ def suche_kontakte(text: str, filter: str = "alle", archiv: bool = False) -> lis
         abfrage = abfrage.where(
             or_(
                 *(
-                    feld.ilike(muster)
+                    enthaelt(feld, text)
                     for feld in (
                         Kontakt.firmenname,
                         Kontakt.vorname,

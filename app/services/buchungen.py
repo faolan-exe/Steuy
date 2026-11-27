@@ -1,14 +1,15 @@
 """Einnahmen und Ausgaben: Entwurf, Festschreiben, Zahlung, Storno (ADR 0002)."""
 
+import re
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
 from app.domain.zahlung import ZahlungUngueltig, offene_gebuehr, pruefe_zahlung
 from app.extensions import db
-from app.models import Buchung, BuchungGebuehr, Kategorie, Zahlung
+from app.models import Beleg, Buchung, BuchungGebuehr, Kategorie, Zahlung
 from app.services.protokoll import protokolliere
 
 
@@ -324,3 +325,73 @@ def suche_buchungen(filter: str = "ausgaben") -> list[Buchung]:
     return list(
         db.session.execute(abfrage.order_by(Buchung.belegdatum.desc(), Buchung.id.desc())).scalars()
     )
+
+
+def beleghinweise(
+    *,
+    belegdatum: date | None,
+    betrag_cent: int | None,
+    partner: str | None,
+    kontakt_id: int | None,
+    belegnummer: str | None,
+    beleg: Beleg | None = None,
+    buchung_id: int | None = None,
+    heute: date | None = None,
+) -> list[str]:
+    """Was beim Erfassen eines Belegs auffällt, aber erlaubt ist: vertipptes Jahr, derselbe
+    Beleg zweimal, eine eigene Rechnung als Ausgabe."""
+    from app.services.einrichtung import aktuelles_gewerbe
+
+    heute = heute or date.today()
+    hinweise = []
+    if belegdatum and belegdatum < heute - timedelta(days=365):
+        hinweise.append(
+            f"Das Belegdatum {belegdatum:%d.%m.%Y} ist über ein Jahr alt. Ist das Jahr richtig "
+            "(auch richtig vom Beleg gelesen)? Die Ausgabe zählt im Jahr der Zahlung."
+        )
+    if belegdatum and betrag_cent:
+        stornierte = select(Buchung.storno_von_id).where(Buchung.storno_von_id.is_not(None))
+        gleich = select(Buchung).where(
+            Buchung.belegdatum == belegdatum,
+            Buchung.betrag_cent == betrag_cent,
+            Buchung.storno_von_id.is_(None),
+            Buchung.id.not_in(stornierte),
+        )
+        if buchung_id:
+            gleich = gleich.where(Buchung.id != buchung_id)
+        for andere in db.session.execute(gleich.limit(5)).scalars():
+            selber_partner = (kontakt_id and andere.kontakt_id == kontakt_id) or (
+                (partner or "").strip().casefold()
+                and (andere.partner or "").strip().casefold() == partner.strip().casefold()
+            )
+            selbe_nummer = belegnummer and andere.belegnummer == belegnummer
+            if selber_partner or selbe_nummer or not (partner or kontakt_id):
+                hinweise.append(
+                    f"Eine Buchung mit demselben Datum und Betrag gibt es schon "
+                    f"({andere.partner or 'ohne Namen'}, {andere.belegnummer or 'ohne Nummer'}). "
+                    "Wurde derselbe Beleg zweimal erfasst, z. B. als Foto und als Scan?"
+                )
+                break
+    gewerbe = aktuelles_gewerbe()
+    text = (beleg.text or "") if beleg else ""
+    # Nur die Steuernummer: Die eigene IBAN steht auch auf Lastschrift-Rechnungen von
+    # Lieferanten, die eigene USt-IdNr. auf Rechnungen aus dem EU-Ausland.
+    steuernummer = re.sub(r"\D", "", gewerbe.steuernummer or "")
+    eigene_steuernummer = len(steuernummer) >= 10 and re.search(
+        r"(?<!\d)" + r"[\s/-]*".join(steuernummer) + r"(?!\d)", text
+    )
+    # Als Rechnungssteller erkannt wurde der eigene Name (nicht nur als Empfänger genannt)
+    from app.services.kontakte import namensschluessel
+
+    aussteller = ((beleg.vorschlag or {}) if beleg else {}).get("lieferant")
+    eigener_name = bool(aussteller) and namensschluessel(aussteller) in (
+        namensschluessel(gewerbe.name),
+        namensschluessel(gewerbe.inhaber),
+    )
+    if eigene_steuernummer or eigener_name:
+        hinweise.append(
+            "Das sieht aus wie eine Rechnung von dir selbst (dein Name als Aussteller oder "
+            "deine Steuernummer steht darauf). Eigene Rechnungen sind keine Ausgabe: Das Geld "
+            "dafür erfasst du bei der Rechnung mit „Zahlung erfassen“."
+        )
+    return hinweise

@@ -1,0 +1,33 @@
+{% extends "basis.html" %}
+{% block titel %}Änderungsprotokoll – steuy{% endblock %}
+{% block inhalt %}
+<div class="seitenkopf">
+  <h1>Änderungsprotokoll</h1>
+</div>
+<p class="hinweis">Wer hat wann was getan. Die Einträge lassen sich nicht ändern oder löschen.{% if objekt_typ %} Gefiltert: {{ objekt_typ }}{% if objekt_id %} {{ objekt_id }}{% endif %}. <a href="{{ url_for('protokoll.liste') }}">Alle zeigen</a>{% endif %}</p>
+<section class="karte">
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Zeitpunkt</th><th>Wer</th><th>Was</th><th>Einzelheiten</th></tr></thead>
+      <tbody>
+        {% for e in eintraege %}
+        {% set link = ziel(e) %}
+        <tr>
+          <td class="nowrap">{{ e.zeitpunkt | datum_zeit }}</td>
+          <td>{{ nutzer[e.nutzer_id].name if e.nutzer_id in nutzer else "System oder Kunde" }}</td>
+          <td>{% if link %}<a href="{{ link }}">{{ aktion_text(e.aktion) }}</a>{% else %}{{ aktion_text(e.aktion) }}{% endif %}</td>
+          <td class="leise">{{ details_text(e.details) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4">Noch keine Einträge.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+<div class="aktionen abstand-oben">
+  {% if seite > 1 %}<a class="knopf" href="{{ url_for('protokoll.liste', seite=seite - 1, objekt=objekt_typ, id=objekt_id) }}">Neuere</a>{% endif %}
+  {% if weitere %}<a class="knopf" href="{{ url_for('protokoll.liste', seite=seite + 1, objekt=objekt_typ, id=objekt_id) }}">Ältere</a>{% endif %}
+  <span class="hinweis">{{ anzahl }} Einträge</span>
+</div>
+{% endblock %}

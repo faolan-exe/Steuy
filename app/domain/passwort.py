@@ -59,7 +59,7 @@ def schwaches_passwort(passwort: str, persoenlich: tuple[str, ...] = ()) -> str 
     for text in persoenlich:
         for teil in re.split(r"[^0-9a-zäöüß]+", (text or "").lower()):
             if len(teil) >= 4 and teil in klein:
-                return "Das Passwort enthält deinen Namen oder deine E-Mail-Adresse."
+                return "Das Passwort enthält den Namen oder die E-Mail-Adresse."
     return None
 
 

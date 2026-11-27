@@ -142,7 +142,7 @@ def test_update_starten_legt_anfrage_ab(angemeldet, mit_release, app, tmp_path):
     assert anfrage["version"] == "v9.0.0"
     assert json.loads((tmp_path / "status.json").read_text())["zustand"] == "angefragt"
     seite = angemeldet.get("/einstellungen/update").get_data(as_text=True)
-    assert "Update auf v9.0.0 läuft" in seite
+    assert "Update auf v9.0.0" in seite and "Warte auf den Update-Dienst" in seite
     zweites = angemeldet.post("/einstellungen/update/starten", follow_redirects=True)
     assert "Es läuft bereits ein Update" in zweites.get_data(as_text=True) or "läuft" in (
         zweites.get_data(as_text=True)
@@ -267,3 +267,175 @@ def test_hintergrundsuche_installiert_nie(monkeypatch, app, admin, session, tmp_
     assert fertig.wait(5)
     assert not (tmp_path / "anfrage").exists()
     app.config["UPDATE_VERZEICHNIS"] = ""
+
+
+# ---------- Fortschritt ----------
+
+
+@pytest.mark.parametrize(
+    ("status", "alter", "erwartet"),
+    [
+        ({}, 0, "bereit"),
+        ({"zustand": "angefragt"}, 10, "wartet"),
+        ({"zustand": "angefragt"}, 120, "dienst_fehlt"),
+        ({"zustand": "laeuft"}, 60, "laeuft"),
+        ({"zustand": "laeuft"}, 30 * 60, "haengt"),
+        ({"zustand": "fertig"}, 9999, "fertig"),
+        ({"zustand": "fehlgeschlagen"}, 1, "fehlgeschlagen"),
+    ],
+)
+def test_update_lage(status, alter, erwartet):
+    from app.domain.update import update_lage
+
+    jetzt = 1_000_000
+    assert update_lage({**status, "zeit": jetzt - alter}, jetzt) == erwartet
+
+
+def _status(tmp_path, **werte):
+    (tmp_path / "status.json").write_text(json.dumps({"version": "v9.0.0", **werte}))
+
+
+def test_seite_zeigt_schritte_und_fortschritt(angemeldet, app, tmp_path, monkeypatch):
+    import time
+
+    monkeypatch.setattr(dienst, "_hole_release", lambda: dict(RELEASE))
+    app.config["UPDATE_VERZEICHNIS"] = str(tmp_path)
+    jetzt = int(time.time())
+    _status(
+        tmp_path,
+        zustand="laeuft",
+        nr=3,
+        gesamt=6,
+        schritt="Version prüfen",
+        ausgabe="Entpacken …",
+        start=jetzt - 30,
+        zeit=jetzt,
+    )
+    seite = angemeldet.get("/einstellungen/update").get_data(as_text=True)
+    assert 'class="erledigt" data-nr="2"' in seite and 'class="aktiv" data-nr="3"' in seite
+    assert 'class="offen" data-nr="4"' in seite and "Entpacken …" in seite
+    assert "33 %" in seite and "Neu bauen und starten" in seite
+    stand = angemeldet.get("/einstellungen/update/status").get_json()
+    assert stand["lage"] == "laeuft" and stand["nr"] == 3
+    app.config["UPDATE_VERZEICHNIS"] = ""
+
+
+def test_dienst_reagiert_nicht(angemeldet, app, tmp_path):
+    import time
+
+    app.config["UPDATE_VERZEICHNIS"] = str(tmp_path)
+    _status(tmp_path, zustand="angefragt", zeit=int(time.time()) - 600)
+    seite = angemeldet.get("/einstellungen/update").get_data(as_text=True)
+    assert "Update-Dienst auf dem Server reagiert nicht" in seite
+    assert "update-dienst-einrichten.sh" in seite
+    app.config["UPDATE_VERZEICHNIS"] = ""
+
+
+def test_fertig_und_fehlgeschlagen(angemeldet, app, tmp_path):
+    app.config["UPDATE_VERZEICHNIS"] = str(tmp_path)
+    import time
+
+    jetzt = int(time.time())
+    _status(
+        tmp_path,
+        zustand="fertig",
+        nr=6,
+        gesamt=6,
+        start=jetzt - 200,
+        zeit=jetzt,
+        version=f"v{VERSION}",
+    )
+    seite = angemeldet.get("/einstellungen/update").get_data(as_text=True)
+    assert "abgeschlossen" in seite and "100 %" in seite and "läuft jetzt mit Version" in seite
+    # Nach einem Tag ist die Erfolgsmeldung weg
+    _status(tmp_path, zustand="fertig", nr=6, gesamt=6, start=1, zeit=100)
+    assert "abgeschlossen" not in angemeldet.get("/einstellungen/update").get_data(as_text=True)
+    _status(
+        tmp_path, zustand="fehlgeschlagen", nr=1, schritt="Sicherung anlegen", meldung="Platte voll"
+    )
+    seite = angemeldet.get("/einstellungen/update").get_data(as_text=True)
+    assert "Fehlgeschlagen bei „Sicherung anlegen“" in seite and "Platte voll" in seite
+    assert 'class="fehler" data-nr="1"' in seite
+    app.config["UPDATE_VERZEICHNIS"] = ""
+
+
+def test_schritte_im_skript_wie_in_der_app():
+    from app.domain.update import UPDATE_SCHRITTE
+
+    skript = (ROOT / "scripts" / "update-ausfuehren.sh").read_text()
+    for nr, name in enumerate(UPDATE_SCHRITTE, 1):
+        assert f'schritt {nr} "{name}"' in skript
+    assert f"GESAMT={len(UPDATE_SCHRITTE)}" in skript
+
+
+def _baue_umgebung(tmp_path, bauen_klappt=True):
+    """Ein steuy-Ordner mit nachgebauten docker- und curl-Befehlen."""
+    import tarfile
+
+    ziel = tmp_path / "steuy"
+    (ziel / "app").mkdir(parents=True)
+    (ziel / "app" / "version.py").write_text('VERSION = "0.2.0"\n')
+    (ziel / "update").mkdir()
+    (ziel / "scripts").mkdir()
+    for name in ("update-ausfuehren.sh", "docker-sicherung.sh"):
+        (ziel / "scripts" / name).write_text((ROOT / "scripts" / name).read_text())
+        (ziel / "scripts" / name).chmod(0o755)
+    neu = tmp_path / "neu" / "steuy-9.0.0"
+    (neu / "app").mkdir(parents=True)
+    (neu / "app" / "version.py").write_text('VERSION = "9.0.0"\n')
+    (neu / "docker-compose.yml").write_text("services: {}\n")
+    archiv = tmp_path / "neu.tar.gz"
+    with tarfile.open(archiv, "w:gz") as tar:
+        tar.add(neu, arcname="steuy-9.0.0")
+    bin_ = tmp_path / "bin"
+    bin_.mkdir()
+    (bin_ / "docker").write_text(
+        "#!/bin/sh\n"
+        'case "$*" in *pg_dump*) echo dump;; *tar*) echo ablage;; '
+        f'*up*) echo "Image wird gebaut"; exit {0 if bauen_klappt else 1};; esac\n'
+    )
+    (bin_ / "curl").write_text("#!/bin/sh\nexit 0\n")
+    for datei in bin_.iterdir():
+        datei.chmod(0o755)
+    (ziel / "update" / "anfrage").write_text('{"version": "v9.0.0"}')
+    env = {
+        "ZIEL": str(ziel),
+        "SICHERUNG": str(tmp_path / "sicherung"),
+        "UPDATE_QUELLE": str(archiv),
+        "PATH": f"{bin_}:/usr/bin:/bin",
+    }
+    return ziel, env
+
+
+def test_update_skript_meldet_jeden_schritt_bis_fertig(tmp_path):
+    ziel, env = _baue_umgebung(tmp_path)
+    lauf = subprocess.run(
+        ["sh", str(ziel / "scripts" / "update-ausfuehren.sh")],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+    assert lauf.returncode == 0, lauf.stderr
+    for nr in range(1, 7):
+        assert f"Schritt {nr} von 6" in lauf.stdout
+    status = json.loads((ziel / "update" / "status.json").read_text())
+    assert status["zustand"] == "fertig" and status["nr"] == 6 and status["von"] == "0.2.0"
+    assert status["start"] <= status["zeit"]
+    assert 'VERSION = "9.0.0"' in (ziel / "app" / "version.py").read_text()
+
+
+def test_update_skript_bei_fehler_alter_stand_und_schritt(tmp_path):
+    ziel, env = _baue_umgebung(tmp_path, bauen_klappt=False)
+    subprocess.run(
+        ["sh", str(ziel / "scripts" / "update-ausfuehren.sh")],
+        env=env,
+        capture_output=True,
+        check=False,
+        timeout=60,
+    )
+    status = json.loads((ziel / "update" / "status.json").read_text())
+    assert status["zustand"] == "fehlgeschlagen" and status["nr"] == 5
+    assert "alte läuft wieder" in status["meldung"]
+    assert 'VERSION = "0.2.0"' in (ziel / "app" / "version.py").read_text()

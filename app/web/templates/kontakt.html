@@ -7,7 +7,7 @@
   <h1><a class="zurueck" href="{{ url_for('kontakte.liste') }}" aria-label="Zurück zur Liste">‹</a> {{ kontakt.name }}{% if kontakt.archiviert %} <small>archiviert</small>{% endif %}</h1>
   {% if darf("stammdaten") %}
   <div class="aktionen">
-    <form method="post" action="{{ url_for('kontakte.archivieren', kontakt_id=kontakt.id) }}">
+    <form method="post" action="{{ url_for('kontakte.archivieren', kontakt_id=kontakt.id) }}"{% if not kontakt.archiviert and u.offen_cent > 0 %} data-bestaetigen="{{ kontakt.name }} hat noch offene Rechnungen über {{ u.offen_cent | euro }}. Trotzdem archivieren? Die Rechnungen bleiben offen und werden weiter angezeigt." data-bestaetigen-knopf="Trotzdem archivieren"{% endif %}>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="knopf" type="submit">{{ "Wiederherstellen" if kontakt.archiviert else "Archivieren" }}</button>
     </form>

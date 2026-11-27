@@ -15,9 +15,9 @@ STANDARDTEXTE = {
     1: (
         "Guten Tag,\n\n"
         "sicher ist es Ihnen im Alltag nur entgangen: Für die Rechnung {nummer} vom "
-        "{rechnungsdatum} habe ich noch keinen Zahlungseingang festgestellt. Sie war am "
-        "{faellig} fällig.\n\n"
-        "Bitte überweisen Sie den offenen Betrag von {betrag} bis zum {frist}.\n\n"
+        "{rechnungsdatum} ist noch ein Betrag von {betrag} offen. Sie war am {faellig} "
+        "fällig.\n\n"
+        "Bitte überweisen Sie den offenen Betrag bis zum {frist}.\n\n"
         "Bitte beachten Sie: Geht die Zahlung bis dahin nicht ein, muss ich Ihnen mit der "
         "nächsten Mahnung Verzugskosten in Rechnung stellen, also die gesetzliche "
         "Verzugspauschale von 40,00 € und Verzugszinsen."

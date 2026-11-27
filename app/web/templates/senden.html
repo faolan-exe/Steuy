@@ -8,7 +8,7 @@
 <div class="seitenkopf">
   <h1><a class="zurueck" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}" aria-label="Zurück">‹</a> Per E-Mail senden <small>{{ mahnung.bezeichnung if mahnung else r.titel }} {{ r.anzeige_nummer }}</small></h1>
 </div>
-<form method="post" novalidate>
+<form method="post" novalidate data-ungespeichert>
   {{ formular.csrf_token }}
   <section class="karte">
     <div class="karte-inhalt">

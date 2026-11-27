@@ -7,7 +7,7 @@
   <div class="aktionen">
     <a class="knopf" href="{{ url_for('rechnungen.bearbeiten', rechnung_id=r.id) }}">Bearbeiten</a>
     {% if darf("rechnungen_versenden") %}
-    <form method="post" action="{{ url_for('rechnungen.finalisieren', rechnung_id=r.id) }}">
+    <form method="post" action="{{ url_for('rechnungen.finalisieren', rechnung_id=r.id) }}"{% if hinweise and not fehler %} data-bestaetigen="Bitte prüfen: {{ hinweise | join(' ') }} Trotzdem finalisieren?" data-bestaetigen-knopf="Trotzdem finalisieren"{% endif %}>
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% if mail_bereit %}
       <button class="knopf" type="submit" {% if fehler %}disabled aria-disabled="true"{% endif %}>Nur finalisieren</button>
@@ -26,8 +26,25 @@
     <ul>{% for f in fehler %}<li>{{ f }}</li>{% endfor %}</ul>
   </div>
 </div>
+{% elif hinweise %}
+<div class="meldung warnung" role="alert">
+  <div>
+    <strong>Vollständig, aber bitte prüfen:</strong>
+    <ul>{% for h in hinweise %}<li>{{ h }}</li>{% endfor %}</ul>
+    {% if reverse_charge and darf("entwuerfe") %}
+    <form method="post" action="{{ url_for('rechnungen.reverse_charge', rechnung_id=r.id) }}" class="aktionen">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="knopf" type="submit">„Steuerschuldnerschaft des Leistungsempfängers“ ergänzen</button>
+    </form>
+    {% endif %}
+    Wenn alles stimmt, kannst du trotzdem finalisieren. Danach lässt sich {{ "das Angebot" if r.belegart == "angebot" else "die Rechnung" }} nicht mehr ändern.
+  </div>
+</div>
 {% else %}
 <div class="meldung">Alles vollständig. Beim Finalisieren bekommt {{ "das Angebot" if r.belegart == "angebot" else "die Rechnung" }} eine Nummer und kann danach nicht mehr geändert werden.</div>
+{% endif %}
+{% if not r.kontakt_id and r.empfaenger_name and darf("stammdaten") %}
+<p class="hinweis">„{{ r.empfaenger_name }}“ ist kein gespeicherter Kontakt. <a href="{{ url_for('kontakte.neu', fuer=r.id) }}">Als Kontakt speichern</a>, dann steht der Kunde beim nächsten Mal in der Auswahl.</p>
 {% endif %}
 {% if not darf("rechnungen_versenden") %}
 <p class="hinweis">Finalisieren darf deine Rolle nicht. Bitte jemanden mit dem Recht „Rechnungen finalisieren und versenden“ fragen.</p>

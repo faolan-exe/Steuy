@@ -4,7 +4,7 @@
 {% block inhalt_klasse %}schmal{% endblock %}
 {% block inhalt %}
 <div class="seitenkopf"><h1><a class="zurueck" href="{{ url_for('belege.buchung', buchung_id=b.id) }}" aria-label="Zurück">‹</a> Über mehrere Jahre abschreiben{{ hilfe("afa") }}</h1></div>
-<form method="post" novalidate>
+<form method="post" novalidate data-ungespeichert>
   {{ formular.csrf_token }}
   <section class="karte">
     <div class="karte-inhalt">

@@ -141,3 +141,79 @@ def verzeichnis(jahr: int) -> list[Zeile]:
 
 def buchungen_mit_anlagegut() -> set[int]:
     return set(db.session.execute(select(Anlagegut.buchung_id)).scalars())
+
+
+def ohne_anlagegut() -> list[Buchung]:
+    """Festgeschriebene „Geringwertige Anschaffungen“ über der Grenze ohne Anlagegut. Sie
+    stehen sonst voll als Ausgabe in der EÜR (docs/domain/euer.md)."""
+    storniert = select(Buchung.storno_von_id).where(Buchung.storno_von_id.is_not(None))
+    mit_anlage = select(Anlagegut.buchung_id)
+    kandidaten = db.session.execute(
+        select(Buchung)
+        .where(
+            Buchung.art == "ausgabe",
+            Buchung.status == "festgeschrieben",
+            Buchung.storno_von_id.is_(None),
+            Buchung.id.not_in(storniert),
+            Buchung.id.not_in(mit_anlage),
+        )
+        .order_by(Buchung.belegdatum)
+    ).scalars()
+    return [b for b in kandidaten if ueber_gwg_grenze(b)]
+
+
+def korrigiere(buchung: Buchung, nutzer_id: int) -> Buchung:
+    """Falsches Anlagegut (Art, Dauer, Datum) korrigieren, ohne etwas zu überschreiben:
+    Die Ausgabe wird storniert (das hebt das Anlagegut auf) und mit denselben Angaben und
+    Zahlungen neu gebucht. Zur neuen Buchung legt man das Anlagegut dann richtig an."""
+    from app.services.buchungen import (
+        Buchungsdaten,
+        erfasse_zahlung,
+        festschreiben,
+        lege_entwurf_an,
+        storniere,
+    )
+
+    gut = buchung.anlagegut
+    if gut is None or not gut.aktiv:
+        raise AfaUngueltig("Zu dieser Buchung gibt es kein gültiges Anlagegut.")
+    zahlungen = [
+        z
+        for z in buchung.zahlungen
+        if z.storno_von_id is None and not any(g.storno_von_id == z.id for g in buchung.zahlungen)
+    ]
+    storniere(buchung, nutzer_id)
+    neu = lege_entwurf_an(
+        Buchungsdaten(
+            art=buchung.art,
+            belegdatum=buchung.belegdatum,
+            betrag_cent=buchung.betrag_cent,
+            kategorie_id=buchung.kategorie_id,
+            betrieblich_prozent=buchung.betrieblich_prozent,
+            kontakt_id=buchung.kontakt_id,
+            partner=buchung.partner,
+            belegnummer=buchung.belegnummer,
+            beschreibung=buchung.beschreibung,
+            beleg_id=buchung.beleg_id,
+        ),
+        nutzer_id,
+    )
+    festschreiben(neu, nutzer_id)
+    for z in zahlungen:
+        erfasse_zahlung(
+            neu,
+            datum=z.datum,
+            betrag_cent=z.betrag_cent,
+            zahlungsart=z.zahlungsart,
+            notiz=z.notiz,
+            nutzer_id=nutzer_id,
+        )
+    protokolliere(
+        "anlagegut_korrigiert",
+        nutzer_id=nutzer_id,
+        objekt_typ="buchung",
+        objekt_id=neu.id,
+        details={"alte_buchung": buchung.id, "altes_anlagegut": gut.id},
+    )
+    db.session.commit()
+    return neu

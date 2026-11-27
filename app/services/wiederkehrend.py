@@ -132,6 +132,9 @@ def lege_leer_an(nutzer_id: int, heute: date | None = None) -> WiederkehrendeRec
         anker_tag=heute.day,
         erstellt_von=nutzer_id,
         empfaenger_land="Deutschland",
+        # Pausiert, bis die Vorlage einmal gespeichert ist: Ein neugieriger Klick soll keine
+        # Rechnungen auslösen
+        aktiv=False,
     )
     vorlage.positionen.append(WiederkehrendePosition(position=1, typ="artikel", bezeichnung=""))
     db.session.add(vorlage)
@@ -169,6 +172,7 @@ def lege_aus_rechnung_an(rechnung: Rechnung, nutzer_id: int) -> WiederkehrendeRe
         naechste_am=start,
         anker_tag=rechnung.rechnungsdatum.day,
         erstellt_von=nutzer_id,
+        aktiv=False,
     )
     db.session.add(vorlage)
     db.session.flush()

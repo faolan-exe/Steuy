@@ -14,8 +14,11 @@
   <div class="aktionen">
     {% if r.belegart == "angebot" %}
       {% if r.status == "offen" and darf("rechnungen_versenden") %}
-      <form method="post" action="{{ url_for('rechnungen.ablehnen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit">Abgelehnt</button></form>
+      <form method="post" action="{{ url_for('rechnungen.ablehnen', rechnung_id=r.id) }}" data-bestaetigen="Angebot als abgelehnt markieren?" data-bestaetigen-knopf="Abgelehnt"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit">Abgelehnt</button></form>
       <form method="post" action="{{ url_for('rechnungen.annehmen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Angenommen</button></form>
+      {% endif %}
+      {% if r.status in ("angenommen", "abgelehnt") and darf("rechnungen_versenden") and not rechnung_aus_angebot_vorhanden %}
+      <form method="post" action="{{ url_for('rechnungen.wieder_offen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text" type="submit">{{ "Ablehnung zurücknehmen" if r.status == "abgelehnt" else "Wieder auf offen setzen" }}</button></form>
       {% endif %}
       {% if r.status != "abgelehnt" and darf("entwuerfe") and not rechnung_aus_angebot_vorhanden %}
       <form method="post" action="{{ url_for('rechnungen.in_rechnung', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">In Rechnung umwandeln</button></form>
@@ -29,7 +32,7 @@
       {% if lieferscheine %}
       <a class="knopf" href="{{ url_for('rechnungen.detail', rechnung_id=lieferscheine[0].id) }}">Lieferschein {{ lieferscheine[0].nummer }}</a>
       {% else %}
-      <form method="post" action="{{ url_for('rechnungen.lieferschein_erstellen', rechnung_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Lieferschein erstellen</button></form>
+      <form method="post" action="{{ url_for('rechnungen.lieferschein_erstellen', rechnung_id=r.id) }}" data-bestaetigen="Lieferschein zu {{ r.nummer }} erstellen? Er bekommt sofort eine Nummer und lässt sich danach nicht mehr löschen." data-bestaetigen-knopf="Lieferschein erstellen"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf" type="submit">Lieferschein erstellen</button></form>
       {% endif %}
     {% endif %}
     {% if r.ist_rechnung and not r.ist_entwurf and r.status != "storniert" and darf("entwuerfe") %}
@@ -181,7 +184,7 @@
             <td>{{ m.datum | datum }}</td>
             <td>{{ m.frist_bis | datum }}</td>
             <td class="rechts betrag">{{ m.offen_cent | euro }}{% if m.pauschale_cent %}<br><small>+ {{ m.pauschale_cent | euro }} Pauschale</small>{% endif %}</td>
-            <td class="rechts"><a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF</a>{% if darf("rechnungen_versenden") and m.aktiv %} <a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Senden</a>{% endif %}</td>
+            <td class="rechts"><a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF</a>{% if darf("rechnungen_versenden") and m.aktiv and r.status != "storniert" %} <a class="knopf knopf-text" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Senden</a>{% endif %}</td>
           </tr>
           {% endfor %}
         </tbody>

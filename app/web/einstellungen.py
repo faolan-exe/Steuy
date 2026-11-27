@@ -33,6 +33,7 @@ from app.domain.rollen import (
     Recht,
     Rolle,
 )
+from app.domain.update import UPDATE_SCHRITTE
 from app.extensions import db
 from app.models import Mahnstufe, Nutzer
 from app.services import drucklayout as layoutdienst
@@ -63,6 +64,7 @@ from app.services.rechnungseinstellungen import (
 )
 from app.services.rechte import rechte_matrix, setze_rechte
 from app.services.update import automatisch_moeglich as update_moeglich
+from app.services.update import lage as update_lage
 from app.services.update import pruefe as pruefe_update
 from app.services.update import (
     schalte_automatik,
@@ -97,6 +99,11 @@ def firmendaten():
             flash("Firmendaten gespeichert.")
         else:
             flash("Keine Änderungen.")
+        if not (gewerbe.steuernummer or gewerbe.ust_idnr):
+            flash(
+                "Ohne Steuernummer kannst du keine Rechnung finalisieren: Sie ist Pflichtangabe "
+                "(§ 34a UStDV). Trage sie ein, sobald du sie vom Finanzamt hast."
+            )
         return redirect(url_for("einstellungen.firmendaten"))
 
     return render_template("firmendaten.html", formular=formular)
@@ -213,6 +220,8 @@ def update():
         "update.html",
         ergebnis=update_seite(frisch=frisch),
         status=update_status(),
+        lage=update_lage(),
+        schritte=UPDATE_SCHRITTE,
         automatisch=update_moeglich(),
         version=VERSION,
     )
@@ -234,7 +243,7 @@ def update_automatik():
 @bp.get("/update/status")
 @braucht_recht(Recht.EINSTELLUNGEN)
 def update_fortschritt():
-    return jsonify({**update_status(), "installiert": VERSION})
+    return jsonify({**update_status(), "lage": update_lage(), "installiert": VERSION})
 
 
 @bp.post("/update/starten")

@@ -52,10 +52,34 @@ def _sende_smtp(nachricht: EmailMessage) -> None:
         raise MailFehler("Der Mailserver hat die Empfängeradresse abgelehnt.") from fehler
     except (smtplib.SMTPException, OSError) as fehler:
         current_app.logger.warning("Mailversand fehlgeschlagen", exc_info=True)
-        raise MailFehler(
-            f"Der Mailserver ist nicht erreichbar oder lehnt ab ({type(fehler).__name__}). "
-            "Server, Port und Verschlüsselung prüfen."
-        ) from fehler
+        raise MailFehler(_erklaere(fehler, gewerbe)) from fehler
+
+
+def _erklaere(fehler: Exception, gewerbe) -> str:
+    """Verständliche Meldung statt technischer Fehlernamen wie „gaierror“."""
+    import socket
+
+    port, art = gewerbe.smtp_port, gewerbe.smtp_verschluesselung
+    passt_nicht = (port == 465 and art != "ssl") or (port == 587 and art == "ssl")
+    tipp = (
+        " Port und Verschlüsselung passen nicht zusammen: 465 gehört zu SSL, 587 zu STARTTLS."
+        if passt_nicht
+        else ""
+    )
+    if isinstance(fehler, socket.gaierror):
+        return (
+            f"Den Mailserver „{gewerbe.smtp_server}“ gibt es nicht oder er ist gerade nicht "
+            "erreichbar. Bitte die Schreibweise prüfen." + tipp
+        )
+    if isinstance(fehler, TimeoutError | ConnectionRefusedError | ssl.SSLError):
+        return (
+            f"Der Mailserver ist über Port {port} nicht erreichbar. Port und "
+            "Verschlüsselung prüfen." + tipp
+        )
+    return (
+        "Der Mailserver ist nicht erreichbar oder lehnt ab. "
+        "Server, Port und Verschlüsselung prüfen." + tipp
+    )
 
 
 def sende(

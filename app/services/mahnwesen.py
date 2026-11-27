@@ -30,6 +30,10 @@ class MahnungNichtMoeglich(ValueError):
     pass
 
 
+class MahnungSchonErstellt(MahnungNichtMoeglich):
+    """Doppelklick: Die Stufe, die das Formular erstellen wollte, gibt es schon."""
+
+
 def stufen() -> list[Stufe]:
     zeilen = db.session.execute(select(Mahnstufe).order_by(Mahnstufe.nummer)).scalars()
     return [z.als_stufe() for z in zeilen]
@@ -132,7 +136,8 @@ def entwurf(
         bezeichnung=stufe.bezeichnung,
         datum=heute,
         offen_cent=rechnung.offen_cent,
-        frist_bis=heute + timedelta(days=stufe.frist_tage),
+        # Die neue Frist liegt nie vor der ursprünglichen Fälligkeit (bei vorzeitiger Mahnung)
+        frist_bis=max(heute, rechnung.faellig_am or heute) + timedelta(days=stufe.frist_tage),
         pauschale_cent=VERZUGSPAUSCHALE_CENT if pauschale else 0,
     )
     werte = {
@@ -154,10 +159,16 @@ def erstelle_mahnung(
     automatisch: bool = False,
     text: str | None = None,
     pauschale: bool | None = None,
+    erwartete_stufe: int | None = None,
 ) -> Mahnung:
     """Erstellt die nächste Stufe, auch wenn sie laut Zeitplan noch nicht fällig ist."""
     from app.services.pdf import rendere_mahnung
+    from app.services.rechnungen import sperre
 
+    sperre(rechnung)
+    naechste = naechste_fuer(rechnung)
+    if erwartete_stufe is not None and (naechste is None or naechste.nummer != erwartete_stufe):
+        raise MahnungSchonErstellt("Diese Mahnstufe wurde gerade schon erstellt.")
     mahnung, brieftext = entwurf(rechnung, text=text, pauschale=pauschale, heute=heute)
     mahnung.erstellt_von = nutzer_id
     mahnung.automatisch = automatisch

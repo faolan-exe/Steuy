@@ -24,7 +24,7 @@
 </div>
 {% if fehler %}<div class="fehlermeldung" role="alert">{% if fehler.get("einstellung") %}{{ fehler["einstellung"] }}{% else %}Bitte die markierten Felder prüfen. Es wurde nichts gespeichert.{% endif %}</div>{% endif %}
 
-<form method="post" id="editor" class="rechnungseditor" novalidate>
+<form method="post" id="editor" class="rechnungseditor" novalidate data-ungespeichert>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <input type="hidden" name="rechnungsdatum" value="{{ heute.isoformat() }}">
   <input type="hidden" name="leistung_art" value="leistungszeitraum">
@@ -52,7 +52,7 @@
         {% if fehler.get("versand") %}<div class="feldfehler">{{ fehler["versand"] }}</div>{% endif %}
         <p class="hinweis">{% if not mail_da %}Für den Versand per E-Mail muss zuerst der E-Mail-Versand eingerichtet sein (Einstellungen → E-Mail). {% endif %}Festgeschriebene Rechnungen lassen sich nicht mehr ändern. Prüfe die Vorlage deshalb sorgfältig, bevor du eine der beiden automatischen Arten wählst.</p>
       </fieldset>
-      <label class="haken" style="display:block;margin-top:.5rem"><input type="checkbox" name="aktiv" value="y" {% if r.aktiv %}checked{% endif %}> <span>Aktiv (ohne Haken ist die Vorlage pausiert)</span></label>
+      <label class="haken" style="display:block;margin-top:.5rem"><input type="checkbox" name="aktiv" value="y" {% if r.aktiv or request.args.get("neu") %}checked{% endif %}> <span>Aktiv (ohne Haken ist die Vorlage pausiert)</span></label>
     </div>
   </section>
 
@@ -64,7 +64,7 @@
           <select class="feld" id="kontakt_id" name="kontakt_id">
             <option value="">– Kunde wählen –</option>
             {% for k in kunden %}
-            <option value="{{ k.id }}" {% if r.kontakt_id == k.id %}selected{% endif %} data-name="{{ k.name }}" data-zusatz="{{ k.adresszusatz or '' }}" data-strasse="{{ k.strasse or '' }}" data-plz="{{ k.plz or '' }}" data-ort="{{ k.ort or '' }}" data-land="{{ k.land or 'Deutschland' }}">{{ k.name }} ({{ k.kundennummer }})</option>
+            <option value="{{ k.id }}" {% if r.kontakt_id == k.id %}selected{% endif %} data-name="{{ k.briefname }}" data-zusatz="{{ k.adresszusatz or '' }}" data-strasse="{{ k.strasse or '' }}" data-plz="{{ k.plz or '' }}" data-ort="{{ k.ort or '' }}" data-land="{{ k.land or 'Deutschland' }}">{{ k.name }} ({{ k.kundennummer }})</option>
             {% endfor %}
           </select>
           <label class="feldlabel" for="kontakt_id">Kunde</label>

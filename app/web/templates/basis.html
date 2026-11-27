@@ -57,6 +57,7 @@
           </div>
           <a class="menue-eintrag" href="{{ url_for('profil.profil') }}">Profil und Sicherheit</a>
           <a class="menue-eintrag" href="{{ url_for('einstellungen.darstellung') }}">Darstellung</a>
+          <a class="menue-eintrag" href="{{ hilfe_url() }}" target="_blank" rel="noopener">Hilfe und Anleitungen</a>
           <form method="post" action="{{ url_for('auth.abmelden') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="menue-eintrag">Abmelden</button>
@@ -79,8 +80,10 @@
   <aside class="rundgang" id="rundgang" role="dialog" aria-labelledby="rundgang-titel" data-licht="{{ rundgang.schritt.licht or '' }}" data-endpunkt="{{ rundgang.schritt.endpunkt }}">
     <div class="rundgang-kopf">
       <span class="rundgang-zaehler">Rundgang · Schritt {{ rundgang.nummer }} von {{ rundgang.anzahl }}</span>
+      <button class="rundgang-klapp" type="button" aria-expanded="true" aria-controls="rundgang-inhalt" title="Einklappen" aria-label="Rundgang einklappen">–</button>
       <div class="rundgang-balken" role="meter" aria-valuemin="0" aria-valuemax="{{ rundgang.anzahl }}" aria-valuenow="{{ rundgang.nummer }}"><span style="width: {{ (rundgang.nummer * 100 / rundgang.anzahl) | round(0) | int }}%"></span></div>
     </div>
+    <div class="rundgang-inhalt" id="rundgang-inhalt">
     <h2 id="rundgang-titel">{{ rundgang.schritt.titel }}</h2>
     {% for absatz in rundgang.absaetze %}<p>{{ absatz }}</p>{% endfor %}
     <div class="rundgang-fuss">
@@ -95,6 +98,7 @@
       <form method="post" action="{{ url_for('rundgang.weiter') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-primaer" type="submit" autofocus>{{ "Fertig" if rundgang.letzter else "Weiter" }}</button></form>
     </div>
     {% if request.endpoint != rundgang.schritt.endpunkt %}<a class="rundgang-seite" href="{{ url_for('rundgang.schritt') }}">Zur Seite dieses Schritts</a>{% endif %}
+    </div>
   </aside>
   <script src="{{ url_for('static', filename='js/rundgang.js') }}" defer></script>
   {% endif %}

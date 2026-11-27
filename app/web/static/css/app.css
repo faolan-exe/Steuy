@@ -602,10 +602,9 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 .anmeldekarte .hinweis { margin: 0 0 1.25rem; }
 
 .fehlermeldung,
+/* Block statt Flex: Sonst wird jeder Link und jedes Code-Stück im Text eine eigene Spalte */
 .meldung {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: block;
   margin-bottom: 1rem;
   padding: 0.7rem 0.9rem;
   border-radius: var(--radius);
@@ -613,6 +612,9 @@ svg.icon { width: 1.25rem; height: 1.25rem; flex: none; }
 
 .fehlermeldung { background: var(--rot-hell); color: var(--rot); }
 .meldung { background: var(--gruen-hell); color: var(--gruen-dunkel); }
+.meldung > svg:first-child { vertical-align: -0.2em; margin-right: 0.4rem; }
+.meldung > p { margin: 0; }
+.meldung > p + p, .meldung > p + ul, .meldung > div + div { margin-top: 0.4rem; }
 
 /* ---------- Nutzermenü ---------- */
 
@@ -1231,7 +1233,14 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
 .rundgang { position: fixed; right: 1rem; bottom: 1rem; z-index: 40; width: min(26rem, calc(100vw - 2rem)); max-height: calc(100vh - 6rem); overflow-y: auto; padding: 1rem 1.1rem; background: var(--karte); border-radius: 8px; border-top: 4px solid var(--gruen); box-shadow: 0 6px 28px rgba(0, 0, 0, 0.28); }
 .rundgang h2 { margin: 0.5rem 0 0.4rem; font-size: 1.15rem; }
 .rundgang p { margin: 0 0 0.6rem; }
-.rundgang-kopf { display: grid; gap: 0.35rem; }
+.rundgang-kopf { position: sticky; top: -1rem; z-index: 1; display: grid; gap: 0.35rem; margin: -1rem -1.1rem 0; padding: 1rem 1.1rem 0.4rem; background: var(--karte); }
+.rundgang-zaehler { padding-right: 2rem; }
+.rundgang-klapp { position: absolute; top: 0.55rem; right: 0.5rem; min-width: 2rem; min-height: 2rem; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--text-leise); font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.rundgang-klapp:hover, .rundgang-klapp:focus-visible { background: var(--linie); color: var(--text); }
+.rundgang.eingeklappt { width: auto; max-width: calc(100vw - 2rem); padding: 0.55rem 0.8rem; cursor: pointer; }
+.rundgang.eingeklappt .rundgang-inhalt, .rundgang.eingeklappt .rundgang-balken { display: none; }
+.rundgang.eingeklappt .rundgang-kopf { position: static; margin: 0; padding: 0; }
+.rundgang.eingeklappt .rundgang-klapp { top: 50%; transform: translateY(-50%); }
 .rundgang-zaehler { font-size: 0.78rem; color: var(--text-leise); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
 .rundgang-balken { height: 4px; background: var(--linie); border-radius: 2px; overflow: hidden; }
 .rundgang-balken span { display: block; height: 100%; background: var(--gruen); }
@@ -1242,7 +1251,7 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
 .rundgang-licht { outline: 3px solid var(--gelb); outline-offset: 3px; border-radius: 4px; animation: rundgang-puls 1.6s ease-in-out infinite; }
 @keyframes rundgang-puls { 0%, 100% { outline-color: var(--gelb); } 50% { outline-color: rgba(227, 169, 0, 0.35); } }
 @media (prefers-reduced-motion: reduce) { .rundgang-licht { animation: none; } }
-@media (max-width: 48rem) { .rundgang { left: 0.5rem; right: 0.5rem; bottom: 0.5rem; width: auto; max-height: 55vh; } }
+@media (max-width: 48rem) { .rundgang { left: 0.5rem; right: 0.5rem; bottom: 0.5rem; width: auto; max-height: 55vh; } .rundgang.eingeklappt { left: auto; } }
 .auswahlgruppe { border: 0; padding: 0; margin: 0 0 1rem; display: grid; gap: 0.4rem; }
 .auswahlgruppe legend { font-weight: 600; margin-bottom: 0.3rem; padding: 0; }
 
@@ -1306,3 +1315,28 @@ dialog.bestaetigung::backdrop { background: rgb(0 0 0 / 0.35); }
 .liste-schlicht { list-style: none; margin: 0; padding: 0; }
 .liste-schlicht li { padding: 0.35rem 0; border-bottom: 1px solid var(--linie); }
 .liste-schlicht li:last-child { border-bottom: none; }
+
+/* ---------- Update mit Fortschritt ---------- */
+
+.update-zeile { display: flex; align-items: center; gap: 0.75rem; }
+.update-balken { flex: 1; height: 0.75rem; margin: 0; }
+.update-balken span { transition: width 0.6s ease; }
+.update-prozent { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 3.2rem; text-align: right; }
+.update-schritte { list-style: none; margin: 0.75rem 0; padding: 0; display: grid; gap: 0.4rem; }
+.update-schritte li { display: flex; align-items: center; gap: 0.6rem; color: var(--text-leise); }
+.update-schritte li.aktiv { color: var(--text); font-weight: 600; }
+.update-schritte li.erledigt { color: var(--text); }
+.update-schritte li.fehler { color: var(--rot); font-weight: 600; }
+.update-symbol { width: 1.15rem; height: 1.15rem; border-radius: 50%; border: 2px solid var(--linie); flex: none; position: relative; }
+.update-schritte li.erledigt .update-symbol { background: var(--gruen); border-color: var(--gruen); }
+.update-schritte li.erledigt .update-symbol::after { content: ""; position: absolute; left: 0.3rem; top: 0.1rem; width: 0.3rem; height: 0.55rem; border: solid var(--karte); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.update-schritte li.aktiv .update-symbol { border-color: var(--gruen); border-top-color: transparent; animation: update-drehen 0.9s linear infinite; }
+.update-schritte li.fehler .update-symbol { background: var(--rot); border-color: var(--rot); }
+.update-ausgabe { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; color: var(--text-leise); background: var(--hintergrund); border-radius: var(--radius); padding: 0.4rem 0.6rem; margin: 0 0 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lage-fehlgeschlagen .update-balken span { background: var(--rot); }
+@keyframes update-drehen { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .update-schritte li.aktiv .update-symbol { animation: none; border-top-color: var(--gruen); } }
+
+/* Während ein Formular gesendet wird, sind seine Knöpfe gesperrt (gegen Doppelklick) */
+form.wird-gesendet button[type="submit"], form.wird-gesendet button:not([type]) { opacity: 0.6; cursor: progress; }
+.passwort-vergessen { margin-top: 1rem; } .passwort-vergessen summary { cursor: pointer; color: var(--text-leise); font-size: 0.9rem; }

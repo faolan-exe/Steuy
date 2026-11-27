@@ -40,8 +40,8 @@ def mit_app(app):
 
 
 def test_pruefe_nimmt_gueltige_werte_und_haken():
-    layout = pruefe({"layout": "3", "akzent": "#AABBCC", "schrift": "serif", "zeige_pos": "y"})
-    assert (layout.layout, layout.akzent, layout.schrift) == (3, "#aabbcc", "serif")
+    layout = pruefe({"layout": "3", "akzent": "#2B4C7E", "schrift": "serif", "zeige_pos": "y"})
+    assert (layout.layout, layout.akzent, layout.schrift) == (3, "#2b4c7e", "serif")
     assert layout.zeige_pos is True and layout.zeige_bank is False
 
 
@@ -54,6 +54,7 @@ def test_pruefe_nimmt_gueltige_werte_und_haken():
         {"akzent": "rot"},
         {"akzent": "#12345"},
         {"akzent": "url(javascript:1)"},
+        {"akzent": "#ffee88"},  # Hellgelb: auf weißem Papier unlesbar
         {"schrift": "Comic Sans"},
         {"schrift_text": "30"},
         {"schrift_titel": "5"},

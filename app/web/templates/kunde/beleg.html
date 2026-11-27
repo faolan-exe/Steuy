@@ -12,7 +12,7 @@
   </div>
   {% if r.belegart != "lieferschein" %}
   <p class="k-betrag">{{ (offen if offen > 0 and offen != r.summe_cent else r.summe_cent) | euro }}</p>
-  {% if offen > 0 and offen != r.summe_cent %}<p class="k-leise">noch offen von {{ r.summe_cent | euro }}</p>{% endif %}
+  {% if offen > 0 and offen != r.summe_cent %}<p class="k-leise">noch offen von {{ r.summe_cent | euro }}{% if pauschale %}, darin {{ pauschale | euro }} Verzugspauschale laut Mahnung{% endif %}</p>{% endif %}
   {% endif %}
   <dl class="k-daten">
     <div><dt>Datum</dt><dd>{{ r.rechnungsdatum | datum }}</dd></div>

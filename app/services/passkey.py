@@ -73,7 +73,8 @@ def moeglich() -> tuple[bool, str]:
     if request.scheme != "https" and not lokal:
         return (
             False,
-            "Passkeys brauchen eine verschlüsselte Verbindung (HTTPS), siehe docs/passkeys.md.",
+            "Passkeys brauchen eine verschlüsselte Verbindung (HTTPS). Wie das geht, steht in der "
+            "Hilfe unter „Passkeys“.",
         )
     return True, ""
 

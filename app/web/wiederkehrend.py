@@ -13,7 +13,13 @@ from app.models import Artikel, Kontakt, Rechnung, WiederkehrendeRechnung
 from app.services import mail, wiederkehrend
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.rechte import darf
-from app.web.rechnungseditor import lies_formular, roh_aus_rechnung, wende_positionsaktion
+from app.web.rechnungseditor import (
+    Ansicht,
+    lies_formular,
+    ohne_leere,
+    roh_aus_rechnung,
+    wende_positionsaktion,
+)
 from app.web.rechte import braucht_recht
 
 bp = Blueprint("wiederkehrend", __name__, url_prefix="/wiederkehrend")
@@ -56,7 +62,8 @@ def liste():
 @braucht_recht(Recht.ENTWUERFE)
 def neu():
     vorlage = wiederkehrend.lege_leer_an(current_user.id)
-    return redirect(url_for("wiederkehrend.bearbeiten", vorlage_id=vorlage.id))
+    flash("Vorlage angelegt. Sie ist noch pausiert und startet erst, wenn du sie speicherst.")
+    return redirect(url_for("wiederkehrend.bearbeiten", vorlage_id=vorlage.id, neu=1))
 
 
 @bp.post("/aus-rechnung/<int:rechnung_id>")
@@ -68,8 +75,11 @@ def aus_rechnung(rechnung_id: int):
     except wiederkehrend.VorlageUngueltig as fehler:
         flash(str(fehler))
         return redirect(url_for("rechnungen.detail", rechnung_id=rechnung.id))
-    flash("Vorlage angelegt. Bitte Intervall und ersten Termin prüfen.")
-    return redirect(url_for("wiederkehrend.bearbeiten", vorlage_id=vorlage.id))
+    flash(
+        "Vorlage angelegt. Sie ist noch pausiert: Prüfe Intervall und ersten Termin und speichere, "
+        "dann läuft sie."
+    )
+    return redirect(url_for("wiederkehrend.bearbeiten", vorlage_id=vorlage.id, neu=1))
 
 
 def _einstellungen(formular, fehler: dict) -> wiederkehrend.Einstellungen:
@@ -125,9 +135,11 @@ def bearbeiten(vorlage_id: int):
     except wiederkehrend.VorlageUngueltig as problem:
         fehler["einstellung"] = str(problem)
     if fehler:
+        eingaben = vars(eingabe.kopf).copy() if eingabe.kopf else {}
+        eingaben.update(vars(einstellungen))
         return render_template(
             "wiederkehrend_editor.html",
-            r=vorlage,
+            r=Ansicht(vorlage, eingaben),
             positionen=eingabe.roh,
             fehler=fehler,
             rechnungen=wiederkehrend.rechnungen_der_vorlage(vorlage),
@@ -138,6 +150,8 @@ def bearbeiten(vorlage_id: int):
 
     aktion = request.form.get("aktion", "speichern")
     positionen = wende_positionsaktion(aktion, eingabe.positionen, request.form)
+    if aktion == "speichern":
+        positionen = ohne_leere(positionen)
     wiederkehrend.speichere(vorlage, eingabe.kopf, positionen, einstellungen, current_user.id)
     if aktion == "speichern":
         flash("Gespeichert.")

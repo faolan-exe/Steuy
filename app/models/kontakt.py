@@ -80,5 +80,12 @@ class Kontakt(db.Model):
         return anzeigename(self.art, self.firmenname, self.vorname, self.nachname)
 
     @property
+    def briefname(self) -> str:
+        """Name für die Anschrift im Brief: „Herr Dr. Max Mustermann“ statt „Mustermann, Max“."""
+        if self.art == "firma":
+            return self.firmenname or ""
+        return " ".join(t for t in (self.anrede, self.vorname, self.nachname) if t)
+
+    @property
     def nummer(self) -> int | None:
         return self.kundennummer or self.lieferantennummer

@@ -13,7 +13,7 @@ from app.domain.zahlung import (
     status_nach_zahlungen,
 )
 from app.extensions import db
-from app.models import Buchung, Rechnung, Zahlung
+from app.models import Buchung, BuchungGebuehr, Rechnung, Zahlung
 from app.services import ablage
 from app.services.protokoll import protokolliere
 
@@ -52,6 +52,9 @@ def erfasse_zahlung(
     referenz: str | None = None,
     nachweis: tuple[str, bytes] | None = None,
 ) -> Zahlung:
+    from app.services.rechnungen import sperre
+
+    sperre(rechnung)  # Doppelklick: die zweite Zahlung sieht den neuen offenen Rest
     if not rechnung.ist_rechnung or rechnung.ist_entwurf or rechnung.status == "storniert":
         raise ZahlungUngueltig(
             "Zahlungen gibt es nur zu finalisierten, nicht stornierten Rechnungen."
@@ -100,6 +103,23 @@ def storniere_zahlung(zahlung: Zahlung, nutzer_id: int) -> Zahlung:
     """Gegenbuchung mit gleichem Datum, damit sich beide im selben Zeitraum aufheben."""
     if zahlung.storno_von_id is not None:
         raise ZahlungUngueltig("Eine Gegenbuchung kann nicht rückgängig gemacht werden.")
+    from sqlalchemy.orm import aliased
+
+    storno = aliased(Buchung)
+    gebuehr = db.session.execute(
+        select(Buchung)
+        .join(BuchungGebuehr, BuchungGebuehr.buchung_id == Buchung.id)
+        .where(
+            BuchungGebuehr.zahlung_id == zahlung.id,
+            ~select(storno.id).where(storno.storno_von_id == Buchung.id).exists(),
+        )
+    ).scalar_one_or_none()
+    if gebuehr is not None:
+        raise ZahlungUngueltig(
+            "Die Gebühr dieser Zahlung ist schon als Ausgabe gebucht. Bitte zuerst diese "
+            f"Gebührenbuchung vom {gebuehr.belegdatum:%d.%m.%Y} stornieren (unter Belege → "
+            "Ausgaben), dann die Zahlung rückgängig machen."
+        )
     vorhanden = db.session.execute(
         select(Zahlung.id).where(Zahlung.storno_von_id == zahlung.id)
     ).first()
@@ -171,17 +191,37 @@ def zu_pruefen(heute: date | None = None) -> dict:
             .order_by(Rechnung.gueltig_bis)
         ).scalars()
     )
+    # Angenommen (z. B. online vom Kunden), aber noch keine Rechnung daraus
+    from app.services.rechnungen import rechnungen_zum_angebot
+
+    angenommen = [
+        a
+        for a in db.session.execute(
+            select(Rechnung)
+            .where(Rechnung.belegart == "angebot", Rechnung.status == "angenommen")
+            .order_by(Rechnung.rechnungsdatum)
+        ).scalars()
+        if not rechnungen_zum_angebot(a)
+    ]
     from app.services.jahreswechsel import kandidaten
     from app.services.shop import offene_hinweise, zur_freigabe
 
     jahreswechsel = kandidaten(heute)
+    from app.services.anlagen import ohne_anlagegut
+    from app.services.versand import nicht_verschickt
+
+    anlagen_fehlen = ohne_anlagegut()
+    versand_fehlt = nicht_verschickt()
     shop_freigabe = zur_freigabe()
     shop_hinweise = offene_hinweise()
     return {
         "jahreswechsel": jahreswechsel,
+        "anlagen_fehlen": anlagen_fehlen,
+        "versand_fehlt": versand_fehlt,
         "shop_freigabe": shop_freigabe,
         "shop_hinweise": shop_hinweise,
         "angebote": angebote,
+        "angenommen": angenommen,
         "mahnungen": mahnungen,
         "ueberfaellig": ueberfaellig,
         "offen": [r for r in offene if r not in ueberfaellig],
@@ -193,6 +233,8 @@ def zu_pruefen(heute: date | None = None) -> dict:
         "offene_einnahmen": offene_einnahmen,
         "anzahl": len(offene)
         + len(jahreswechsel)
+        + len(anlagen_fehlen)
+        + len(versand_fehlt)
         + len(shop_freigabe)
         + len(shop_hinweise)
         + len(entwuerfe)
@@ -202,7 +244,8 @@ def zu_pruefen(heute: date | None = None) -> dict:
         + len(buchungsentwuerfe)
         + len(offene_ausgaben)
         + len(offene_einnahmen)
-        + len(angebote),
+        + len(angebote)
+        + len(angenommen),
     }
 
 

@@ -22,10 +22,11 @@
 <div class="seitenkopf">
   <h1><a class="zurueck" href="{{ url_for('angebote.angebote') if r.belegart == 'angebot' else url_for('rechnungen.liste') }}" aria-label="Zurück zur Liste">‹</a> {{ r.belegname }} erstellen <small>Entwurf</small></h1>
 </div>
-{% if fehler %}<div class="fehlermeldung" role="alert">Bitte die markierten Felder prüfen. Es wurde nichts gespeichert.</div>{% endif %}
+{% if fehler %}<div class="fehlermeldung" role="alert">{{ fehler.get("stand") or "Bitte die markierten Felder prüfen. Es wurde nichts gespeichert." }}</div>{% endif %}
 
-<form method="post" id="editor" class="rechnungseditor" novalidate>
+<form method="post" id="editor" class="rechnungseditor" novalidate data-ungespeichert>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if stand %}<input type="hidden" name="stand" value="{{ stand }}">{% endif %}
 
   <section class="karte">
     <div class="karte-inhalt editor-kopf">
@@ -33,7 +34,7 @@
         <div class="feldgruppe ganz">
           <select class="feld" id="kontakt_id" name="kontakt_id">
             <option value="">– Kunde wählen –</option>
-            {% macro kundenoption(k, waehlbar=True) %}<option value="{{ k.id }}" {% if waehlbar and r.kontakt_id == k.id %}selected{% endif %} data-name="{{ k.name }}" data-zusatz="{{ k.adresszusatz or '' }}" data-strasse="{{ k.strasse or '' }}" data-plz="{{ k.plz or '' }}" data-ort="{{ k.ort or '' }}" data-land="{{ k.land or 'Deutschland' }}">{{ k.name }} ({{ k.kundennummer }})</option>{% endmacro %}
+            {% macro kundenoption(k, waehlbar=True) %}<option value="{{ k.id }}" {% if waehlbar and r.kontakt_id == k.id %}selected{% endif %} data-name="{{ k.briefname }}" data-zusatz="{{ k.adresszusatz or '' }}" data-strasse="{{ k.strasse or '' }}" data-plz="{{ k.plz or '' }}" data-ort="{{ k.ort or '' }}" data-land="{{ k.land or 'Deutschland' }}">{{ k.name }} ({{ k.kundennummer }})</option>{% endmacro %}
             {% if zuletzt %}
             <optgroup label="Zuletzt verwendet">{% for k in zuletzt %}{{ kundenoption(k, False) }}{% endfor %}</optgroup>
             <optgroup label="Alle Kunden">{% for k in kunden %}{{ kundenoption(k) }}{% endfor %}</optgroup>
@@ -44,6 +45,11 @@
           <label class="feldlabel" for="kontakt_id">Kunde</label>
           <div class="feldhinweis">Die Anschrift wird sofort aus dem Kontakt übernommen und lässt sich danach noch ändern.</div>
         </div>
+        {% if anschrift_geaendert %}
+        <div class="meldung warnung ganz" role="status">
+          <div>Die Anschrift im Kontakt wurde geändert, seit dieser Entwurf sie übernommen hat. <button class="knopf knopf-text" type="button" data-kontakt-uebernehmen>Neue Anschrift übernehmen</button></div>
+        </div>
+        {% endif %}
         {{ eingabe("empfaenger_name", "Name", r.empfaenger_name, klasse="ganz", attrs='autocomplete="off"') }}
         {{ eingabe("empfaenger_zusatz", "Adresszusatz", r.empfaenger_zusatz, klasse="ganz", attrs='autocomplete="off"') }}
         {{ eingabe("empfaenger_strasse", "Straße", r.empfaenger_strasse, klasse="ganz", attrs='autocomplete="off"') }}

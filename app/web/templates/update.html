@@ -6,22 +6,51 @@
 <div class="seitenkopf"><h1>Einstellungen</h1></div>
 {{ reiter("einstellungen.update") }}
 
+{% if lage != "bereit" %}
+{% set nr = status.get("nr") or 0 %}
+{% set gesamt = status.get("gesamt") or schritte | length %}
+<section class="karte abstand-unten update-lauf lage-{{ lage }}" id="update-lauf" data-url="{{ url_for('einstellungen.update_fortschritt') }}" data-lage="{{ lage }}" data-start="{{ status.get('start') or '' }}" data-ende="{{ status.get('zeit') if lage in ('fertig', 'fehlgeschlagen') else '' }}">
+  <div class="karte-kopf"><h2 id="update-titel">{% if lage == "fertig" %}Update auf {{ status.version }} abgeschlossen{% elif lage == "fehlgeschlagen" %}Update auf {{ status.version }} fehlgeschlagen{% else %}Update auf {{ status.version }}{% endif %}</h2></div>
+  <div class="karte-inhalt">
+    <div class="update-zeile">
+      <div class="fortschritt update-balken" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ ((100 if lage == 'fertig' else (nr - 1 if nr else 0) * 100 // gesamt)) }}" aria-labelledby="update-titel"><span id="update-balken" style="width: {{ 100 if lage == 'fertig' else (nr - 1 if nr else 0) * 100 // gesamt }}%"></span></div>
+      <span class="update-prozent" id="update-prozent">{{ 100 if lage == "fertig" else (nr - 1 if nr else 0) * 100 // gesamt }} %</span>
+    </div>
+    <p class="hinweis" id="update-zeit" aria-live="polite"></p>
+    <ol class="update-schritte" id="update-schritte">
+      {% for name in schritte %}
+      {% set i = loop.index %}
+      <li class="{{ 'erledigt' if lage == 'fertig' or i < nr else ('aktiv' if i == nr and lage in ('laeuft', 'haengt') else ('fehler' if i == nr and lage == 'fehlgeschlagen' else 'offen')) }}" data-nr="{{ i }}"><span class="update-symbol" aria-hidden="true"></span><span>{{ name }}</span></li>
+      {% endfor %}
+    </ol>
+    <p class="update-ausgabe" id="update-ausgabe"{% if not status.get("ausgabe") %} hidden{% endif %}>{{ status.get("ausgabe") or "" }}</p>
+    <div id="update-meldung" role="status">
+      {% if lage == "wartet" %}
+      <p class="hinweis">Warte auf den Update-Dienst des Servers … Das dauert normalerweise nur ein paar Sekunden.</p>
+      {% elif lage == "laeuft" %}
+      <p class="hinweis">Bitte die Seite offen lassen und in dieser Zeit nichts buchen. Beim Schritt „Neu bauen und starten“ ist steuy kurz nicht erreichbar, die Seite verbindet sich danach von selbst wieder.</p>
+      {% elif lage == "dienst_fehlt" %}
+      <div class="meldung warnung" role="alert"><strong>Der Update-Dienst auf dem Server reagiert nicht.</strong> Die Anfrage liegt bereit, aber niemand holt sie ab. Meist ist der Dienst nicht eingerichtet oder gestoppt. Auf dem Server als root im Ordner von steuy ausführen:<br><code>sh scripts/update-dienst-einrichten.sh</code><br>Danach startet das Update von selbst. Prüfen lässt sich der Dienst mit <code>systemctl status steuy-update.path</code>.</div>
+      {% elif lage == "haengt" %}
+      <div class="meldung warnung" role="alert"><strong>Seit über 20 Minuten keine Rückmeldung.</strong> Das Update hängt vermutlich bei „{{ status.get("schritt") }}“. Auf dem Server nachsehen: <code>journalctl -u steuy-update -n 50</code>. Die Daten sind gesichert.</div>
+      {% elif lage == "fehlgeschlagen" %}
+      <div class="meldung warnung" role="alert">Fehlgeschlagen bei „{{ status.get("schritt") or "Start" }}“. Die vorherige Version läuft weiter, es ist nichts verloren.{% if status.get("meldung") %}<br>{{ status.meldung }}{% endif %}</div>
+      {% elif lage == "fertig" %}
+      {% if status.version == "v" ~ version %}
+      <div class="meldung" role="status"><p>steuy läuft jetzt mit Version {{ version }}.</p></div>
+      {% else %}
+      <div class="meldung warnung" role="alert"><p>Das Update meldet „fertig“, es läuft aber noch Version {{ version }}. Bitte die Seite neu laden. Bleibt es dabei, auf dem Server <code>docker compose up -d --build</code> im Ordner von steuy ausführen.</p></div>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
 <section class="karte">
   <div class="karte-kopf"><h2>Version</h2></div>
   <div class="karte-inhalt">
     <p>Installiert: <strong>steuy {{ version }}</strong></p>
-
-    {% if status.zustand in ("angefragt", "laeuft") %}
-    <div class="meldung" role="status" id="update-lauf" data-ziel="{{ status.version }}" data-url="{{ url_for('einstellungen.update_fortschritt') }}">
-      Update auf {{ status.version }} läuft: <span id="update-schritt">{{ status.get("schritt") or "wird gestartet" }}</span>.
-      Das dauert einige Minuten, die Seite lädt danach von selbst neu. Bitte nichts schließen und keine Buchungen erfassen.
-    </div>
-    {% elif status.zustand == "fehlgeschlagen" %}
-    <div class="meldung warnung" role="alert">
-      Das letzte Update auf {{ status.version }} ist fehlgeschlagen. Die vorherige Version läuft weiter, es ist nichts verloren.
-      {% if status.get("meldung") %}<div class="hinweis">{{ status.meldung }}</div>{% endif %}
-    </div>
-    {% endif %}
 
     {% if ergebnis.zustand == "aktuell" %}
     <p class="meldung" role="status">Bereits aktuelle Version. Du hast die neueste Version ({{ ergebnis.neueste }}).</p>
@@ -71,9 +100,9 @@
       <button class="knopf" type="submit">Doch aktualisieren</button>
     </form>
     {% elif not automatisch %}
-    <p class="meldung warnung">Das Update per Knopfdruck ist auf diesem Server noch nicht eingerichtet. Einmalig im Ordner von steuy als root ausführen: <code>sh scripts/update-dienst-einrichten.sh</code> (bei der Installation mit dem Installationsskript passiert das automatisch). Ohne Dienst geht es von Hand: <code>git pull && docker compose up -d --build</code>. Mehr dazu in <code>docs/betrieb.md</code>.</p>
-    {% elif status.zustand in ("angefragt", "laeuft") %}
-    <p class="hinweis">Ein Update läuft bereits.</p>
+    <p class="meldung warnung">Das Update per Knopfdruck ist auf diesem Server noch nicht eingerichtet. Einmalig im Ordner von steuy als root ausführen: <code>sh scripts/update-dienst-einrichten.sh</code> (bei der Installation mit dem Installationsskript passiert das automatisch). Ohne Dienst geht es von Hand: <code>git pull && docker compose up -d --build</code>. Mehr dazu in der <a href="{{ hilfe_url('betrieb') }}" target="_blank" rel="noopener">Anleitung zum Betrieb</a>.</p>
+    {% elif lage in ("wartet", "laeuft") %}
+    <p class="hinweis">Ein Update läuft bereits, den Fortschritt siehst du oben.</p>
     {% else %}
     <div class="formular-fuss">
       <form method="post" action="{{ url_for('einstellungen.update_ueberspringen') }}">
@@ -92,20 +121,71 @@
 
 <script nonce="{{ csp_nonce() }}">
 (function () {
-  var box = document.getElementById("update-lauf");
-  if (!box) return;
-  var ziel = box.dataset.ziel, url = box.dataset.url;
-  function pruefen() {
-    fetch(url, { credentials: "same-origin" })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (s) {
-        if (!s) return;
-        if (s.schritt) document.getElementById("update-schritt").textContent = s.schritt;
-        if (s.zustand === "fertig" || s.zustand === "fehlgeschlagen") { location.href = location.pathname; }
-      })
-      .catch(function () { /* während des Neustarts nicht erreichbar: weiter versuchen */ });
+  "use strict";
+  var karte = document.getElementById("update-lauf");
+  if (!karte) return;
+  var lage = karte.dataset.lage;
+  if (lage !== "wartet" && lage !== "laeuft") { zeigeZeit(); return; }
+  var url = karte.dataset.url, fehlversuche = 0;
+
+  function dauer(sekunden) {
+    sekunden = Math.max(0, Math.round(sekunden));
+    var m = Math.floor(sekunden / 60), s = sekunden % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s + " Min.";
   }
-  setInterval(pruefen, 4000);
+  function zeigeZeit() {
+    var start = parseInt(karte.dataset.start, 10);
+    if (!start) return;
+    var text = (lage === "fertig" || lage === "fehlgeschlagen" ? "Dauer: " : "Läuft seit ") +
+      dauer((karte.dataset.ende ? parseInt(karte.dataset.ende, 10) : Date.now() / 1000) - start);
+    document.getElementById("update-zeit").textContent = text;
+  }
+  function zeige(s) {
+    var nr = s.nr || 0, gesamt = s.gesamt || 6;
+    // Ein laufender Schritt zählt halb, damit der Balken nicht stehen bleibt
+    var prozent = Math.min(99, Math.round(((Math.max(nr, 1) - 1) + (nr ? 0.5 : 0)) * 100 / gesamt));
+    document.getElementById("update-balken").style.width = prozent + "%";
+    document.getElementById("update-prozent").textContent = prozent + " %";
+    karte.querySelector("[role=progressbar]").setAttribute("aria-valuenow", prozent);
+    karte.querySelectorAll("#update-schritte li").forEach(function (li) {
+      var i = parseInt(li.dataset.nr, 10);
+      li.className = i < nr ? "erledigt" : (i === nr ? "aktiv" : "offen");
+    });
+    var ausgabe = document.getElementById("update-ausgabe");
+    ausgabe.textContent = s.ausgabe || "";
+    ausgabe.hidden = !s.ausgabe;
+    if (s.start) karte.dataset.start = s.start;
+  }
+  function meldung(text) {
+    document.getElementById("update-meldung").innerHTML = "";
+    var p = document.createElement("p");
+    p.className = "hinweis";
+    p.textContent = text;
+    document.getElementById("update-meldung").appendChild(p);
+  }
+  function pruefen() {
+    fetch(url, { credentials: "same-origin", cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (s) {
+        fehlversuche = 0;
+        if (s.lage !== lage) {
+          if (s.lage === "laeuft" && lage === "wartet") {
+            lage = "laeuft";
+            meldung("Bitte die Seite offen lassen und in dieser Zeit nichts buchen. Beim Schritt „Neu bauen und starten“ ist steuy kurz nicht erreichbar, die Seite verbindet sich danach von selbst wieder.");
+          } else { location.replace(location.pathname); return; }
+        }
+        zeige(s);
+      })
+      .catch(function () {
+        // Während steuy neu startet, ist es kurz nicht erreichbar: weiter versuchen
+        fehlversuche += 1;
+        if (fehlversuche >= 2) meldung("steuy startet gerade neu … die Verbindung wird gleich wiederhergestellt.");
+      });
+  }
+  setInterval(function () { zeigeZeit(); }, 1000);
+  setInterval(pruefen, 2000);
+  zeigeZeit();
+  pruefen();
 })();
 </script>
 {% endblock %}

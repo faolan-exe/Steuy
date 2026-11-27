@@ -6,8 +6,20 @@
 <div class="seitenkopf">
   <h1>{{ "Kontakt bearbeiten" if kontakt else "Neuer Kontakt" }}</h1>
 </div>
-<form method="post" novalidate class="kontaktformular">
+<form method="post" novalidate class="kontaktformular" data-ungespeichert>
   {{ formular.csrf_token }}
+  {% if fuer %}<input type="hidden" name="fuer" value="{{ fuer.id }}">
+  <div class="meldung">Kunde aus dem Rechnungsentwurf. Bitte prüfen, ob es eine Firma oder eine Privatperson ist: Davon hängt z. B. ab, ob du eine Verzugspauschale verlangen darfst.</div>{% endif %}
+  {% if doppelte %}
+  <div class="meldung warnung" role="alert">
+    <div>
+      <strong>Diesen Kontakt gibt es vielleicht schon:</strong>
+      <ul>{% for k in doppelte %}<li><a href="{{ url_for('kontakte.detail', kontakt_id=k.id) }}">{{ k.name }}</a>{% if k.ort %}, {{ k.ort }}{% endif %}{% if k.kundennummer %} (Nr. {{ k.kundennummer }}){% endif %}</li>{% endfor %}</ul>
+      Ist es jemand anderes mit gleichem Namen, unten auf „Trotzdem anlegen“ klicken.
+    </div>
+  </div>
+  <input type="hidden" name="doppelt_ok" value="1">
+  {% endif %}
   <section class="karte">
     <div class="karte-kopf"><h2>Kontakt</h2></div>
     <div class="karte-inhalt">
@@ -49,7 +61,7 @@
   </section>
   <div class="formular-fuss">
     <a class="knopf knopf-text" href="{{ url_for('kontakte.detail', kontakt_id=kontakt.id) if kontakt else url_for('kontakte.liste') }}">Abbrechen</a>
-    <button type="submit" class="knopf knopf-primaer">Speichern</button>
+    <button type="submit" class="knopf knopf-primaer">{{ "Trotzdem anlegen" if doppelte else "Speichern" }}</button>
   </div>
 </form>
 {% endblock %}

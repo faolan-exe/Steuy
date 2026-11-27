@@ -8,11 +8,15 @@
   <h1><a class="zurueck" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}#mahnungen" aria-label="Zurück zur Rechnung">‹</a> {{ stufe.bezeichnung }} erstellen <small>zu Rechnung {{ r.nummer }}, {{ kunde(r) }}</small></h1>
 </div>
 {% if fehler %}<div class="meldung warnung abstand-unten" role="alert">{{ fehler }}</div>{% endif %}
-{% if ab and ab > heute %}
-<div class="meldung warnung abstand-unten">Die {{ stufe.bezeichnung }} ist laut Zeitplan erst ab dem {{ ab | datum }} fällig ({{ stufe.tage_nach }} Tage nach {{ "der Fälligkeit am " ~ (r.faellig_am | datum) if not r.mahnungen else "der letzten Mahnung" }}). Du kannst sie trotzdem jetzt erstellen.{% if darf("einstellungen") %} Den Abstand änderst du unter <a href="{{ url_for('einstellungen.mahnwesen') }}">Einstellungen → Mahnwesen</a>.{% endif %}</div>
+{% if ohne_bank %}
+<div class="meldung warnung abstand-unten"><p>Es ist keine Bankverbindung hinterlegt. Auf der Mahnung steht dann kein Konto und kein QR-Code.{% if darf("einstellungen") %} Nachtragen unter <a href="{{ url_for('einstellungen.rechnungen') }}">Einstellungen → Rechnungen</a>.{% endif %}</p></div>
 {% endif %}
-<form method="post" action="{{ url_for('rechnungen.mahnung_erstellen', rechnung_id=r.id) }}" novalidate>
+{% if ab and ab > heute %}
+<div class="meldung warnung abstand-unten"><p>Die {{ stufe.bezeichnung }} ist laut Zeitplan erst ab dem {{ ab | datum }} fällig ({{ stufe.tage_nach }} Tage nach {{ "der Fälligkeit am " ~ (r.faellig_am | datum) if not r.aktive_mahnungen else "der letzten Mahnung" }}). Du kannst sie trotzdem jetzt erstellen.{% if darf("einstellungen") %} Den Abstand änderst du unter <a href="{{ url_for('einstellungen.mahnwesen') }}">Einstellungen → Mahnwesen</a>.{% endif %}</p></div>
+{% endif %}
+<form method="post" action="{{ url_for('rechnungen.mahnung_erstellen', rechnung_id=r.id) }}" novalidate data-ungespeichert>
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="stufe" value="{{ stufe.nummer }}">
   <section class="karte abstand-unten">
     <div class="karte-kopf"><h2>Text</h2></div>
     <div class="karte-inhalt">
@@ -51,7 +55,8 @@
       <p>Offener Rechnungsbetrag: <strong>{{ r.offen_cent | euro }}</strong></p>
       {% if pauschale_moeglich %}
       <label class="haken"><input type="checkbox" name="pauschale" value="y"{% if pauschale %} checked{% endif %}> Verzugspauschale von {{ pauschale_cent | euro }} dazurechnen (zusammen {{ (r.offen_cent + pauschale_cent) | euro }})</label>
-      {% if r.kontakt and r.kontakt.art == "person" %}<div class="meldung warnung">Dieser Kontakt ist als Person angelegt. Ist er Privatkunde (Verbraucher), schuldet er die Pauschale nach § 288 Abs. 5 BGB nicht. Dann nimm den Haken heraus.</div>{% endif %}
+      {% if not r.kontakt %}<div class="meldung warnung"><p>Der Kunde ist kein gespeicherter Kontakt, steuy weiß also nicht, ob es eine Firma ist. Ist er Privatkunde (Verbraucher), schuldet er die Pauschale nach § 288 Abs. 5 BGB nicht. Dann nimm den Haken heraus.</p></div>
+      {% elif r.kontakt.art == "person" %}<div class="meldung warnung"><p>Dieser Kontakt ist als Person angelegt. Ist er Privatkunde (Verbraucher), schuldet er die Pauschale nach § 288 Abs. 5 BGB nicht. Dann nimm den Haken heraus.</p></div>{% endif %}
       <p class="hinweis">Die Pauschale steht ab der zweiten Stufe standardmäßig auf dem Schreiben, im Text an der Stelle <code>{pauschale}</code>, und der QR-Code enthält den Gesamtbetrag. Gesetzlich gilt sie nur gegenüber Unternehmern, nicht gegenüber Verbrauchern. Im Zweifel frag deine Rechtsberatung.</p>
       {% else %}
       <p class="hinweis">Die Verzugspauschale kannst du ab der zweiten Stufe dazurechnen.</p>

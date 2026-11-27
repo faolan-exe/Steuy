@@ -5,6 +5,41 @@ import re
 VERSION_MUSTER = re.compile(r"^v?(\d+)\.(\d+)\.(\d+)$")
 
 
+# Schritte des Updates, in derselben Reihenfolge wie in scripts/update-ausfuehren.sh
+UPDATE_SCHRITTE = (
+    "Sicherung anlegen",
+    "Neue Version laden",
+    "Version prüfen",
+    "Programm ersetzen",
+    "Neu bauen und starten",
+    "Neue Version prüfen",
+)
+# So lange darf eine Anfrage liegen, bis der Dienst auf dem Server sie aufgreift
+DIENST_WARTET_HOECHSTENS = 90  # Sekunden
+# Ohne neues Lebenszeichen gilt ein laufendes Update als hängen geblieben
+LAUF_STILL_HOECHSTENS = 20 * 60  # Sekunden
+
+
+def update_lage(status: dict, jetzt: float) -> str:
+    """Was die Seite zeigen soll: „bereit“, „wartet“, „laeuft“, „haengt“, „dienst_fehlt“,
+    „fertig“ oder „fehlgeschlagen“."""
+    zustand = status.get("zustand")
+    zeit = status.get("zeit")
+    alter = jetzt - zeit if isinstance(zeit, int | float) else None
+    if zustand == "angefragt":
+        return (
+            "dienst_fehlt" if alter is not None and alter > DIENST_WARTET_HOECHSTENS else "wartet"
+        )
+    if zustand == "laeuft":
+        return "haengt" if alter is not None and alter > LAUF_STILL_HOECHSTENS else "laeuft"
+    if zustand == "fertig":
+        # Die Erfolgsmeldung nur einen Tag lang zeigen, danach ist die Seite wieder normal
+        return "bereit" if alter > 24 * 3600 else "fertig"
+    if zustand == "fehlgeschlagen":
+        return zustand
+    return "bereit"
+
+
 class VersionUngueltig(ValueError):
     pass
 

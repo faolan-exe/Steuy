@@ -117,6 +117,22 @@ def lies_formular(formular: MultiDict) -> Eingabe:
     return eingabe
 
 
+def ohne_leere(positionen: list[Positionsdaten]) -> list[Positionsdaten]:
+    """Ganz leere Zeilen (keine Bezeichnung, kein Preis, keine Beschreibung) fallen weg, sobald
+    es eine echte Position gibt. Sie entstehen meist durch einen Klick zu viel."""
+
+    def leer(p: Positionsdaten) -> bool:
+        return (
+            p.typ == "artikel"
+            and not p.bezeichnung
+            and not p.einzelpreis_cent
+            and not (p.beschreibung or "").strip()
+        )
+
+    gefuellt = [p for p in positionen if not leer(p)]
+    return gefuellt if any(p.typ == "artikel" for p in gefuellt) else positionen
+
+
 def wende_positionsaktion(
     aktion: str, positionen: list[Positionsdaten], formular: MultiDict
 ) -> list[Positionsdaten]:
@@ -161,3 +177,50 @@ def roh_aus_rechnung(rechnung) -> list[dict]:
             }
         )
     return zeilen
+
+
+class Ansicht:
+    """Gespeicherter Beleg, überlagert mit den Eingaben aus dem Formular. So stehen nach einer
+    Fehlermeldung die eben getippten Werte im Formular, nicht wieder der alte Stand."""
+
+    def __init__(self, gespeichert, eingaben: dict):
+        self._gespeichert = gespeichert
+        self._eingaben = eingaben
+
+    def __getattr__(self, name):
+        if name in self._eingaben:
+            return self._eingaben[name]
+        return getattr(self._gespeichert, name)
+
+
+def entwurfsstand(rechnung) -> str:
+    """Fingerabdruck des gespeicherten Entwurfs, um ein Überschreiben aus einem zweiten Fenster
+    zu erkennen."""
+    import hashlib
+    import json
+
+    kopf = {
+        spalte: str(getattr(rechnung, spalte))
+        for spalte in [
+            "kontakt_id",
+            "empfaenger_name",
+            "empfaenger_zusatz",
+            "empfaenger_strasse",
+            "empfaenger_plz",
+            "empfaenger_ort",
+            "empfaenger_land",
+            "rechnungsdatum",
+            "leistung_art",
+            "leistung_von",
+            "leistung_bis",
+            "titel",
+            "einleitung",
+            "nachbemerkung",
+            "hinweis_steuerbefreiung",
+            "zahlungsziel_tage",
+            "qr_ueberweisung",
+        ]
+        if hasattr(rechnung, spalte)
+    }
+    inhalt = json.dumps([kopf, roh_aus_rechnung(rechnung)], sort_keys=True, default=str)
+    return hashlib.sha256(inhalt.encode()).hexdigest()[:16]

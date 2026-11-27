@@ -64,7 +64,7 @@ def test_steuerberater_zip(angemeldet, daten, session):
     zahlungen = zip_.read(f"Zahlungen-{HEUTE.year}.csv").decode("utf-8-sig")
     assert f";Einnahme;{daten.nummer};" in zahlungen
     assert (
-        f"Muster Tankstelle GmbH;Fahrzeugkosten;81,17;100;81,17;karte;{belegdateien[0]}"
+        f"Muster Tankstelle GmbH;Fahrzeugkosten;81,17;100;81,17;Kartenzahlung;{belegdateien[0]}"
         in zahlungen
     )
     assert zip_.read(f"rechnungen/{daten.nummer}.pdf").startswith(b"%PDF")

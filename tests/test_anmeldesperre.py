@@ -16,6 +16,8 @@ def test_regel():
     alt = [JETZT - timedelta(minutes=16)] * 10
     assert not gesperrt(alt, alt, JETZT)
     assert gesperrt([], [JETZT] * 20, JETZT)
+    assert not gesperrt([], [], JETZT, [JETZT] * 49)
+    assert gesperrt([], [], JETZT, [JETZT] * 50)
 
 
 def anmelden(client, email=ADMIN_EMAIL, passwort=ADMIN_PASSWORT, ip="10.0.0.1"):
@@ -36,6 +38,20 @@ def test_fuenf_fehlversuche_sperren_konto(client, admin):
     assert "Zu viele Anmeldeversuche" in antwort.get_data(as_text=True)
     # anderes Konto ist nicht betroffen
     assert anmelden(client, email="jemand@x.example").status_code == 200
+
+
+def test_fremder_sperrt_inhaber_nicht_aus(client, admin):
+    """Fünf falsche Passwörter von fremder Adresse sperren nur diese Adresse."""
+    for _ in range(5):
+        anmelden(client, passwort="falsch-falsch", ip="203.0.113.66")
+    assert anmelden(client, ip="203.0.113.66").status_code == 429
+    assert anmelden(client, ip="10.0.0.1").status_code == 302
+
+
+def test_verteiltes_raten_sperrt_konto(client, admin):
+    for i in range(50):
+        anmelden(client, passwort="falsch-falsch", ip=f"198.51.100.{i}")
+    assert anmelden(client, ip="10.0.0.1").status_code == 429
 
 
 def test_sperre_endet_nach_15_minuten(client, admin, session):

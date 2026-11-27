@@ -21,6 +21,10 @@
       <button type="button" class="knopf knopf-voll" data-passkey="anmelden" data-optionen="{{ url_for('auth.passkey_optionen') }}" data-ziel="{{ url_for('auth.passkey_anmelden') }}" hidden>Mit Passkey anmelden</button>
       <p id="passkey-meldung" hidden></p>
     </div>
+    <details class="passwort-vergessen">
+      <summary>Passwort vergessen?</summary>
+      <p class="hinweis">Ein Admin kann dir unter Einstellungen → Nutzer ein neues Passwort geben. Bist du selbst der einzige Admin, setzt du es auf dem Server neu, im Ordner von steuy: <code>docker compose exec app flask passwort-setzen deine@email.de</code></p>
+    </details>
     <script src="{{ url_for('static', filename='js/passkey.js') }}" defer></script>
   </div>
 </section>

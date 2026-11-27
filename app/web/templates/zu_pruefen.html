@@ -136,6 +136,49 @@
 </section>
 {% endif %}
 
+{% if offen.versand_fehlt %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Nicht verschickt</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">steuy wollte diese Belege per E-Mail schicken, das hat nicht geklappt. Der Kunde hat sie also noch nicht. Bitte E-Mail-Einstellungen oder Kundenadresse prüfen und noch einmal senden.</p></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Beleg</th><th>Kunde</th><th>Grund</th></tr></thead>
+      <tbody>
+        {% for e in offen.versand_fehlt %}
+        <tr>
+          <td>{% if e.mahnung %}<a class="zeilenlink" href="{{ url_for('rechnungen.mahnung_detail', rechnung_id=e.rechnung.id, mahnung_id=e.mahnung.id) }}">{{ e.mahnung.bezeichnung }} zu {{ e.rechnung.nummer }}</a>{% else %}<a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=e.rechnung.id) }}">{{ e.rechnung.titel }} {{ e.rechnung.nummer }}</a>{% endif %} <span class="status status-orange">nicht verschickt</span></td>
+          <td>{{ e.rechnung.empfaenger_name or "" }}</td>
+          <td>{{ e.grund or "" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.anlagen_fehlen %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Abschreibung fehlt</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">Diese Anschaffungen liegen über der Grenze für geringwertige Wirtschaftsgüter. Ohne Angabe, was es ist, stehen sie voll als Ausgabe in der EÜR. Bitte öffnen und festlegen, wie sie abgeschrieben werden.</p></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle">
+      <thead><tr><th>Lieferant</th><th>Beschreibung</th><th>Belegdatum</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for b in offen.anlagen_fehlen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('anlagen.anlegen', buchung_id=b.id) }}">{{ b.partner or "–" }}</a></td>
+          <td>{{ b.beschreibung or "" }}</td>
+          <td>{{ b.belegdatum | datum }}</td>
+          <td class="rechts betrag">{{ b.betrag_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
 {% if offen.gebuehren %}
 <section class="karte abstand-unten">
   <div class="karte-kopf"><h2>Gebühren noch nicht erfasst{{ hilfe("gebuehr") }}</h2></div>
@@ -235,6 +278,28 @@
           <td><a class="zeilenlink" href="{{ url_for('belege.buchung', buchung_id=b.id) }}">{{ b.partner or "Entwurf" }}</a></td>
           <td>{{ b.belegdatum | datum }}</td>
           <td class="rechts betrag">{{ b.betrag_cent | euro }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if offen.angenommen %}
+<section class="karte abstand-unten">
+  <div class="karte-kopf"><h2>Angenommene Angebote ohne Rechnung</h2></div>
+  <div class="karte-inhalt"><p class="hinweis">Der Kunde hat zugesagt. Ist der Auftrag erledigt, im Angebot auf „In Rechnung umwandeln“ klicken.</p></div>
+  <div class="tabellenrahmen">
+    <table class="tabelle klickbar">
+      <thead><tr><th>Angebot</th><th>Kunde</th><th>Angebotsdatum</th><th class="rechts">Betrag</th></tr></thead>
+      <tbody>
+        {% for r in offen.angenommen %}
+        <tr>
+          <td><a class="zeilenlink" href="{{ url_for('rechnungen.detail', rechnung_id=r.id) }}">{{ r.nummer }}</a></td>
+          <td>{{ kunde(r) }}</td>
+          <td>{{ r.rechnungsdatum | datum }}</td>
+          <td class="rechts betrag">{{ r.summe_cent | euro }}</td>
         </tr>
         {% endfor %}
       </tbody>

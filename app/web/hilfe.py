@@ -462,8 +462,17 @@ def _an() -> bool:
     return not current_user.is_authenticated or bool(current_user.hilfe_anzeigen)
 
 
+HILFE_SEITE = "https://faolan-exe.github.io/Steuy/doku/"
+
+
+def hilfe_url(seite: str = "") -> str:
+    """Link zur Anleitung auf der Hilfe-Website, z. B. hilfe_url("scanner")."""
+    return HILFE_SEITE + (f"{seite}/" if seite else "")
+
+
 def registriere(app) -> None:
     app.jinja_env.globals.update(
+        hilfe_url=hilfe_url,
         hilfe=lambda schluessel: symbol_fuer_begriff(schluessel, _an()),
         feldhilfe=lambda feld: symbol_fuer_feld(feld, _an()),
         namenhilfe=lambda name: symbol_fuer_name(name, _an()),

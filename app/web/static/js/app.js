@@ -4,6 +4,7 @@
   "use strict";
 
   let dialog;
+  let offen = null; // { formular, knopf } der Rückfrage, die gerade angezeigt wird
 
   function baueDialog() {
     dialog = document.createElement("dialog");
@@ -16,6 +17,18 @@
       '<button class="knopf knopf-primaer" value="ja"></button>' +
       "</div></form>";
     document.body.appendChild(dialog);
+    // Direkt auf den Klick reagieren, nicht auf das close-Ereignis: Das feuert in manchen
+    // eingebetteten Ansichten und Hintergrund-Tabs nicht, dann passierte nach „Ja“ nichts.
+    dialog.querySelector("form").addEventListener("submit", function (e) {
+      const ja = e.submitter && e.submitter.value === "ja";
+      const auftrag = offen;
+      offen = null;
+      if (!ja || !auftrag) return;
+      e.preventDefault();
+      dialog.close("ja");
+      auftrag.formular.dataset.bestaetigt = "ja";
+      auftrag.formular.requestSubmit(auftrag.knopf || undefined);
+    });
   }
 
   document.addEventListener("submit", function (ereignis) {
@@ -27,11 +40,7 @@
     dialog.querySelector(".bestaetigung-text").textContent = frage;
     dialog.querySelector('[value="ja"]').textContent =
       formular.dataset.bestaetigenKnopf || "Ja, fortfahren";
-    dialog.onclose = function () {
-      if (dialog.returnValue !== "ja") return;
-      formular.dataset.bestaetigt = "ja";
-      formular.requestSubmit(ereignis.submitter || undefined);
-    };
+    offen = { formular: formular, knopf: ereignis.submitter };
     dialog.returnValue = "";
     dialog.showModal();
     dialog.querySelector('[value="nein"]').focus();
@@ -279,5 +288,53 @@
   document.addEventListener("change", function (e) {
     const feld = e.target;
     if (feld && feld.name === "farbschema" && feld.type === "radio" && feld.checked) setze(feld.value);
+  });
+})();
+
+// Doppelklick: Ein Formular wird nur einmal abgeschickt. Sonst legt ein schneller zweiter Klick
+// Zahlungen, Stornos oder Belege doppelt an. Ausgenommen sind Vorschauen in neuen Fenstern.
+(function () {
+  "use strict";
+  document.addEventListener("submit", function (e) {
+    const formular = e.target;
+    if (e.defaultPrevented || !formular || (formular.method || "").toLowerCase() !== "post") return;
+    const ziel = (e.submitter && e.submitter.getAttribute("formtarget")) || formular.target;
+    if (ziel && ziel !== "_self") return;
+    if (formular.dataset.gesendet === "ja") {
+      e.preventDefault();
+      return;
+    }
+    formular.dataset.gesendet = "ja";
+    formular.classList.add("wird-gesendet");
+  });
+  // Zurück im Browser: Seite kommt aus dem Zwischenspeicher, Formulare wieder freigeben
+  window.addEventListener("pageshow", function () {
+    document.querySelectorAll("form[data-gesendet]").forEach(function (f) {
+      delete f.dataset.gesendet;
+      f.classList.remove("wird-gesendet");
+    });
+  });
+})();
+
+// Ungespeicherte Änderungen: Wer in einem Bearbeitungsformular etwas ändert und dann
+// wegklickt, wird gefragt. Abschicken (Speichern, Vorschau, Löschen) fragt nicht.
+(function () {
+  "use strict";
+  let geaendert = false;
+  function merke(e) {
+    const formular = e.target && e.target.form;
+    if (formular && formular.hasAttribute("data-ungespeichert")) geaendert = true;
+  }
+  document.addEventListener("input", merke);
+  document.addEventListener("change", merke);
+  document.addEventListener("submit", function (e) {
+    // Vorschau in neuem Fenster verlässt die Seite nicht
+    const ziel = (e.submitter && e.submitter.getAttribute("formtarget")) || e.target.target;
+    if (!e.defaultPrevented && !(ziel && ziel !== "_self")) geaendert = false;
+  });
+  window.addEventListener("beforeunload", function (e) {
+    if (!geaendert) return;
+    e.preventDefault();
+    e.returnValue = "";
   });
 })();

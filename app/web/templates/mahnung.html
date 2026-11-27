@@ -9,10 +9,13 @@
     {% if darf("rechnungen_versenden") and loeschbar %}
     <form method="post" action="{{ url_for('rechnungen.mahnung_loeschen', rechnung_id=r.id, mahnung_id=m.id) }}" data-bestaetigen="{{ m.bezeichnung }} löschen? Sie wurde nie verschickt und verschwindet aus der Rechnung. Das Protokoll hält das Löschen fest." data-bestaetigen-knopf="Löschen"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="knopf knopf-text gefahr" type="submit">Löschen</button></form>
     {% endif %}
-    {% if darf("rechnungen_versenden") and m.aktiv %}<a class="knopf" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Per E-Mail senden</a>{% endif %}
+    {% if darf("rechnungen_versenden") and m.aktiv and r.status != "storniert" %}<a class="knopf" href="{{ url_for('rechnungen.mahnung_senden', rechnung_id=r.id, mahnung_id=m.id) }}">Per E-Mail senden</a>{% endif %}
     <a class="knopf knopf-primaer" href="{{ url_for('rechnungen.mahnung_pdf', rechnung_id=r.id, mahnung_id=m.id) }}" target="_blank">PDF öffnen</a>
   </div>
 </div>
+{% if r.status == "storniert" and m.aktiv %}
+<div class="meldung warnung abstand-unten"><p>Die Rechnung {{ r.nummer }} ist storniert. Diese Mahnung gilt nicht mehr und erscheint nicht mehr im Kundenportal.</p></div>
+{% endif %}
 {% if not m.aktiv %}
 <div class="meldung warnung abstand-unten">Zurückgezogen am {{ m.zurueckgezogen_am | datum }}{% if m.zurueckgezogen_grund %}: {{ m.zurueckgezogen_grund }}{% endif %}. Sie zählt nicht mehr als Mahnstufe und erscheint nicht mehr im Kundenportal.</div>
 {% endif %}

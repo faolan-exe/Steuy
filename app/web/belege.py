@@ -14,7 +14,7 @@ from flask import (
 from flask_login import current_user
 from sqlalchemy import select
 
-from app.domain.geld import cent_zu_euro
+from app.domain.geld import GeldFormatFehler, cent_zu_euro, euro_zu_cent
 from app.domain.rollen import Recht
 from app.domain.zahlung import ZAHLUNGSARTEN, ZahlungUngueltig
 from app.extensions import db
@@ -34,6 +34,7 @@ from app.services.buchungen import (
     Buchungsdaten,
     BuchungUngueltig,
     aendere_entwurf,
+    beleghinweise,
     erfasse_gebuehren,
     erfasse_zahlung,
     festschreiben,
@@ -130,6 +131,11 @@ def _speichern(formular: BuchungFormular, buchung: Buchung | None, beleg_id: int
             zahlungsart=formular.zahlungsart.data,
         )
         flash("Buchung festgeschrieben.")
+        if not bezahlt_am:
+            flash(
+                "Noch nicht als bezahlt erfasst: Sie zählt erst in der EÜR, wenn du die Zahlung "
+                "einträgst (unten bei „Zahlungen“). War sie schon bezahlt, trag das gleich nach."
+            )
         if ueber_gwg_grenze(buchung):
             flash(
                 "Diese Anschaffung liegt über der Grenze für geringwertige Wirtschaftsgüter "
@@ -144,12 +150,29 @@ def _speichern(formular: BuchungFormular, buchung: Buchung | None, beleg_id: int
 
 def _formularseite(formular, beleg=None, buchung=None, hinweis=None, status=200):
     betrag = formular.betrag_cent or 0
+    if not betrag and formular.betrag.data:
+        try:
+            betrag = euro_zu_cent(formular.betrag.data)
+        except (GeldFormatFehler, ValueError):
+            betrag = 0
+    kontakt = formular.kontakt_id.data
     return render_template(
         "buchung_formular.html",
         formular=formular,
         beleg=beleg,
         buchung=buchung,
         hinweis=hinweis,
+        pruefhinweise=beleghinweise(
+            belegdatum=formular.belegdatum.data,
+            betrag_cent=betrag,
+            partner=formular.partner.data,
+            kontakt_id=int(kontakt) if str(kontakt or "").isdigit() else None,
+            belegnummer=formular.belegnummer.data,
+            beleg=beleg,
+            buchung_id=buchung.id if buchung else None,
+        )
+        if not (buchung and not buchung.ist_entwurf)
+        else [],
         gwg_hinweis=formular.art.data == "ausgabe" and betrag >= GWG_HINWEIS_AB_CENT,
     ), status
 
@@ -253,6 +276,10 @@ def beleg(beleg_id: int):
             # Belege mit Karte oder bar sind meist am Belegtag bezahlt
             "bezahlt_am": vorschlag.get("belegdatum") or date.today(),
         }
+        if vorschlag.get("zahlungsart"):
+            # Auf dem Bon steht, dass schon bezahlt wurde (Karte, bar)
+            vorbelegung["bereits_bezahlt"] = True
+            vorbelegung["zahlungsart"] = vorschlag["zahlungsart"]
         formular = _formular(**vorbelegung)
         formular.betrag_cent = vorschlag.get("betrag_cent")
         hinweis = vorschlag.get("hinweis")

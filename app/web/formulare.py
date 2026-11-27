@@ -15,6 +15,7 @@ from wtforms import (
     TextAreaField,
 )
 from wtforms.validators import (
+    AnyOf,
     DataRequired,
     Email,
     EqualTo,
@@ -302,6 +303,16 @@ class KontaktFormular(FlaskForm):
     def validate_firmenname(self, feld):
         if self.art.data == "firma" and not (feld.data or "").strip():
             raise ValidationError("Firmenname fehlt.")
+
+    def validate_leitweg_id(self, feld):
+        from app.domain.leitweg import leitweg_fehler, sieht_aus_wie_leitweg_id
+
+        text = (feld.data or "").strip()
+        if text and sieht_aus_wie_leitweg_id(text):
+            fehler = leitweg_fehler(text)
+            if fehler:
+                raise ValidationError(fehler)
+            feld.data = text.upper()
 
     def validate_nachname(self, feld):
         if self.art.data == "person" and not (feld.data or "").strip():
@@ -594,7 +605,12 @@ class AnlagegutFormular(FlaskForm):
             ("beweglich", "Etwas anderes zum Anfassen (z. B. Möbel, Kamera, Fahrzeug)"),
             ("immateriell", "Etwas anderes Nicht-Greifbares (z. B. Lizenz, Website)"),
         ],
-        default="computer",
+        # Bewusst ohne Vorauswahl: Ein eiliger Klick soll eine Kamera nicht zum Computer machen
+        validators=[
+            InputRequired("Bitte auswählen, was es ist."),
+            AnyOf(["computer", "software", "beweglich", "immateriell"], "Bitte auswählen."),
+        ],
+        validate_choice=False,
     )
     anschaffungsdatum = Datumsfeld("Angeschafft am", [InputRequired(PFLICHT)])
     nutzungsdauer_jahre = IntegerField(

@@ -36,6 +36,7 @@ def create_app(config: type[Config] = Config) -> Flask:
         kontakte,
         kundenportal,
         profil,
+        protokoll,
         rechnungen,
         rundgang,
         shop,
@@ -61,6 +62,7 @@ def create_app(config: type[Config] = Config) -> Flask:
     app.register_blueprint(rundgang.bp)
     app.register_blueprint(wiederkehrend.bp)
     app.register_blueprint(kundenportal.bp)
+    app.register_blueprint(protokoll.bp)
     registriere_filter(app)
 
     from app.web.hilfe import registriere as registriere_hilfe
@@ -116,6 +118,33 @@ def create_app(config: type[Config] = Config) -> Flask:
         from app.services.scaneingang import dienst
 
         dienst()
+
+    @app.cli.command("passwort-setzen")
+    @click.argument("email")
+    def passwort_setzen(email):
+        """Neues Passwort für ein Konto, z. B. wenn der einzige Admin seins vergessen hat."""
+        from sqlalchemy import func, select
+
+        from app.domain.passwort import PasswortZuKurz, hash_passwort, schwaches_passwort
+        from app.models import Nutzer
+        from app.services.protokoll import protokolliere
+
+        nutzer = db.session.execute(
+            select(Nutzer).where(func.lower(Nutzer.email) == email.strip().lower())
+        ).scalar_one_or_none()
+        if nutzer is None:
+            raise click.ClickException(f"Kein Konto mit der E-Mail-Adresse {email}.")
+        passwort = click.prompt("Neues Passwort", hide_input=True, confirmation_prompt=True)
+        grund = schwaches_passwort(passwort, (nutzer.email, nutzer.name))
+        if grund:
+            raise click.ClickException(grund)
+        try:
+            nutzer.passwort_hash = hash_passwort(passwort)
+        except PasswortZuKurz as fehler:
+            raise click.ClickException(str(fehler)) from fehler
+        protokolliere("passwort_auf_server_gesetzt", nutzer_id=nutzer.id)
+        db.session.commit()
+        click.echo(f"Neues Passwort für {nutzer.email} gesetzt. Anmelden geht ab sofort.")
 
     @app.cli.command("erinnerungen")
     def erinnerungen():

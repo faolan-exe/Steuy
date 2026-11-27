@@ -32,9 +32,10 @@ TEXTE = {
     ),
 }
 CSRF_TEXT = (
-    "Die Seite war zu lange geöffnet",
-    "Aus Sicherheitsgründen läuft ein geöffnetes Formular nach einiger Zeit ab, oder es wurde "
-    "schon abgeschickt. Bitte lade die Seite neu und versuche es noch einmal.",
+    "Das Formular ist nicht mehr gültig",
+    "Meist hast du dich inzwischen abgemeldet (zum Beispiel in einem anderen Tab), oder das "
+    "Formular wurde schon abgeschickt. Geh mit „Zurück“ auf die Seite: Deine Eingaben stehen dort "
+    "meist noch. Melde dich bei Bedarf in einem neuen Tab an und speichere dann noch einmal.",
 )
 
 # Minimale Seite für interne Fehler: Sie darf nichts aus der Datenbank brauchen, weil die

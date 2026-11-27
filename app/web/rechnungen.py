@@ -30,6 +30,7 @@ from app.services.ablage import AblageBeschaedigt
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.mahnwesen import (
     MahnungNichtMoeglich,
+    MahnungSchonErstellt,
     entwurf,
     erstelle_mahnung,
     ist_neueste,
@@ -59,16 +60,21 @@ from app.services.rechnungen import (
     NichtBearbeitbar,
     NichtFinalisierbar,
     belegkette,
+    empfaenger_aus_kontakt,
     entscheide_angebot,
+    ergaenze_reverse_charge,
     finalisiere,
     finalisierungsfehler,
     lieferschein_aus_rechnung,
     lieferscheine_zu,
     loesche_entwurf,
     neuer_entwurf,
+    oeffne_angebot,
     pdf,
+    pruefhinweise,
     rechnung_aus_angebot,
     rechnungen_zum_angebot,
+    reverse_charge_vorschlag,
     speichere_entwurf,
     storniere_rechnung,
     suche_rechnungen,
@@ -77,7 +83,14 @@ from app.services.rechte import darf
 from app.services.versand import dateiname, sende_beleg, vorschlag
 from app.services.zahlungen import erfasse_zahlung, ist_storniert, storniere_zahlung
 from app.web.formulare import SendenFormular, ZahlungFormular
-from app.web.rechnungseditor import lies_formular, roh_aus_rechnung, wende_positionsaktion
+from app.web.rechnungseditor import (
+    Ansicht,
+    entwurfsstand,
+    lies_formular,
+    ohne_leere,
+    roh_aus_rechnung,
+    wende_positionsaktion,
+)
 from app.web.rechte import braucht_recht
 
 bp = Blueprint("rechnungen", __name__, url_prefix="/rechnungen")
@@ -88,6 +101,18 @@ FILTER = {"alle": "Alle", "entwuerfe": "Entwürfe", "offen": "Offen", "ueberfael
 
 def _rechnung(rechnung_id: int) -> Rechnung:
     return db.session.get(Rechnung, rechnung_id) or abort(404)
+
+
+def _anschrift_geaendert(rechnung: Rechnung) -> bool:
+    """Wurde die Anschrift im Kontakt geändert, seit der Entwurf sie übernommen hat?"""
+    k = rechnung.kontakt
+    if k is None or k.archiviert:
+        return False
+    return any(
+        (getattr(rechnung, feld) or "").strip() != (wert or "").strip()
+        for feld, wert in empfaenger_aus_kontakt(k).items()
+        if feld != "empfaenger_name"
+    )
 
 
 def _auswahl():
@@ -335,23 +360,47 @@ def bearbeiten(rechnung_id: int):
             r=rechnung,
             positionen=roh_aus_rechnung(rechnung),
             fehler={},
+            stand=entwurfsstand(rechnung),
+            anschrift_geaendert=_anschrift_geaendert(rechnung),
             **_auswahl(),
         )
 
     eingabe = lies_formular(request.form)
+    ansicht = Ansicht(rechnung, vars(eingabe.kopf) if eingabe.kopf else {})
+    gesendet = request.form.get("stand")
+    if gesendet and gesendet != entwurfsstand(rechnung):
+        # Ein anderes Fenster hat inzwischen gespeichert: nicht still überschreiben
+        return render_template(
+            "rechnung_editor.html",
+            r=ansicht,
+            positionen=eingabe.roh,
+            fehler={
+                "stand": "Dieser Entwurf wurde inzwischen in einem anderen Fenster geändert. "
+                "Unten stehen deine Eingaben, gespeichert ist noch nichts. Speichern übernimmt "
+                "sie und ersetzt den anderen Stand."
+            },
+            stand=entwurfsstand(rechnung),
+            **_auswahl(),
+        ), 409
     if eingabe.fehler:
         return render_template(
             "rechnung_editor.html",
-            r=rechnung,
+            r=ansicht,
             positionen=eingabe.roh,
             fehler=eingabe.fehler,
+            stand=gesendet or entwurfsstand(rechnung),
             **_auswahl(),
         ), 422
 
     aktion = request.form.get("aktion", "speichern")
     positionen = wende_positionsaktion(aktion, eingabe.positionen, request.form)
+    if aktion in ("speichern", "vorschau"):
+        positionen = ohne_leere(positionen)
 
+    vorher_kontakt = rechnung.kontakt_id
     speichere_entwurf(rechnung, eingabe.kopf, positionen)
+    if vorher_kontakt is None and rechnung.kontakt_id and not eingabe.kopf.kontakt_id:
+        flash(f"Mit dem vorhandenen Kontakt „{rechnung.kontakt.name}“ verbunden.")
 
     if aktion == "vorschau":
         return redirect(url_for("rechnungen.vorschau", rechnung_id=rechnung.id))
@@ -370,8 +419,20 @@ def vorschau(rechnung_id: int):
         "rechnung_vorschau.html",
         r=rechnung,
         fehler=finalisierungsfehler(rechnung, aktuelles_gewerbe()),
+        hinweise=pruefhinweise(rechnung, aktuelles_gewerbe()),
+        reverse_charge=reverse_charge_vorschlag(rechnung),
         mail_bereit=mail_eingerichtet() and bool(rechnung.kontakt and rechnung.kontakt.email),
     )
+
+
+@bp.post("/<int:rechnung_id>/reverse-charge")
+@braucht_recht(Recht.ENTWUERFE)
+def reverse_charge(rechnung_id: int):
+    rechnung = _rechnung(rechnung_id)
+    if rechnung.ist_entwurf:
+        ergaenze_reverse_charge(rechnung, current_user.id)
+        flash("Hinweis „Steuerschuldnerschaft des Leistungsempfängers“ ergänzt.")
+    return redirect(url_for("rechnungen.vorschau", rechnung_id=rechnung.id))
 
 
 @bp.post("/<int:rechnung_id>/finalisieren")
@@ -471,6 +532,7 @@ def _mahnseite(rechnung: Rechnung, fehler: str | None = None):
         eigene=mahnvorlagen(),
         platzhalter=PLATZHALTER,
         text_max=TEXT_MAX,
+        ohne_bank=not (aktuelles_gewerbe().iban or "").strip(),
     ), (422 if fehler else 200)
 
 
@@ -510,7 +572,16 @@ def mahnung_erstellen(rechnung_id: int):
         pruefe_mahnbar(rechnung)
         if vorlagenname:
             speichere_vorlage(vorlagenname, angaben["text"], current_user.id)
-        mahnung = erstelle_mahnung(rechnung, current_user.id, **angaben)
+        stufe = request.form.get("stufe", "")
+        mahnung = erstelle_mahnung(
+            rechnung,
+            current_user.id,
+            erwartete_stufe=int(stufe) if stufe.isdigit() else None,
+            **angaben,
+        )
+    except MahnungSchonErstellt as fehler:
+        db.session.rollback()
+        flash(str(fehler))
     except MahnungNichtMoeglich as fehler:
         db.session.rollback()
         if angaben["text"] is not None:
@@ -632,6 +703,18 @@ def annehmen(rechnung_id: int):
     return _entscheiden(rechnung_id, True)
 
 
+@bp.post("/<int:rechnung_id>/offen")
+@braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
+def wieder_offen(rechnung_id: int):
+    try:
+        oeffne_angebot(_rechnung(rechnung_id), current_user.id)
+    except AktionNichtMoeglich as fehler:
+        flash(str(fehler))
+    else:
+        flash("Das Angebot ist wieder offen.")
+    return redirect(url_for("rechnungen.detail", rechnung_id=rechnung_id))
+
+
 @bp.post("/<int:rechnung_id>/ablehnen")
 @braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
 def ablehnen(rechnung_id: int):
@@ -719,6 +802,11 @@ def senden(rechnung_id: int):
 @braucht_recht(Recht.RECHNUNGEN_VERSENDEN)
 def mahnung_senden(rechnung_id: int, mahnung_id: int):
     mahnung = _mahnung_von(rechnung_id, mahnung_id)
+    if mahnung.rechnung.status == "storniert":
+        flash("Die Rechnung ist storniert, die Mahnung gilt nicht mehr und wird nicht verschickt.")
+        return redirect(
+            url_for("rechnungen.mahnung_detail", rechnung_id=rechnung_id, mahnung_id=mahnung_id)
+        )
     if not mahnung.aktiv:
         flash("Diese Mahnung ist zurückgezogen und kann nicht mehr verschickt werden.")
         return redirect(

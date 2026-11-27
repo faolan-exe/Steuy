@@ -17,7 +17,13 @@ from pathlib import Path
 
 from flask import Flask, current_app
 
-from app.domain.update import VersionUngueltig, ist_neuer, release_notizen, tag_fuer
+from app.domain.update import (
+    VersionUngueltig,
+    ist_neuer,
+    release_notizen,
+    tag_fuer,
+    update_lage,
+)
 from app.extensions import db
 from app.services.einrichtung import aktuelles_gewerbe
 from app.services.protokoll import protokolliere
@@ -227,16 +233,24 @@ def starte_update(version: str, nutzer_id: int) -> None:
             "Das automatische Update ist auf dieser Installation nicht eingerichtet."
         )
     tag = tag_fuer(version)
-    if status().get("zustand") == "laeuft":
+    if lage() in ("wartet", "laeuft"):
         raise RuntimeError("Es läuft bereits ein Update.")
+    jetzt = int(time.time())
     (ordner / "status.json").write_text(
-        json.dumps({"zustand": "angefragt", "version": tag, "von": VERSION}), encoding="utf-8"
+        json.dumps(
+            {"zustand": "angefragt", "version": tag, "von": VERSION, "start": jetzt, "zeit": jetzt}
+        ),
+        encoding="utf-8",
     )
     temp = ordner / "anfrage.tmp"
     temp.write_text(json.dumps({"version": tag, "zeit": int(time.time())}), encoding="utf-8")
     temp.replace(ordner / "anfrage")
     protokolliere("update_angefragt", nutzer_id=nutzer_id, details={"version": tag, "von": VERSION})
     db.session.commit()
+
+
+def lage() -> str:
+    return update_lage(status(), time.time())
 
 
 def status() -> dict:

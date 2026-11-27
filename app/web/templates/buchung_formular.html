@@ -20,6 +20,14 @@
   </div>
 </div>
 {% if hinweis %}<div class="meldung">{{ hinweis }}</div>{% endif %}
+{% if pruefhinweise %}
+<div class="meldung warnung" role="alert">
+  <div>
+    <strong>Bitte prüfen:</strong>
+    <ul>{% for h in pruefhinweise %}<li>{{ h }}</li>{% endfor %}</ul>
+  </div>
+</div>
+{% endif %}
 <div class="{{ 'belegansicht' if beleg else '' }}">
   {% if beleg %}
   <section class="karte pdfrahmen belegvorschau">
@@ -38,7 +46,7 @@
     {% endif %}
   </section>
   {% endif %}
-  <form method="post" novalidate class="buchungsformular">
+  <form method="post" novalidate class="buchungsformular" data-ungespeichert>
     {{ formular.csrf_token }}
     <section class="karte">
       <div class="karte-inhalt">
@@ -54,7 +62,7 @@
           {{ feld(formular.beschreibung, klasse="ganz") }}
         </div>
         {% if gwg_hinweis %}
-        <div class="meldung warnung">Über 952 € brutto: Ist das eine Anschaffung, die länger genutzt wird? Computer und Software zählen voll im Kaufjahr. Andere Anschaffungen über 800 € netto werden über mehrere Jahre abgeschrieben. Das unterstützt steuy in einem der nächsten Schritte. Bis dahin bitte mit der Steuerberatung klären.</div>
+        <div class="meldung warnung">Über 952 € brutto: Ist das eine Anschaffung, die länger genutzt wird? Computer und Software zählen voll im Kaufjahr. Andere Anschaffungen über 800 € netto werden über mehrere Jahre abgeschrieben. Nach dem Festschreiben fragt steuy, wie die Anschaffung abgeschrieben wird.</div>
         {% endif %}
       </div>
     </section>

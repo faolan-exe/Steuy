@@ -58,7 +58,7 @@
       <p class="hinweis">Jede E-Mail zu Rechnung, Angebot, Lieferschein oder Mahnung bekommt einen persönlichen Link. Darüber sieht dein Kunde den Beleg mit Status, lädt PDF und E-Rechnung herunter, bezahlt per QR-Code und nimmt Angebote mit einem Klick an. Du siehst am Beleg, ob er den Link geöffnet hat.</p>
       {{ feld(formular.kundenportal) }}
       {{ feld(formular.kundenportal_plz, hinweis="Schützt, falls eine Mail weitergeleitet wird. Nach 5 falschen Versuchen ist der Link 15 Minuten gesperrt.") }}
-      {{ feld(formular.oeffentliche_adresse, hinweis="Unter dieser Adresse muss steuy aus dem Internet erreichbar sein, mit HTTPS. Am sichersten gibst du nach außen nur die Pfade /k/ und /static/ frei (Anleitung: docs/kundenportal.md).") }}
+      {{ feld(formular.oeffentliche_adresse, hinweis="Unter dieser Adresse muss steuy aus dem Internet erreichbar sein, mit HTTPS. Am sichersten gibst du nach außen nur die Pfade /k/ und /static/ frei (siehe Hilfe-Website unter „Kundenportal“).") }}
       {% if not formular.oeffentliche_adresse.data and config.BASIS_URL %}<p class="hinweis">Leer: steuy nimmt {{ config.BASIS_URL }} aus der Server-Einstellung.</p>{% endif %}
     </div>
   </section>

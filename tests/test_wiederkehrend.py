@@ -228,7 +228,7 @@ def test_senden_ohne_mail_einrichtung_laesst_festgeschriebene_rechnung_stehen(
 
 def test_festschreiben_mit_fehlenden_angaben_bleibt_entwurf(angemeldet, admin, bank, session, app):  # noqa: F811
     v = wiederkehrend.lege_leer_an(admin.id, heute=date(2026, 11, 1))
-    v.versand, v.name = "festschreiben", "Ohne Kunde"
+    v.versand, v.name, v.aktiv = "festschreiben", "Ohne Kunde", True
     session.commit()
     with app.app_context():
         lauf = wiederkehrend.fuehre_aus(admin.id, heute=date(2026, 11, 1))

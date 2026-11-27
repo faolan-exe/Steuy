@@ -186,6 +186,20 @@
   });
 })();
 
+// Anschrift im Kontakt geändert: auf Knopfdruck neu übernehmen
+(function () {
+  "use strict";
+  document.addEventListener("click", function (e) {
+    const knopf = e.target.closest ? e.target.closest("[data-kontakt-uebernehmen]") : null;
+    if (!knopf) return;
+    const auswahl = document.getElementById("kontakt_id");
+    if (!auswahl) return;
+    auswahl.dispatchEvent(new Event("change", { bubbles: true }));
+    const meldung = knopf.closest(".meldung");
+    if (meldung) meldung.remove();
+  });
+})();
+
 // Artikel beim Tippen in „Bezeichnung“ vorschlagen. Passt der Text genau zu einem Artikel,
 // werden Einheit, Preis und Beschreibung übernommen (nur in leere Felder bzw. Preis 0).
 (function () {

@@ -128,10 +128,33 @@ def test_mehrere_auf_einmal(angemeldet, session):
         angemeldet,
         ("a.pdf", text_pdf(TANKBELEG)),
         ("b.xml", (DATEIEN / "xrechnung_ubl.xml").read_bytes()),
-        ("c.png", b"\x89PNG\r\n\x1a\n" + b"0" * 20),
+        ("c.png", echtes_png()),
     )
     assert "filter=pruefen" in antwort.headers["Location"]
     assert len(neue_belege()) == 3
+
+
+def echtes_png() -> bytes:
+    import io
+
+    from PIL import Image
+
+    puffer = io.BytesIO()
+    Image.new("RGB", (4, 4), "white").save(puffer, "PNG")
+    return puffer.getvalue()
+
+
+def test_kaputte_dateien_werden_abgelehnt(angemeldet, session):
+    gut = text_pdf(TANKBELEG)
+    antwort = hochladen(
+        angemeldet,
+        ("abgeschnitten.pdf", gut[: len(gut) // 3]),
+        ("unsinn.pdf", b"%PDF-1.7\n" + b"x" * 500),
+        ("kaputt.png", b"\x89PNG\r\n\x1a\n" + b"0" * 20),
+    )
+    seite = angemeldet.get(antwort.headers["Location"]).get_data(as_text=True)
+    assert seite.count("beschädigt oder unvollständig") == 3
+    assert session.execute(select(Beleg)).all() == []
 
 
 # ---------- Erfassen, Festschreiben, Zahlen ----------
